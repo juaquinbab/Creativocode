@@ -5,6 +5,31 @@
  @import url('https://fonts.googleapis.com/css?family=Raleway:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
 /*--------------------------------------------------------------------- basic ---------------------------------------------------------------------*/
 
+@media (max-width: 768px) {
+    .carousel-caption h1 {
+        font-size: 4vw; /* Reducir el tamaño de fuente para dispositivos móviles */
+    }
+    .carousel-caption strong {
+        font-size: 5vw; /* Reducir el tamaño de fuente para dispositivos móviles */
+    }
+}
+
+@media (max-width: 768px) {
+    .carousel-caption {
+        text-align: center;
+        padding-top: 20px;
+    }
+    .carousel-inner .carousel-item img {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Estilo opcional para ajustar la altura del carousel según el contenido */
+
 
 .centered-link {
     display: block;
