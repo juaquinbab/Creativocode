@@ -503,16 +503,22 @@ body {
      top: -298px;
 }
  .about {
-    padding-top: 10px;
+    padding-top: 30px;
 }
- .about_box {
+.about_box {
     box-shadow: #ddd 0px 0px 20px 0px;
-     height: 96%;
-     margin-right: 30px;
+    height: 96%;
+    margin-right: 30px;
+    margin-left: 60px;
+    margin-bottom: 50px; /* Ajusta el valor según necesites */
 }
- .about_box_text {
+.about_box_text {
     padding-left: 200px;
-     padding-right: 50px;
+    padding-right: 200px;
+    text-align: center; /* Centra el texto */
+    font-family: 'YourChosenFont', sans-serif; /* Cambia 'YourChosenFont' por la fuente que desees */
+    font-size: 24px; /* Ajusta el tamaño de la fuente a tu gusto */
+    color: #333; /* Ajusta el color de la fuente a tu gusto */
 }
  .about_box_text .title {
     padding-top: 120px;
@@ -934,4 +940,60 @@ body {
 }
 /** end footer **/
 /*--------------------------------------------------------------------- ener page css ---------------------------------------------------------------------*/
- 
+ /* Styles for Clientes Section */
+.clientes_section {
+    padding: 50px 0;
+    background: #f8f8f8;
+}
+.clientes_section .title {
+    text-align: center;
+    margin-bottom: 5px;
+}
+.clientes_section .cliente_box {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.clientes_section .cliente_box img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+/* Styles for WhatsApp Bot for Clinics Section */
+.whatsapp_bot_section {
+    padding: 50px 0;
+    background: #ffffff;
+}
+.whatsapp_bot_section .title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+
+.whatsapp_bot_section2 {
+    padding: 50px 0;
+    background: #ffffff;
+}
+
+
+
+.whatsapp_bot_section .whatsapp_bot_box {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.whatsapp_bot_section .whatsapp_bot_box img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.centered-title {
+    text-align: center;
+    font-size: 17px; /* Ajusta el tamaño según tus necesidades */
+    font-weight: bold; /* Puedes ajustar el grosor de la fuente */
+    color: #000000; /* Cambia el color si lo deseas */
+    margin-top: 5px; /* Ajusta el margen superior */
+    margin-bottom: 5px; /* Ajusta el margen inferior */
+}
