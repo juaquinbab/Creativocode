@@ -275,6 +275,7 @@ body {
 }
  .text_align_center {
      text-align: center;
+     font-size: 14px;
 }
 /*---------------------------- preloader area ----------------------------*/
  .loader_bg {
