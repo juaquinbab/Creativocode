@@ -76,6 +76,11 @@
                                 <div class="email">
                                     <a href="https://wa.me/573128281024" target="_blank"
                                         style="text-decoration: none; color: inherit;">
+                                        <!-- SDK loading -->
+                                       <!-- Launch button -->
+                                        
+                                     
+
                                         <img src="images/mail_icon.png" alt="WhatsApp Icon"
                                             style="width: 49px; height: 49px; vertical-align: middle;" />
                                         Hablar por WhatsApp
@@ -91,6 +96,7 @@
                                 <div class="contact_nu">
                                     <a href="#"> <img src="images/phone_icon.png" /> Contact : +573204037757</a>
                                 </div>
+                              
                             </div>
                         </div>
                     </div>
@@ -110,6 +116,7 @@
                                     <li class="nav-item active">
                                         <a class="nav-link" href="index.html">Home <span
                                                 class="sr-only">(current)</span></a>
+                                              
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" href="#about">BOT </a>
@@ -124,6 +131,12 @@
                                         <a class="nav-link" href="#online">VIDEO</a>
                                     </li>
 
+                                <li>
+
+                                    <button class="fb-login-button" onclick="loginWithFacebook();">Iniciar sesión con Facebook</button>
+  
+                                    <div id="status"></div>
+                                </li>
                                    
 
                                 </ul>
@@ -443,6 +456,64 @@
             });
         });
     </script>
+
+
+<script>
+    // Cargar el SDK de JavaScript de Facebook
+    (function(d, s, id){
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {return;}
+      js = d.createElement(s); js.id = id;
+      js.src = "https://connect.facebook.net/es_LA/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    // Inicializar el SDK
+    window.fbAsyncInit = function() {
+      FB.init({
+        ppId            : '531332619731859',
+      autoLogAppEvents : true,
+      xfbml            : true,
+      version          : 'v21.0'
+      });
+
+      // Verificar el estado de inicio de sesión
+      FB.getLoginStatus(function(response) {
+        statusChangeCallback(response);
+      });
+    };
+
+    // Función para manejar el estado de inicio de sesión
+    function statusChangeCallback(response) {
+      console.log('statusChangeCallback');
+      console.log(response);  // Verificar el estado de inicio de sesión
+      if (response.status === 'connected') {
+        testAPI();  // Si está conectado, obtenemos los datos del usuario
+      } else {
+        document.getElementById('profile').innerHTML = 'Por favor, inicia sesión en Facebook.';
+      }
+    }
+
+    // Función para obtener la información del usuario
+    function testAPI() {
+      console.log('Bienvenido! Obteniendo tu información...');
+      FB.api('/me', {fields: 'name,email'}, function(response) {
+        document.getElementById("profile").innerHTML = "¡Hola, " + response.name + "! Tu correo es " + response.email;
+      });
+    }
+
+    // Función para iniciar sesión con Facebook
+    function loginWithFacebook() {
+      FB.login(function(response) {
+        if (response.authResponse) {
+          testAPI();  // Si el login es exitoso, obtenemos los datos
+        } else {
+          console.log('El usuario canceló o no autorizó la solicitud.');
+        }
+      }, {scope: 'public_profile,email'});  // Solicitamos permisos para obtener el perfil y el correo
+    }
+  </script>
+
 
     
 

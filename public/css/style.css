@@ -997,3 +997,39 @@ body {
     margin-top: 5px; /* Ajusta el margen superior */
     margin-bottom: 5px; /* Ajusta el margen inferior */
 }
+
+
+
+/* Estilo del botón de inicio de sesión */
+.fb-login-button {
+    background-color: #1877f2; /* Azul de Facebook */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 250px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    display: inline-block;
+    text-align: center;
+  }
+
+  /* Estilo para el hover (cuando el ratón pasa sobre el botón) */
+  .fb-login-button:hover {
+    background-color: #165eab; /* Azul más oscuro de Facebook */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Estilo para los iconos (si es necesario) */
+  .fb-login-button span {
+    margin-left: 10px;
+  }
+
+  /* Estilo para el texto del estado (mensaje de bienvenida o error) */
+  #profile {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #333;
+  }
