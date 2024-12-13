@@ -457,62 +457,58 @@
         });
     </script>
 
+    
 
 <script>
-    // Cargar el SDK de JavaScript de Facebook
-    (function(d, s, id){
-      var js, fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) {return;}
-      js = d.createElement(s); js.id = id;
-      js.src = "https://connect.facebook.net/es_LA/sdk.js";
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-
-    // Inicializar el SDK
     window.fbAsyncInit = function() {
+      // Inicializar el SDK de Facebook
       FB.init({
-        ppId            : '531332619731859',
-      autoLogAppEvents : true,
-      xfbml            : true,
-      version          : 'v21.0'
+        appId: '531332619731859',
+        autoLogAppEvents: true,
+        xfbml: true,
+        version: 'v21.0'
       });
 
-      // Verificar el estado de inicio de sesión
+      // Revisar el estado de inicio de sesión cuando el SDK se haya cargado
       FB.getLoginStatus(function(response) {
         statusChangeCallback(response);
       });
     };
 
-    // Función para manejar el estado de inicio de sesión
     function statusChangeCallback(response) {
-      console.log('statusChangeCallback');
-      console.log(response);  // Verificar el estado de inicio de sesión
       if (response.status === 'connected') {
-        testAPI();  // Si está conectado, obtenemos los datos del usuario
+        // Si está conectado, muestra la información
+        testAPI();
       } else {
         document.getElementById('profile').innerHTML = 'Por favor, inicia sesión en Facebook.';
       }
     }
 
-    // Función para obtener la información del usuario
     function testAPI() {
+      // Usar la API de Facebook para obtener el perfil del usuario
       console.log('Bienvenido! Obteniendo tu información...');
-      FB.api('/me', {fields: 'name,email'}, function(response) {
-        document.getElementById("profile").innerHTML = "¡Hola, " + response.name + "! Tu correo es " + response.email;
+      FB.api('/me', { fields: 'name,email' }, function(response) {
+        document.getElementById('profile').innerHTML = '¡Hola, ' + response.name + '! Tu correo es ' + response.email;
       });
     }
 
-    // Función para iniciar sesión con Facebook
     function loginWithFacebook() {
+      // Llamada a FB.login() cuando el usuario haga clic en el botón
       FB.login(function(response) {
         if (response.authResponse) {
-          testAPI();  // Si el login es exitoso, obtenemos los datos
+          // Si el login es exitoso
+          testAPI();
         } else {
           console.log('El usuario canceló o no autorizó la solicitud.');
         }
-      }, {scope: 'public_profile,email'});  // Solicitamos permisos para obtener el perfil y el correo
+      }, { scope: 'public_profile,email' });
     }
+
   </script>
+
+  <!-- Cargar el SDK de Facebook -->
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
+
 
 
     
