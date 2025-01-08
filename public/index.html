@@ -10,6 +10,7 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1">
     <!-- site metas -->
     <title>Creativo Code</title>
+    <link rel="shortcut icon" href="https://i.ibb.co/0j0Tt87/logo.png" />
     <meta name="keywords" content="">
     <meta name="description" content="">
     <meta name="author" content="">
@@ -533,6 +534,9 @@ function exchangeTokenForLongTerm(accessToken) {
 
 
 
+FB.getLoginStatus(function(response) {
+    statusChangeCallback(response);
+});
 
 
   </script>
