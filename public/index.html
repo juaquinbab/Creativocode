@@ -438,6 +438,7 @@
     <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
 
     <script src="js/jquery-3.0.0.min.js"></script>
+    
     <script type="text/javascript">
         $(document).ready(function () {
             $("#sidebar").mCustomScrollbar({
@@ -462,90 +463,67 @@
 
 <script>
     window.fbAsyncInit = function() {
-      // Inicializar el SDK de Facebook
       FB.init({
         appId: '531332619731859',
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v21.0'
       });
-
-      // Revisar el estado de inicio de sesión cuando el SDK se haya cargado
+  
       FB.getLoginStatus(function(response) {
         statusChangeCallback(response);
       });
     };
-
+  
     function statusChangeCallback(response) {
       if (response.status === 'connected') {
-        // Si está conectado, muestra la información
         testAPI();
       } else {
         document.getElementById('profile').innerHTML = 'Por favor, inicia sesión en Facebook.';
       }
     }
-
+  
     function testAPI() {
-      // Usar la API de Facebook para obtener el perfil del usuario
-      console.log('Bienvenido! Obteniendo tu información...');
       FB.api('/me', { fields: 'name,email' }, function(response) {
-        document.getElementById('profile').innerHTML = '¡Hola, ' + response.name + '! Tu correo es ' + response.email;
+        if (!response || response.error) {
+          console.error('Error al obtener la información del usuario:', response.error);
+          return;
+        }
+        document.getElementById('profile').innerHTML = `¡Hola, ${response.name}! Tu correo es ${response.email}`;
       });
     }
-
+  
     function loginWithFacebook() {
-  // Llamada a FB.login() cuando el usuario haga clic en el botón
-  FB.login(function(response) {
-    if (response.authResponse) {
-      // Si el login es exitoso
-      const accessToken = response.authResponse.accessToken;
-      
-      // Aquí puedes enviar el token al servidor para intercambio si es necesario
-      exchangeTokenForLongTerm(accessToken);
-      
-      testAPI();
-    } else {
-      console.log('El usuario canceló o no autorizó la solicitud.');
+      FB.login(function(response) {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          exchangeTokenForLongTerm(accessToken);
+          testAPI();
+        } else {
+          console.log('El usuario canceló o no autorizó la solicitud.');
+        }
+      }, { scope: 'public_profile,email' });
     }
-  }, { scope: 'public_profile,email' });
-}
-
-
-
-function exchangeTokenForLongTerm(accessToken) {
-  // Enviar el token al backend para intercambiarlo por uno de largo plazo
-  fetch('/exchange-token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ accessToken: accessToken })
-  })
-  .then(response => response.json())
-  .then(data => {
-    console.log('Token de acceso a largo plazo:', data);
-    // Aquí puedes almacenar el token de largo plazo o usarlo según necesites
-  })
-  .catch(error => {
-    console.error('Error al intercambiar el token:', error);
-  });
-}
-
-
-
-
-FB.getLoginStatus(function(response) {
-    statusChangeCallback(response);
-});
-
-
+  
+    function exchangeTokenForLongTerm(accessToken) {
+      fetch('/exchange-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ accessToken })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Token de acceso a largo plazo:', data);
+      })
+      .catch(error => {
+        console.error('Error al intercambiar el token:', error);
+      });
+    }
   </script>
-
-  <!-- Cargar el SDK de Facebook -->
   <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js"></script>
-
-
-
+  
     
 
      
