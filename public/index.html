@@ -134,9 +134,10 @@
 
                                 <li>
 
-                                    <button class="fb-login-button" onclick="loginWithFacebook();">Iniciar sesión con Facebook</button>
-  
-                                    <div id="status"></div>
+                                    <div id="fb-root"></div>
+                                    <button onclick="launchWhatsAppSignup()" style="background-color: #1877f2; border: 0; border-radius: 4px; color: #fff; cursor: pointer; font-family: Helvetica, Arial, sans-serif; font-size: 16px; font-weight: bold; height: 40px; padding: 0 24px;">Únete con Facebook</button>
+                                  
+
                                 </li>
                                    
 
@@ -481,16 +482,8 @@
   </script>
 
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Embedded Signup</title>
-</head>
-<body>
-  <div id="fb-root"></div>
-  <button onclick="launchWhatsAppSignup()" style="background-color: #1877f2; border: 0; border-radius: 4px; color: #fff; cursor: pointer; font-family: Helvetica, Arial, sans-serif; font-size: 16px; font-weight: bold; height: 40px; padding: 0 24px;">Login with Facebook</button>
 
+ 
   <script>
     window.addEventListener('message', (event) => {
       if (event.origin !== "https://www.facebook.com" && event.origin !== "https://web.facebook.com") {
