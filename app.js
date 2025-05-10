@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const PORT = process.env.PORT;
+const fs = require('fs');
+
 
 const cors = require('cors');
 
@@ -45,6 +47,37 @@ app.post('/exchange-token', async (req, res) => {
   }
 });
 
+
+
+
+
+app.post("/guardar-mensaje", (req, res) => {
+  const nuevoMensaje = { ...req.body, fecha: new Date().toISOString() };
+
+  fs.readFile("mensajes.json", "utf8", (err, data) => {
+    let mensajes = [];
+    if (!err && data) {
+      mensajes = JSON.parse(data);
+    }
+
+    mensajes.push(nuevoMensaje);
+
+    fs.writeFile("mensajes.json", JSON.stringify(mensajes, null, 2), (err) => {
+      if (err) {
+        return res.status(500).json({ mensaje: "Error al guardar el mensaje." });
+      }
+      res.json({ mensaje: "Mensaje guardado correctamente 🚀" });
+    });
+  });
+});
+
+// Ruta para consultar los mensajes (opcional)
+app.get("/mensajes", (req, res) => {
+  fs.readFile("mensajes.json", "utf8", (err, data) => {
+    if (err) return res.status(500).send("Error al leer mensajes");
+    res.json(JSON.parse(data));
+  });
+});
 
 
 
