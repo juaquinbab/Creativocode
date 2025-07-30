@@ -421,6 +421,8 @@
     <div class="logo">
       <img src="IMG/logo.png" alt="Creativos Code">
     </div>
+
+    <button onclick="launchWhatsAppSignup()">Iniciar conexión</button>
     <nav>
       <a href="#clientes">Clientes</a>
       <a href="#videos">Videos</a>
@@ -663,6 +665,45 @@
 
   window.addEventListener("DOMContentLoaded", type);
 </script>
+
+
+
+<script>
+  window.fbAsyncInit = function () {
+    FB.init({
+      appId: '531332619731859', // ← reemplaza con tu App ID
+      autoLogAppEvents: true,
+      xfbml: false,
+      version: 'v19.0'
+    });
+  };
+
+  (function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  })(document, 'script', 'facebook-jssdk');
+
+  function launchWhatsAppSignup() {
+    FB.login(function (response) {
+      console.log("🟢 Embedded Signup completado:", response);
+      alert("Conexión realizada. Verifica consola para detalles.");
+    }, {
+      config_id: '1546533655845405', // ← reemplaza con tu config ID
+      response_type: 'code',
+      override_default_response_type: true,
+      extras: {
+        setup: {},
+        featureType: 'whatsapp_business_app_onboarding',
+        sessionInfoVersion: '3'
+      }
+    });
+  }
+</script>
+
 
 </body>
 
