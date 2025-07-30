@@ -422,14 +422,37 @@
       <img src="IMG/logo.png" alt="Creativos Code">
     </div>
 
-    <button onclick="launchWhatsAppSignup()">Iniciar conexión</button>
     <nav>
       <a href="#clientes">Clientes</a>
       <a href="#videos">Videos</a>
       <a href="#plan">Plan</a>
       <a href="#contacto">Contacto</a>
     </nav>
+
+
+    <button class="btn btn-verde" onclick="launchWhatsAppSignup()">Iniciar conexión</button>
+    <style>
+      .btn-verde {
+        background: #25D366;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 0.9rem 2rem;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(37,211,102,0.12);
+        transition: background 0.3s, transform 0.2s;
+      }
+      .btn-verde:hover {
+        background: #1ebe5b;
+        transform: translateY(-2px) scale(1.04);
+      }
+    </style>
   </header>
+
+
+
 
   
 
