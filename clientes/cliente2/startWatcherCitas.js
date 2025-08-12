@@ -154,7 +154,13 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
       console.warn(`[CITAS] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
     }
 
-    const textoGracias =  `Estás a punto de hablar con un ingeniero especializado. La automatización de tu WhatsApp está cada vez más cerca. Recuerda que en Creativo Code desarrollamos sistemas a la medida de tus necesidades.`;
+    const textoGracias =  `
+    
+    Asesor: 🎉 ¡Gracias por tu pedido!
+Ya estamos cocinando con amor y toda la sazón 🔥 para que disfrutes algo ¡DELICIOSO! 🤤
+🍔✨ ¡Prepárate, Zummy va en camino! 🚀
+
+    `;
 
     mensajes.push({
       from,

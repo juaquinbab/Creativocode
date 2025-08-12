@@ -138,7 +138,7 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "Imagen recibida." },
+        text: { preview_url: false, body: "Tu pedido ha sido recibido no olvides escribir la palabra confirmar. " },
       },
       {
         headers: {
