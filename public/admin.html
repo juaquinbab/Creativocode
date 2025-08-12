@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestor de Archivos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
+  <div class="container max-w-4xl bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-semibold text-gray-700 text-center mb-4">Gestor de Archivos</h2>
+    <div id="clientes" class="space-y-4"></div>
+  </div>
+
+  <script>
+    // Define aquí tus clientes
+    const clientes = ["cliente1", "cliente2", "cliente3", "cliente4"];
+    const container = document.getElementById("clientes");
+
+    clientes.forEach(cliente => {
+      const div = document.createElement("div");
+      div.className = "bg-gray-50 p-4 rounded-md shadow border border-gray-200";
+      div.innerHTML = `
+        <h3 class="text-lg font-medium text-gray-800 mb-2">${cliente} / <span class="text-gray-500">salachat</span></h3>
+        <input type="file" id="upload-${cliente}" multiple class="block w-full text-gray-700 border border-gray-300 rounded-md p-2 mb-2">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="uploadFiles('${cliente}')" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">Subir Archivos</button>
+          <button onclick="downloadFiles('${cliente}')" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition">Descargar Todo</button>
+          <button onclick="deleteFiles('${cliente}')" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition">Eliminar Seleccionados</button>
+          <button onclick="loadFiles('${cliente}')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition">Refrescar</button>
+        </div>
+        <ul id="file-list-${cliente}" class="mt-3 space-y-1 text-gray-700"></ul>
+      `;
+      container.appendChild(div);
+      loadFiles(cliente);
+    });
+
+    function loadFiles(cliente) {
+      fetch(`/api/${cliente}/files`)
+        .then(r => r.json())
+        .then(files => {
+          const fileList = document.getElementById(`file-list-${cliente}`);
+          fileList.innerHTML = "";
+          (files || []).forEach(file => {
+            const li = document.createElement("li");
+            li.className = "flex items-center gap-2 p-2 border-b border-gray-200";
+            li.innerHTML = `<input type="checkbox" value="${file}" class="mr-2"> <span class="truncate">${file}</span>`;
+            fileList.appendChild(li);
+          });
+        })
+        .catch(() => {
+          const fileList = document.getElementById(`file-list-${cliente}`);
+          fileList.innerHTML = `<li class="text-red-600">No se pudo cargar la lista.</li>`;
+        });
+    }
+
+    function uploadFiles(cliente) {
+      const input = document.getElementById(`upload-${cliente}`);
+      const files = input.files;
+      if (!files || files.length === 0) return;
+
+      const formData = new FormData();
+      for (let file of files) formData.append("files", file);
+
+      fetch(`/api/${cliente}/upload`, { method: "POST", body: formData })
+        .then(r => r.json())
+        .then(() => {
+          input.value = "";
+          loadFiles(cliente);
+        });
+    }
+
+    function downloadFiles(cliente) {
+      window.location.href = `/api/${cliente}/download`;
+    }
+
+    function deleteFiles(cliente) {
+      const fileList = document.getElementById(`file-list-${cliente}`);
+      const selected = Array.from(fileList.querySelectorAll("input:checked")).map(i => i.value);
+      if (selected.length === 0) return;
+
+      fetch(`/api/${cliente}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files: selected })
+      })
+      .then(r => r.json())
+      .then(() => loadFiles(cliente));
+    }
+  </script>
+</body>
+</html>

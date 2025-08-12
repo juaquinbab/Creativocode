@@ -1,0 +1,159 @@
+// clientes/cliente1/pedidosRouter.js
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const PDFDocument = require('pdfkit');
+
+const router = express.Router();
+
+// Ajusta si tu sala está en otra ruta
+const SALA_DIR = path.join(__dirname, 'salachat');
+
+function safeReadJSON(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(raw);
+}
+
+function ensureJsonInSala(filename) {
+  if (!filename || filename.includes('..') || !filename.endsWith('.json')) {
+    throw new Error('archivo inválido');
+  }
+  const fp = path.join(SALA_DIR, filename);
+  if (!fs.existsSync(fp)) throw new Error('archivo no existe');
+  return fp;
+}
+
+// GET /pedidos  -> lista pedidos confirmados + conteos
+router.get('/pedidos', (req, res) => {
+  try {
+    if (!fs.existsSync(SALA_DIR)) fs.mkdirSync(SALA_DIR, { recursive: true });
+
+    const archivos = fs.readdirSync(SALA_DIR).filter(n => n.endsWith('.json'));
+    const pedidos = [];
+    let confirmados = 0;
+    let noConfirmados = 0;
+
+    const frasesPedido = [
+
+      'resumen de pedido',
+      'detalle del pedido',
+    ,
+    ];
+
+    for (const file of archivos) {
+      const filePath = path.join(SALA_DIR, file);
+      const data = safeReadJSON(filePath);
+
+      const tieneConfirmado = Array.isArray(data) && data.some(d => d && d.confirmado === true);
+      if (tieneConfirmado) {
+        const cliente = data.find(d => d && d.name);
+        const pedido = data.find(d =>
+          d?.body && frasesPedido.some(frase => d.body.toLowerCase().includes(frase))
+        );
+
+        pedidos.push({
+          nombre: cliente?.name || 'Desconocido',
+          numero: cliente?.from || file.replace('.json', ''),
+          resumen: pedido?.body || 'No se encontró resumen del pedido',
+          archivo: file
+        });
+        confirmados++;
+      } else {
+        noConfirmados++;
+      }
+    }
+
+    res.json({ pedidos, confirmados, noConfirmados });
+  } catch (e) {
+    console.error('GET /pedidos error:', e.message);
+    res.status(500).json({ error: 'Error leyendo pedidos' });
+  }
+});
+
+// POST /despachar  -> set confirmado=false en el archivo
+router.post('/despachar', (req, res) => {
+  try {
+    const { archivo } = req.body;
+    const filePath = ensureJsonInSala(archivo);
+
+    const data = safeReadJSON(filePath);
+    if (Array.isArray(data)) {
+      data.forEach(d => { if (d?.confirmado === true) d.confirmado = false; });
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+      return res.json({ success: true });
+    }
+    res.status(400).json({ error: 'Formato no esperado' });
+  } catch (e) {
+    console.error('POST /despachar error:', e.message);
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// GET /pedidos/:archivo/pdf  -> genera PDF de la comanda
+router.get('/pedidos/:archivo/pdf', (req, res) => {
+  try {
+    const archivo = req.params.archivo;
+    const filePath = ensureJsonInSala(archivo);
+    const data = safeReadJSON(filePath);
+
+    if (!Array.isArray(data)) return res.status(400).send('Formato no esperado');
+
+    const cliente = data.find(d => d && d.name);
+    const numero = cliente?.from || archivo.replace('.json', '');
+    const nombre = cliente?.name || 'Desconocido';
+
+    // Buscar el “resumen de pedido”
+    const frasesPedido = [
+      'pedido',
+      'mi pedido es',
+      'resumen',
+      'detalle del pedido',
+      'reseman de pedido',
+    ];
+    const resumenObj = data.find(d => d?.body && frasesPedido.some(frase => d.body.toLowerCase().includes(frase)));
+    const resumen = resumenObj?.body || 'No se encontró resumen del pedido';
+
+    // Crear PDF
+    const doc = new PDFDocument({ margin: 40 });
+    const filename = `comanda_${numero}.pdf`;
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    doc.pipe(res);
+
+    // Encabezado
+    doc.fontSize(20).text('🧾 COMANDA DE PEDIDO', { align: 'center' }).moveDown(1);
+    doc.fontSize(12).text(`Fecha: ${new Date().toLocaleString()}`);
+    doc.text(`Cliente: ${nombre}`);
+    doc.text(`Número: ${numero}`).moveDown(1);
+
+    // Separador
+    doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke().moveDown(1);
+
+    // Resumen (respetar saltos de línea)
+    doc.fontSize(14).text('Resumen del pedido:', { underline: true }).moveDown(0.5);
+    doc.fontSize(12).text(resumen, { width: 515 });
+
+    // (Opcional) Listar últimas líneas con confirmado=true
+    const confirmados = data.filter(d => d?.confirmado === true);
+    if (confirmados.length) {
+      doc.moveDown(1);
+      doc.fontSize(14).text('Marcadores de confirmación:', { underline: true }).moveDown(0.5);
+      confirmados.forEach((d, i) => {
+        doc.fontSize(11).text(`• ${d.timestamp ? new Date(d.timestamp).toLocaleString() : ''}  ${d.body || ''}`);
+      });
+    }
+
+    // Footer
+    doc.moveDown(2);
+    doc.fontSize(10).text('Generado por CreativoCode • Zummy', { align: 'center' });
+
+    doc.end();
+  } catch (e) {
+    console.error('GET /pedidos/:archivo/pdf error:', e.message);
+    res.status(400).send('No fue posible generar el PDF');
+  }
+});
+
+module.exports = router;

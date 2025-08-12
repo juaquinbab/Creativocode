@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plataforma de Pedidos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">
+            📋 Plataforma de pedidos
+        </h1>
+
+        <div id="conteo" class="flex justify-center gap-6 text-lg mb-6 text-gray-700 font-semibold">
+            <!-- Conteo dinámico aquí -->
+        </div>
+
+        <div id="listaPedidos" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Pedidos se renderizan aquí -->
+        </div>
+    </div>
+
+<script>
+  const basePath = `/${window.location.pathname.split('/')[1]}`;
+
+</script>
+
+
+    <script>
+        async function cargarPedidos() {
+            const res = await fetch(`${basePath}/pedidos`);
+            const { pedidos, confirmados, noConfirmados } = await res.json();
+
+            document.getElementById('conteo').innerHTML = `
+        <span class="bg-green-100 text-green-700 px-4 py-2 rounded-full shadow">
+          ✅ Pendientes: ${confirmados}
+        </span>
+        <span class="bg-red-100 text-red-700 px-4 py-2 rounded-full shadow">
+          ⛔️ En Sala: ${noConfirmados}
+        </span>
+      `;
+
+            const contenedor = document.getElementById('listaPedidos');
+            contenedor.innerHTML = '';
+
+            pedidos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-6 rounded-xl shadow hover:shadow-lg transition';
+                div.innerHTML = `
+          <div class="mb-2">
+            <span class="text-sm text-gray-500">📞 Número:</span>
+            <p class="text-lg font-semibold text-gray-800">${p.numero}</p>
+          </div>
+          <div class="mb-2">
+            <span class="text-sm text-gray-500">🙍‍♀️ Nombre:</span>
+            <p class="text-gray-700">${p.nombre}</p>
+          </div>
+          <div class="mb-4">
+            <span class="text-sm text-gray-500">🧾 Pedido:</span>
+            <p class="whitespace-pre-line text-gray-700 mt-1">${p.resumen.replace(/\n/g, '<br>')}</p>
+          </div>
+          <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full font-semibold"
+            onclick="despachar('${p.archivo}')">✔️ Marcar como Despachado</button>
+
+
+<a class="ml-2 inline-block bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-full font-semibold"
+   href="/pedidos/${p.archivo}/pdf" target="_blank" rel="noopener">
+  ⬇️ Descargar PDF
+</a>
+
+        `;
+                contenedor.appendChild(div);
+            });
+        }
+
+        async function despachar(archivo) {
+            await fetch(`${basePath}/despachar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archivo })
+            });
+            cargarPedidos();
+        }
+
+        setInterval(cargarPedidos, 5000);
+        cargarPedidos();
+    </script>
+</body>
+
+</html>
