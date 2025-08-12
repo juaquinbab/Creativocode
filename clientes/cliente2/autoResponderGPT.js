@@ -272,83 +272,91 @@ Zummy: Frutas, merengue, helado de nata y maní – $17.000
 Litro y medio: $9000
 1.75: $10000
 3 litros: $12000
+JUGOS
+- En combinación: $10.000  |  Jarra: $20.000
+  • Mágico: Mora – Arándanos – Fresa
+  • Emoción: Melocotón – Naranja – Mango
+  • Pasión: Sandía – Fresa – Limón
+  • Encanto: Piña – Naranja – Papaya
+  • Ilusión: Mango – Fresa – Piña
+  • Enérgico: Banano – Papaya – Naranja
+  • Euforia: Mandarina – Fresa
+  • Deleite: Manzana verde – Piña – Yerbabuena
+  • Alegría: Maracuyá – Banano – Sandía
+  • Valentía: Lulo – Limón – Fresa – Kiwi
+  • Intrépido: Uva – Fresa – Mora
 
-✅ Jugos y Batidos
+BATIDOS
+- En agua:  Vaso $6.000  |  Jarra $15.000
+- En leche: Vaso $8.000  |  Jarra $18.000
+  Sabores: Guayaba, Banano, Piña, Mora, Mango, Lulo, Maracuyá, Fresa.
 
-Jugos en agua – $6.000 | En leche – $8.000 | Jarra – $15.000–$20.000
+JUGOS SALUDABLES (cada uno $9.000)
+- Verde Zummy: Piña, manzana verde, pepino, apio, perejil, naranja.
+- Zummy Energy: Espinaca, piña, banano.
+- Zummy Fibra: Papaya, germen de trigo, sinope, miel, perejil, apio, naranja.
 
-Jugos combinados (Emoción, Encanto, Ilusión, etc.) – $10.000
+CAFETERÍA
+- Café $2.000
+- Café en leche $3.000
+- Milo $4.000
 
-Batidos frutales (mango, papaya, maracuyá, etc.) – $10.000
+MALTEADAS $10.000
+- Sabores: Fresa, frutos del bosque, macadamia, vainilla chips, vainilla, tiramisú,
+  chicle, tres leches brownie, maracuyá.
 
-Jugos saludables:
+PREPARACIONES CON HELADO
+- Cono de helado $4.000
+- Vaso de helado $4.000
+- Bola adicional $3.000
+- Estrella con helado $13.000
+- Banana Split $13.000
+- Gusanito $12.000
+- Lulada $10.000
+- Copa Tropical $10.000
 
-Zummy Energy (espinaca, piña, banano) – $9.000
+SODAS ITALIANAS
+- Maracuyá $10.000
+- Durazno $10.000
+- Sandía $10.000
+- Mango maduro $10.000
+- Manzana verde $10.000
+- Frutos amarillos $12.000
+- Frutos rojos $12.000
 
-Zummy Fibra (papaya, germen de trigo, miel, etc.) – $9.000
+LIMONADAS (cada una $12.000)
+- Cerezada
+- Coco
+- Mango biche
+- Yerbabuena
 
-✅ Cafés y Malteadas
+MICHELADAS
+- Cerveza $12.000
+- Ginger $8.000
+- Tamarindo $8.000
+- Soda $6.000
+- Super Michelada $28.000
 
-Café – $2.000
+GRANIZADOS
+- Con licor $12.000
+  • Pantera Rosa: Sandía, lulo y vodka.
+  • Jolly Ranger: Manzana verde, tequila, ginebra.
+  • Pesadilla: Mandarina, vodka, ron blanco, tequila, coñac.
+  • Ice: Limón, naranja, tequila, coñac, ron blanco.
+  • Sex Blue: Cereza, maracuyá, limón, vodka.
+  • Coco Loco: Crema de coco, limón, tequila, vodka y ron blanco.
+  • Éxtasis: Arándanos, tequila, vodka y coñac.
+  • Orgy: Mandarina, frambuesa, vodka, coñac y tequila.
+  • Zummy: Uva, frutos rojos, ginebra, vodka.
+- Sin licor $10.000
+  • Frutos amarillos
+  • Frutos rojos
+  • Bon bon bum
+  • Chicle
+  • Sandía–maracuyá
 
-Café con leche – $3.000
-
-Milo – $4.000
-
-Malteadas (fresa, vainilla, frutos del bosque, brownie, etc.) – $10.000
-
-✅ Helados y Especiales
-
-Cono o vaso de helado – $4.000
-
-Bola adicional – $3.000
-
-Estrella con helado / Banana Split – $13.000
-
-Gusanito – $12.000
-
-Lulada / Copa Tropical – $10.000
-
-✅ Limonadas y Sodas
-
-Limonadas de sabores (cerezada, coco, mango biche) – $12.000
-
-Sodas italianas (frutos amarillos, frutos rojos, sandía, etc.) – $10.000–$12.000
-
-✅ Micheladas y Granizados
-
-Micheladas
-Super Michelada:
-Cerveza
-$12.000
-Ginger
-$8.000
-Tamarindo
-$8.000
-Soda
-$6.000
-$28.000
-
-Granizados con licor – $12.000 | Sin licor – $10.000
-Pantera Rosa:
-Jolly Ranger:
-Pesadilla:
-Ice:
-Sex Blue:
-Coco loco:
-Extasis:
-Orgy:
-Zummy:
-Sandía, Lulo y Vodka
-Manzana verde, tequila, ginebra.
-Mandarina, vodka, ron blanco, tequila, coñac.
-Limón, Naranja, Tequila, Coñac, Ron blanco.
-Cereza, Maracuyá, Limón, Vodka.
-Crema de coco, Limón, Tequila, Vodka y ron blanco
-Arándanos, Tequila, Vodka y Coñac
-Mandarina, Frambuesa, Vodka, Coñac y Tequila
-Uva, Frutos rojos, Ginebra, Vodka
-
+FRAPES $10.000
+- Sabores: Café, caramelo, Milo, chocolate, galleta Oreo, frutos rojos.
 
 `
         },
