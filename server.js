@@ -37,6 +37,7 @@ app.get('/webhook', function (req, res) {
 
 
 app.use(express.static(path.join(__dirname, 'public')));
+const DATA_DIR = path.join(__dirname, 'data');
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
