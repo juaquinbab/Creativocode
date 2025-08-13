@@ -339,6 +339,11 @@ app.get('/files/:cuenta/download', (req, res) => {
   }
 });
 
+
+/////////
+
+
+
 // Eliminar seleccionados
 app.post('/files/:cuenta/delete', (req, res) => {
   try {
