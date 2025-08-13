@@ -242,9 +242,6 @@ app.get("/mensajes", (req, res) => {
 ////////////////////////////////////////////////////
 ////////////////////////// 
 ////////////////////////////////////////////////////
-
-
-
 // Listar archivos .json en /data
 app.get('/api/files', (req, res) => {
   try {
@@ -263,7 +260,7 @@ app.get('/api/files', (req, res) => {
   }
 });
 
-// Descargar un archivo por nombre
+// Descargar un archivo por nombre (versión robusta)
 app.get('/api/files/:name', (req, res) => {
   const safe = safeJsonFilename(req.params.name);
   if (!safe) return res.status(400).json({ ok: false, error: 'Nombre inválido' });
@@ -271,14 +268,18 @@ app.get('/api/files/:name', (req, res) => {
   const fp = path.join(DATA_DIR, safe);
   if (!fs.existsSync(fp)) return res.status(404).json({ ok: false, error: 'No existe' });
 
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="${safe}"`);
-  fs.createReadStream(fp).pipe(res);
+  // Express maneja headers y errores internos del stream
+  res.download(fp, safe, (err) => {
+    if (err) {
+      console.error('Error en descarga:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ ok: false, error: 'No se pudo descargar' });
+      }
+    }
+  });
 });
 
 // Subir (crear o reemplazar) un JSON
-// FormData: campo "file" (archivo .json). El nombre del archivo será el original del upload,
-// o puedes pasar ?name=archivo.json para forzar el nombre.
 app.post('/api/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ ok: false, error: 'Falta archivo' });

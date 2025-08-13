@@ -49,6 +49,9 @@
   </section>
 
   <script>
+    // === CAMBIO 1: usar siempre el mismo origen ===
+    const API = window.location.origin; // p.ej. http://localhost:3000
+
     const $ = sel => document.querySelector(sel);
     const formatBytes = (n) => {
       if (n < 1024) return n + ' B';
@@ -62,7 +65,7 @@
     async function fetchList() {
       $('#listMsg').textContent = 'Cargando...';
       try {
-        const res = await fetch('/api/files');
+        const res = await fetch(`${API}/api/files`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'Error al listar');
         renderTable(data.files);
@@ -70,6 +73,25 @@
       } catch (err) {
         console.error(err);
         $('#listMsg').textContent = 'Error listando archivos';
+      }
+    }
+
+    // === CAMBIO 2 (opcional): fallback para descarga vía blob ===
+    async function forceDownload(filename) {
+      try {
+        const res = await fetch(`${API}/api/files/${encodeURIComponent(filename)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('No se pudo descargar: ' + e.message);
       }
     }
 
@@ -93,17 +115,24 @@
 
         const tdActions = document.createElement('td');
 
-        // Descargar
+        // Descargar (intento directo)
         const a = document.createElement('a');
-        a.href = `/api/files/${encodeURIComponent(f.name)}`;
+        a.href = `${API}/api/files/${encodeURIComponent(f.name)}`; // <- mismo origen
         a.textContent = 'Descargar';
         a.className = 'btn';
         a.setAttribute('download', f.name);
+        // Fallback si el click "falla" (ej. contenido mixto o bloqueo del navegador)
+        a.addEventListener('click', async (ev) => {
+          // Si el HTML no está servido por el mismo origen, intenta blob
+          if (location.origin !== new URL(a.href).origin) {
+            ev.preventDefault();
+            await forceDownload(f.name);
+          }
+        });
         tdActions.appendChild(a);
 
         // Espacio
-        const space = document.createTextNode(' ');
-        tdActions.appendChild(space);
+        tdActions.appendChild(document.createTextNode(' '));
 
         // Borrar
         const btnDel = document.createElement('button');
@@ -112,7 +141,7 @@
         btnDel.onclick = async () => {
           if (!confirm(`¿Borrar "${f.name}"?`)) return;
           try {
-            const res = await fetch(`/api/files/${encodeURIComponent(f.name)}`, { method: 'DELETE' });
+            const res = await fetch(`${API}/api/files/${encodeURIComponent(f.name)}`, { method: 'DELETE' });
             const data = await res.json();
             if (!data.ok) throw new Error(data.error || 'No se pudo borrar');
             await fetchList();
@@ -147,8 +176,8 @@
       fd.append('file', file);
 
       const url = forcedName
-        ? '/api/upload?name=' + encodeURIComponent(forcedName)
-        : '/api/upload';
+        ? `${API}/api/upload?name=${encodeURIComponent(forcedName)}`
+        : `${API}/api/upload`;
 
       try {
         const res = await fetch(url, { method: 'POST', body: fd });
