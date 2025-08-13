@@ -230,8 +230,95 @@ app.get("/mensajes", (req, res) => {
 
 
 
+////////////////////////////////////////////////////
+////////////////////////// 
+////////////////////////////////////////////////////
 
 
+
+// Listar archivos .json en /data
+app.get('/api/files', (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR)
+      .filter(f => f.toLowerCase().endsWith('.json'))
+      .map(f => ({
+        name: f,
+        size: fs.statSync(path.join(DATA_DIR, f)).size,
+        mtime: fs.statSync(path.join(DATA_DIR, f)).mtimeMs
+      }))
+      .sort((a, b) => b.mtime - a.mtime); // opcional: ordenar por más reciente
+    res.json({ ok: true, files });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'No se pudo listar archivos' });
+  }
+});
+
+// Descargar un archivo por nombre
+app.get('/api/files/:name', (req, res) => {
+  const safe = safeJsonFilename(req.params.name);
+  if (!safe) return res.status(400).json({ ok: false, error: 'Nombre inválido' });
+
+  const fp = path.join(DATA_DIR, safe);
+  if (!fs.existsSync(fp)) return res.status(404).json({ ok: false, error: 'No existe' });
+
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${safe}"`);
+  fs.createReadStream(fp).pipe(res);
+});
+
+// Subir (crear o reemplazar) un JSON
+// FormData: campo "file" (archivo .json). El nombre del archivo será el original del upload,
+// o puedes pasar ?name=archivo.json para forzar el nombre.
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ ok: false, error: 'Falta archivo' });
+
+    const nameFromQuery = req.query.name;
+    const original = req.file.originalname;
+    const targetName = safeJsonFilename(nameFromQuery || original);
+    if (!targetName) return res.status(400).json({ ok: false, error: 'Nombre inválido (requiere .json)' });
+
+    // Validar que el contenido sea JSON válido
+    const text = req.file.buffer.toString('utf8');
+    try {
+      JSON.parse(text);
+    } catch {
+      return res.status(400).json({ ok: false, error: 'El archivo no contiene JSON válido' });
+    }
+
+    const dest = path.join(DATA_DIR, targetName);
+    fs.writeFileSync(dest, text, 'utf8');
+
+    res.json({ ok: true, message: 'Archivo guardado', name: targetName });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Error guardando el archivo' });
+  }
+});
+
+// Borrar por nombre
+app.delete('/api/files/:name', (req, res) => {
+  const safe = safeJsonFilename(req.params.name);
+  if (!safe) return res.status(400).json({ ok: false, error: 'Nombre inválido' });
+
+  const fp = path.join(DATA_DIR, safe);
+  if (!fs.existsSync(fp)) return res.status(404).json({ ok: false, error: 'No existe' });
+
+  try {
+    fs.unlinkSync(fp);
+    res.json({ ok: true, message: 'Archivo borrado', name: safe });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'No se pudo borrar' });
+  }
+});
+
+
+
+////////////////////////////////////////////////////
+////////////////////////// 
+////////////////////////////////////////////////////
 
 
 
