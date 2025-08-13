@@ -251,7 +251,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Sirve tu frontend (ajusta si tu index está en otro lugar)
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'data')));
 
 // Directorio base /data en la RAÍZ del proyecto
 const DATA_DIR = path.join(process.cwd(), 'data');
