@@ -2,199 +2,122 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Gestor de JSON (carpeta /data)</title>
+  <title>Gestor JSON (simple)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body { font-family: system-ui, sans-serif; margin: 20px; }
-    h1 { margin-bottom: 8px; }
-    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f5f5f5; text-align: left; }
-    .muted { color: #666; font-size: 12px; }
-    .btn { cursor: pointer; padding: 6px 10px; border: 1px solid #ccc; background: #fafafa; border-radius: 6px; }
-    .btn:hover { background: #f0f0f0; }
-    .danger { border-color: #e66; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background:#f5f5f5; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin: 8px 0; }
+    code { background:#f3f3f3; padding:2px 6px; border-radius:4px; }
+    .right { text-align:right; white-space:nowrap; }
+    pre { white-space: pre-wrap; word-break: break-word; background:#f9f9f9; padding:8px; border:1px solid #eee; }
   </style>
 </head>
 <body>
-  <h1>Gestor de JSON</h1>
-  <div class="muted">Carpeta: <code>/data</code></div>
+  <h1>Gestor JSON</h1>
+  <div class="row">
+    <input id="file" type="file" accept=".json,application/json">
+    <button id="btnUpload">Subir</button>
+    <span id="msg"></span>
+  </div>
 
-  <section style="margin-top: 16px;">
-    <h3>Subir / Reemplazar</h3>
-    <div class="row">
-      <input type="file" id="fileInput" accept=".json" />
-      <input type="text" id="nameInput" placeholder="(opcional) forzar nombre: ejemplo.json" />
-      <button class="btn" id="btnUpload">Subir</button>
-    </div>
-    <div id="uploadMsg" class="muted" style="margin-top:6px;"></div>
-  </section>
+  <button id="btnReload">Actualizar</button>
+  <table>
+    <thead><tr><th>Nombre</th><th class="right">Tamaño</th><th>Fecha</th><th>Acciones</th></tr></thead>
+    <tbody id="tbody"><tr><td colspan="4">Cargando…</td></tr></tbody>
+  </table>
 
-  <section style="margin-top: 24px;">
-    <h3>Archivos en /data</h3>
-    <button class="btn" id="btnRefresh">Actualizar lista</button>
-    <table id="filesTable">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Tamaño</th>
-          <th>Modificado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div id="listMsg" class="muted" style="margin-top:6px;"></div>
-  </section>
+  <h3>Vista rápida</h3>
+  <pre id="viewer">{ Selecciona “Ver” en un archivo }</pre>
 
   <script>
-    // === CAMBIO 1: usar siempre el mismo origen ===
-    const API = window.location.origin; // p.ej. http://localhost:3000
+    const tbody = document.getElementById("tbody");
+    const btnReload = document.getElementById("btnReload");
+    const btnUpload = document.getElementById("btnUpload");
+    const inpFile = document.getElementById("file");
+    const msg = document.getElementById("msg");
+    const viewer = document.getElementById("viewer");
 
-    const $ = sel => document.querySelector(sel);
-    const formatBytes = (n) => {
-      if (n < 1024) return n + ' B';
-      const kb = n / 1024;
-      if (kb < 1024) return kb.toFixed(1) + ' KB';
-      const mb = kb / 1024;
-      return mb.toFixed(1) + ' MB';
+    const fmtBytes = n => {
+      if (n === 0) return "0 B";
+      const k = 1024, sizes = ["B","KB","MB","GB"];
+      const i = Math.floor(Math.log(n)/Math.log(k));
+      return (n/Math.pow(k,i)).toFixed(1) + " " + sizes[i];
     };
-    const formatDate = (ms) => new Date(ms).toLocaleString();
+    const fmtDate = ms => new Date(ms).toLocaleString();
 
-    async function fetchList() {
-      $('#listMsg').textContent = 'Cargando...';
+    async function loadList() {
+      tbody.innerHTML = `<tr><td colspan="4">Cargando…</td></tr>`;
       try {
-        const res = await fetch(`${API}/api/files`);
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Error al listar');
-        renderTable(data.files);
-        $('#listMsg').textContent = `${data.files.length} archivo(s)`;
-      } catch (err) {
-        console.error(err);
-        $('#listMsg').textContent = 'Error listando archivos';
-      }
-    }
-
-    // === CAMBIO 2 (opcional): fallback para descarga vía blob ===
-    async function forceDownload(filename) {
-      try {
-        const res = await fetch(`${API}/api/files/${encodeURIComponent(filename)}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        const r = await fetch("/api/files");
+        const { files=[] } = await r.json();
+        if (!files.length) {
+          tbody.innerHTML = `<tr><td colspan="4">No hay archivos</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = files.map(f => `
+          <tr>
+            <td><code>${f.name}</code></td>
+            <td class="right">${fmtBytes(f.size)}</td>
+            <td>${fmtDate(f.mtime)}</td>
+            <td>
+              <button onclick="ver('${encodeURIComponent(f.name)}')">Ver</button>
+              <button onclick="descargar('${encodeURIComponent(f.name)}')">Descargar</button>
+              <button onclick="borrar('${encodeURIComponent(f.name)}')">Borrar</button>
+            </td>
+          </tr>`).join("");
       } catch (e) {
-        alert('No se pudo descargar: ' + e.message);
+        tbody.innerHTML = `<tr><td colspan="4">Error al listar</td></tr>`;
       }
     }
 
-    function renderTable(files) {
-      const tbody = $('#filesTable tbody');
-      tbody.innerHTML = '';
-      for (const f of files) {
-        const tr = document.createElement('tr');
-
-        const tdName = document.createElement('td');
-        tdName.textContent = f.name;
-        tr.appendChild(tdName);
-
-        const tdSize = document.createElement('td');
-        tdSize.textContent = formatBytes(f.size);
-        tr.appendChild(tdSize);
-
-        const tdMtime = document.createElement('td');
-        tdMtime.textContent = formatDate(f.mtime);
-        tr.appendChild(tdMtime);
-
-        const tdActions = document.createElement('td');
-
-        // Descargar (intento directo)
-        const a = document.createElement('a');
-        a.href = `${API}/api/files/${encodeURIComponent(f.name)}`; // <- mismo origen
-        a.textContent = 'Descargar';
-        a.className = 'btn';
-        a.setAttribute('download', f.name);
-        // Fallback si el click "falla" (ej. contenido mixto o bloqueo del navegador)
-        a.addEventListener('click', async (ev) => {
-          // Si el HTML no está servido por el mismo origen, intenta blob
-          if (location.origin !== new URL(a.href).origin) {
-            ev.preventDefault();
-            await forceDownload(f.name);
-          }
-        });
-        tdActions.appendChild(a);
-
-        // Espacio
-        tdActions.appendChild(document.createTextNode(' '));
-
-        // Borrar
-        const btnDel = document.createElement('button');
-        btnDel.className = 'btn danger';
-        btnDel.textContent = 'Borrar';
-        btnDel.onclick = async () => {
-          if (!confirm(`¿Borrar "${f.name}"?`)) return;
-          try {
-            const res = await fetch(`${API}/api/files/${encodeURIComponent(f.name)}`, { method: 'DELETE' });
-            const data = await res.json();
-            if (!data.ok) throw new Error(data.error || 'No se pudo borrar');
-            await fetchList();
-          } catch (err) {
-            alert('Error: ' + err.message);
-          }
-        };
-        tdActions.appendChild(btnDel);
-
-        tr.appendChild(tdActions);
-        tbody.appendChild(tr);
-      }
-    }
-
-    $('#btnRefresh').addEventListener('click', fetchList);
-
-    $('#btnUpload').addEventListener('click', async () => {
-      const file = $('#fileInput').files[0];
-      const forcedName = $('#nameInput').value.trim();
-      $('#uploadMsg').textContent = '';
-
-      if (!file) {
-        $('#uploadMsg').textContent = 'Selecciona un archivo .json';
-        return;
-      }
-      if (!file.name.toLowerCase().endsWith('.json') && !forcedName.toLowerCase().endsWith('.json')) {
-        $('#uploadMsg').textContent = 'El archivo debe ser .json';
-        return;
-      }
-
-      const fd = new FormData();
-      fd.append('file', file);
-
-      const url = forcedName
-        ? `${API}/api/upload?name=${encodeURIComponent(forcedName)}`
-        : `${API}/api/upload`;
-
+    async function ver(enc) {
+      viewer.textContent = "Cargando…";
       try {
-        const res = await fetch(url, { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!data.ok) throw new Error(data.error || 'Error al subir');
-        $('#uploadMsg').textContent = `✔ Subido como ${data.name}`;
-        $('#fileInput').value = '';
-        $('#nameInput').value = '';
-        await fetchList();
-      } catch (err) {
-        console.error(err);
-        $('#uploadMsg').textContent = 'Error: ' + err.message;
+        const r = await fetch(`/api/files/${enc}`);
+        const t = await r.text();
+        try { viewer.textContent = JSON.stringify(JSON.parse(t), null, 2); }
+        catch { viewer.textContent = t; }
+      } catch {
+        viewer.textContent = "No se pudo leer el archivo.";
       }
-    });
+    }
 
-    // Cargar listado inicial
-    fetchList();
+    function descargar(enc) {
+      window.location.href = `/api/files/${enc}/download`;
+    }
+
+    async function borrar(enc) {
+      if (!confirm("¿Borrar este archivo?")) return;
+      const r = await fetch(`/api/files/${enc}`, { method: "DELETE" });
+      if (r.ok) { await loadList(); }
+      else { alert("No se pudo borrar"); }
+    }
+
+    btnUpload.onclick = async () => {
+      const f = inpFile.files?.[0];
+      if (!f) return alert("Selecciona un .json");
+      msg.textContent = "Subiendo…";
+      const fd = new FormData();
+      fd.append("file", f);
+      try {
+        const r = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error || "error");
+        msg.textContent = `OK: ${data.savedAs}`;
+        inpFile.value = "";
+        await loadList();
+      } catch (e) {
+        msg.textContent = "Error al subir";
+      } finally {
+        setTimeout(()=> msg.textContent="", 2500);
+      }
+    };
+
+    btnReload.onclick = loadList;
+    loadList();
   </script>
 </body>
 </html>

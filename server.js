@@ -15,6 +15,7 @@ const app = express();
 const archiver = require('archiver');
 app.use(bodyParser.json());
 const router = express.Router();
+const { pipeline } = require('stream');
 
 
 
@@ -40,7 +41,7 @@ app.get('/webhook', function (req, res) {
 
 
 app.use(express.static(path.join(__dirname, 'public')));
-const DATA_DIR = path.join(__dirname, 'data');
+
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -245,87 +246,101 @@ app.get("/mensajes", (req, res) => {
 ////////////////////////////////////////////////////
 ////////////////////////// 
 ////////////////////////////////////////////////////
-// Listar archivos .json en /data
-app.get('/api/files', (req, res) => {
-  try {
-    const files = fs.readdirSync(DATA_DIR)
-      .filter(f => f.toLowerCase().endsWith('.json'))
-      .map(f => ({
-        name: f,
-        size: fs.statSync(path.join(DATA_DIR, f)).size,
-        mtime: fs.statSync(path.join(DATA_DIR, f)).mtimeMs
-      }))
-      .sort((a, b) => b.mtime - a.mtime); // opcional: ordenar por más reciente
-    res.json({ ok: true, files });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: 'No se pudo listar archivos' });
+
+
+const DATA_DIR = path.join(__dirname, "data");
+const PUBLIC_DIR = path.join(__dirname, "public");
+
+fs.mkdirSync(DATA_DIR, { recursive: true });
+fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+
+app.use(express.static(PUBLIC_DIR));
+
+// --- helpers mínimos ---
+const isJson = (name) =>
+  typeof name === "string" &&
+  /^[\w.\-]+$/i.test(name) &&
+  name.toLowerCase().endsWith(".json");
+
+const safePath = (name) => path.join(DATA_DIR, name);
+
+// --- subir (campo: file) ---
+const upload2 = multer({
+  dest: DATA_DIR,
+  fileFilter: (req, file, cb) => {
+    if ((file.mimetype || "").includes("json") || file.originalname.toLowerCase().endsWith(".json"))
+      cb(null, true);
+    else cb(new Error("Solo .json"));
+  },
+});
+
+// --- LISTAR ---
+app.get("/api/files", (req, res) => {
+  const files = fs.readdirSync(DATA_DIR)
+    .filter((n) => n.toLowerCase().endsWith(".json"))
+    .map((name) => {
+      const st = fs.statSync(safePath(name));
+      return { name, size: st.size, mtime: st.mtimeMs };
+    })
+    .sort((a, b) => b.mtime - a.mtime);
+  res.json({ files });
+});
+
+// --- VER (lee el contenido) ---
+app.get("/api/files/:name", (req, res) => {
+  const name = req.params.name;
+  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
+  const fp = safePath(name);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  fs.createReadStream(fp).pipe(res);
+});
+
+// --- DESCARGAR ---
+app.get("/api/files/:name/download", (req, res) => {
+  const name = req.params.name;
+  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
+  const fp = safePath(name);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
+  fs.createReadStream(fp).pipe(res);
+});
+
+// --- BORRAR ---
+app.delete("/api/files/:name", (req, res) => {
+  const name = req.params.name;
+  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
+  const fp = safePath(name);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
+  fs.unlinkSync(fp);
+  res.json({ ok: true });
+});
+
+// --- SUBIR ---
+app.post("/api/upload", upload2.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "falta archivo" });
+
+  // multer con `dest` crea un nombre temporal: renombramos al original (normalizado)
+  let original = (req.file.originalname || "").trim().replace(/\s+/g, "_");
+  if (!isJson(original)) original = original + ".json";
+  const finalPath = safePath(original);
+
+  // si existe, añade sufijo
+  let out = finalPath;
+  const base = original.replace(/\.json$/i, "");
+  let i = 1;
+  while (fs.existsSync(out)) {
+    out = safePath(`${base}__${i}.json`);
+    i++;
   }
+  fs.renameSync(req.file.path, out);
+  res.status(201).json({ ok: true, savedAs: path.basename(out) });
 });
 
-// Descargar un archivo por nombre (versión robusta)
-app.get('/api/files/:name', (req, res) => {
-  const safe = safeJsonFilename(req.params.name);
-  if (!safe) return res.status(400).json({ ok: false, error: 'Nombre inválido' });
+// --- front ---
+app.get("/", (req, res) => res.sendFile(path.join(PUBLIC_DIR, "master.html")));
 
-  const fp = path.join(DATA_DIR, safe);
-  if (!fs.existsSync(fp)) return res.status(404).json({ ok: false, error: 'No existe' });
-
-  // Express maneja headers y errores internos del stream
-  res.download(fp, safe, (err) => {
-    if (err) {
-      console.error('Error en descarga:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ ok: false, error: 'No se pudo descargar' });
-      }
-    }
-  });
-});
-
-// Subir (crear o reemplazar) un JSON
-app.post('/api/upload', upload.single('file'), (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ ok: false, error: 'Falta archivo' });
-
-    const nameFromQuery = req.query.name;
-    const original = req.file.originalname;
-    const targetName = safeJsonFilename(nameFromQuery || original);
-    if (!targetName) return res.status(400).json({ ok: false, error: 'Nombre inválido (requiere .json)' });
-
-    // Validar que el contenido sea JSON válido
-    const text = req.file.buffer.toString('utf8');
-    try {
-      JSON.parse(text);
-    } catch {
-      return res.status(400).json({ ok: false, error: 'El archivo no contiene JSON válido' });
-    }
-
-    const dest = path.join(DATA_DIR, targetName);
-    fs.writeFileSync(dest, text, 'utf8');
-
-    res.json({ ok: true, message: 'Archivo guardado', name: targetName });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: 'Error guardando el archivo' });
-  }
-});
-
-// Borrar por nombre
-app.delete('/api/files/:name', (req, res) => {
-  const safe = safeJsonFilename(req.params.name);
-  if (!safe) return res.status(400).json({ ok: false, error: 'Nombre inválido' });
-
-  const fp = path.join(DATA_DIR, safe);
-  if (!fs.existsSync(fp)) return res.status(404).json({ ok: false, error: 'No existe' });
-
-  try {
-    fs.unlinkSync(fp);
-    res.json({ ok: true, message: 'Archivo borrado', name: safe });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: 'No se pudo borrar' });
-  }
-});
 
 
 
