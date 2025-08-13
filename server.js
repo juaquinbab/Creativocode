@@ -247,100 +247,133 @@ app.get("/mensajes", (req, res) => {
 ////////////////////////// 
 ////////////////////////////////////////////////////
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-const DATA_DIR = path.join(__dirname, "data");
-const PUBLIC_DIR = path.join(__dirname, "public");
+// Sirve tu frontend (ajusta si tu index está en otro lugar)
+app.use(express.static(path.join(__dirname, 'public')));
 
-fs.mkdirSync(DATA_DIR, { recursive: true });
-fs.mkdirSync(PUBLIC_DIR, { recursive: true });
+// Directorio base /data en la RAÍZ del proyecto
+const DATA_DIR = path.join(process.cwd(), 'data');
 
-app.use(express.static(PUBLIC_DIR));
+// Asegura que /data exista
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-// --- helpers mínimos ---
-const isJson = (name) =>
-  typeof name === "string" &&
-  /^[\w.\-]+$/i.test(name) &&
-  name.toLowerCase().endsWith(".json");
-
-const safePath = (name) => path.join(DATA_DIR, name);
-
-// --- subir (campo: file) ---
-const upload2 = multer({
-  dest: DATA_DIR,
-  fileFilter: (req, file, cb) => {
-    if ((file.mimetype || "").includes("json") || file.originalname.toLowerCase().endsWith(".json"))
-      cb(null, true);
-    else cb(new Error("Solo .json"));
-  },
-});
-
-// --- LISTAR ---
-app.get("/api/files", (req, res) => {
-  const files = fs.readdirSync(DATA_DIR)
-    .filter((n) => n.toLowerCase().endsWith(".json"))
-    .map((name) => {
-      const st = fs.statSync(safePath(name));
-      return { name, size: st.size, mtime: st.mtimeMs };
-    })
-    .sort((a, b) => b.mtime - a.mtime);
-  res.json({ files });
-});
-
-// --- VER (lee el contenido) ---
-app.get("/api/files/:name", (req, res) => {
-  const name = req.params.name;
-  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
-  const fp = safePath(name);
-  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  fs.createReadStream(fp).pipe(res);
-});
-
-// --- DESCARGAR ---
-app.get("/api/files/:name/download", (req, res) => {
-  const name = req.params.name;
-  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
-  const fp = safePath(name);
-  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
-  fs.createReadStream(fp).pipe(res);
-});
-
-// --- BORRAR ---
-app.delete("/api/files/:name", (req, res) => {
-  const name = req.params.name;
-  if (!isJson(name)) return res.status(400).json({ error: "nombre inválido" });
-  const fp = safePath(name);
-  if (!fs.existsSync(fp)) return res.status(404).json({ error: "no existe" });
-  fs.unlinkSync(fp);
-  res.json({ ok: true });
-});
-
-// --- SUBIR ---
-app.post("/api/upload", upload2.single("file"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "falta archivo" });
-
-  // multer con `dest` crea un nombre temporal: renombramos al original (normalizado)
-  let original = (req.file.originalname || "").trim().replace(/\s+/g, "_");
-  if (!isJson(original)) original = original + ".json";
-  const finalPath = safePath(original);
-
-  // si existe, añade sufijo
-  let out = finalPath;
-  const base = original.replace(/\.json$/i, "");
-  let i = 1;
-  while (fs.existsSync(out)) {
-    out = safePath(`${base}__${i}.json`);
-    i++;
+// Utilidades seguras
+function carpetaCuenta(cuenta) {
+  // evita path traversal
+  if (!/^[a-zA-Z0-9_-]+$/.test(cuenta)) {
+    throw new Error('Nombre de cuenta inválido');
   }
-  fs.renameSync(req.file.path, out);
-  res.status(201).json({ ok: true, savedAs: path.basename(out) });
+  const dir = path.join(DATA_DIR, cuenta);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function listarArchivosSeguro(dir) {
+  return fs.readdirSync(dir).filter(n => {
+    // Evita directorios y oculta archivos peligrosos
+    const fp = path.join(dir, n);
+    try {
+      const stat = fs.statSync(fp);
+      return stat.isFile();
+    } catch {
+      return false;
+    }
+  });
+}
+
+// --- Multer para uploads a memoria temporal ---
+const almacenamiento = multer.diskStorage({
+  destination: (req, file, cb) => {
+    try {
+      const dir = carpetaCuenta(req.params.cuenta);
+      cb(null, dir);
+    } catch (e) {
+      cb(e);
+    }
+  },
+  filename: (req, file, cb) => {
+    // Mantén el nombre original (ajusta si quieres sanearlo)
+    cb(null, file.originalname);
+  }
+});
+const subir = multer({ storage: almacenamiento });
+
+// --- Rutas API (todas bajo /files/:cuenta/...) ---
+
+// Listar
+app.get('/files/:cuenta/list', (req, res) => {
+  try {
+    const dir = carpetaCuenta(req.params.cuenta);
+    const items = listarArchivosSeguro(dir);
+    res.json(items);
+  } catch (e) {
+    res.status(400).json({ error: String(e.message || e) });
+  }
 });
 
-// --- front ---
-app.get("/", (req, res) => res.sendFile(path.join(PUBLIC_DIR, "master.html")));
+// Subir (campo: "archivos")
+app.post('/files/:cuenta/upload', subir.array('archivos'), (req, res) => {
+  res.json({ ok: true, subidos: (req.files || []).map(f => f.filename) });
+});
 
+// Descargar ZIP con todo
+app.get('/files/:cuenta/download', (req, res) => {
+  try {
+    const dir = carpetaCuenta(req.params.cuenta);
+    const nombreZip = `${req.params.cuenta}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${nombreZip}"`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.on('error', err => { throw err; });
+    archive.pipe(res);
+    archive.directory(dir, false);
+    archive.finalize();
+  } catch (e) {
+    res.status(400).json({ error: String(e.message || e) });
+  }
+});
+
+// Eliminar seleccionados
+app.post('/files/:cuenta/delete', (req, res) => {
+  try {
+    const dir = carpetaCuenta(req.params.cuenta);
+    const { archivos } = req.body;
+    if (!Array.isArray(archivos) || archivos.length === 0) {
+      return res.status(400).json({ error: 'Debes enviar "archivos": [..]' });
+    }
+    const eliminados = [];
+    const fallidos = [];
+
+    archivos.forEach(nombre => {
+      // evita traversal
+      if (!nombre || nombre.includes('..') || path.isAbsolute(nombre)) {
+        fallidos.push(nombre);
+        return;
+      }
+      const fp = path.join(dir, nombre);
+      if (fs.existsSync(fp) && fs.statSync(fp).isFile()) {
+        try {
+          fs.unlinkSync(fp);
+          eliminados.push(nombre);
+        } catch {
+          fallidos.push(nombre);
+        }
+      } else {
+        fallidos.push(nombre);
+      }
+    });
+
+    res.json({ ok: true, eliminados, fallidos });
+  } catch (e) {
+    res.status(400).json({ error: String(e.message || e) });
+  }
+});
 
 
 
