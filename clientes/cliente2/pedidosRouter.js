@@ -23,6 +23,37 @@ function ensureJsonInSala(filename) {
   return fp;
 }
 
+// 🔍 Helper para buscar el resumen de pedido
+function encontrarResumenEnMensajes(arr) {
+  if (!Array.isArray(arr)) return null;
+
+  const frases = [
+    'resumen del pedido:',
+    'detalle del pedido:',
+    'detalle del pedido'
+  ];
+
+  const candidato = arr.find(d => {
+    const body = (d?.body || '').toString();
+    const low = body.toLowerCase();
+    return frases.some(f => low.includes(f));
+  });
+
+  if (!candidato) return null;
+
+  let texto = (candidato.body || '').replace(/^Asesor:\s*/i, '');
+
+  const idxResumen = texto.toLowerCase().indexOf('resumen del pedido:');
+  const idxDetalle = idxResumen === -1 ? texto.toLowerCase().indexOf('detalle del pedido') : -1;
+
+  if (idxResumen !== -1) texto = texto.slice(idxResumen);
+  else if (idxDetalle !== -1) texto = texto.slice(idxDetalle);
+
+  texto = texto.replace(/[ \t]+\n/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
+
+  return texto || null;
+}
+
 // GET /pedidos  -> lista pedidos confirmados + conteos
 router.get('/pedidos', (req, res) => {
   try {
@@ -33,28 +64,22 @@ router.get('/pedidos', (req, res) => {
     let confirmados = 0;
     let noConfirmados = 0;
 
-    const frasesPedido = [
-
-      'resumen de pedido',
-      'detalle del pedido',
-    ,
-    ];
-
     for (const file of archivos) {
       const filePath = path.join(SALA_DIR, file);
-      const data = safeReadJSON(filePath);
+
+      let data;
+      try { data = safeReadJSON(filePath); }
+      catch (err) { console.warn(`JSON inválido ${file}:`, err.message); continue; }
 
       const tieneConfirmado = Array.isArray(data) && data.some(d => d && d.confirmado === true);
       if (tieneConfirmado) {
-        const cliente = data.find(d => d && d.name);
-        const pedido = data.find(d =>
-          d?.body && frasesPedido.some(frase => d.body.toLowerCase().includes(frase))
-        );
+        const cliente = Array.isArray(data) ? data.find(d => d && d.name) : null;
+        const resumen = encontrarResumenEnMensajes(data) || 'No se encontró resumen del pedido';
 
         pedidos.push({
           nombre: cliente?.name || 'Desconocido',
           numero: cliente?.from || file.replace('.json', ''),
-          resumen: pedido?.body || 'No se encontró resumen del pedido',
+          resumen,
           archivo: file
         });
         confirmados++;
@@ -102,18 +127,8 @@ router.get('/pedidos/:archivo/pdf', (req, res) => {
     const numero = cliente?.from || archivo.replace('.json', '');
     const nombre = cliente?.name || 'Desconocido';
 
-    // Buscar el “resumen de pedido”
-    const frasesPedido = [
-      'pedido',
-      'mi pedido es',
-      'resumen',
-      'detalle del pedido',
-      'reseman de pedido',
-    ];
-    const resumenObj = data.find(d => d?.body && frasesPedido.some(frase => d.body.toLowerCase().includes(frase)));
-    const resumen = resumenObj?.body || 'No se encontró resumen del pedido';
+    const resumen = encontrarResumenEnMensajes(data) || 'No se encontró resumen del pedido';
 
-    // Crear PDF
     const doc = new PDFDocument({ margin: 40 });
     const filename = `comanda_${numero}.pdf`;
 
@@ -122,20 +137,16 @@ router.get('/pedidos/:archivo/pdf', (req, res) => {
 
     doc.pipe(res);
 
-    // Encabezado
     doc.fontSize(20).text('🧾 COMANDA DE PEDIDO', { align: 'center' }).moveDown(1);
     doc.fontSize(12).text(`Fecha: ${new Date().toLocaleString()}`);
     doc.text(`Cliente: ${nombre}`);
     doc.text(`Número: ${numero}`).moveDown(1);
 
-    // Separador
     doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke().moveDown(1);
 
-    // Resumen (respetar saltos de línea)
     doc.fontSize(14).text('Resumen del pedido:', { underline: true }).moveDown(0.5);
     doc.fontSize(12).text(resumen, { width: 515 });
 
-    // (Opcional) Listar últimas líneas con confirmado=true
     const confirmados = data.filter(d => d?.confirmado === true);
     if (confirmados.length) {
       doc.moveDown(1);
@@ -145,7 +156,6 @@ router.get('/pedidos/:archivo/pdf', (req, res) => {
       });
     }
 
-    // Footer
     doc.moveDown(2);
     doc.fontSize(10).text('Generado por CreativoCode • Zummy', { align: 'center' });
 

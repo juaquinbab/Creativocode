@@ -26,7 +26,6 @@
 
 <script>
   const basePath = `/${window.location.pathname.split('/')[1]}`;
-
 </script>
 
 
@@ -68,7 +67,7 @@
 
 
 <a class="ml-2 inline-block bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-full font-semibold"
-   href="/pedidos/${p.archivo}/pdf" target="_blank" rel="noopener">
+   href="${basePath}/pedidos/${p.archivo}/pdf" target="_blank" rel="noopener">
   ⬇️ Descargar PDF
 </a>
 

@@ -30,8 +30,7 @@ router.post('/', (req, res, next) => {
   const phoneId = messageChange.metadata?.phone_number_id || '';
 
   // Solo el número que te interesa
-if (phoneId !== PHONE_FILTER) return next();
-
+  if (phoneId !== PHONE_FILTER) return next();
 
   const from = messages?.[0]?.from || 0;
   let body = messages?.[0]?.text?.body || '';
@@ -42,6 +41,28 @@ if (phoneId !== PHONE_FILTER) return next();
   const videoID = messages?.[0]?.type === 'video' ? messages[0].video.id : '';
   const reactedMessageId = messages?.[0]?.type === 'reaction' ? messages[0].reaction?.message_id : '';
   const emoji = messages?.[0]?.type === 'reaction' ? messages[0].reaction?.emoji : '';
+
+  // NUEVO: detectar ubicación
+  const isLocation = Array.isArray(messages) && messages[0] && messages[0].type === 'location' && messages[0].location;
+  const latitude   = isLocation ? messages[0].location.latitude : null;
+  const longitude  = isLocation ? messages[0].location.longitude : null;
+  const locName    = isLocation ? (messages[0].location.name || '') : '';
+  const locAddress = isLocation ? (messages[0].location.address || '') : '';
+
+  function buildMapsUrl(lat, lng) { 
+    return `https://maps.google.com/?q=${lat},${lng}`; 
+  }
+
+  // NUEVO: si hay ubicación, adjuntar texto y url a body (respetando tu lógica)
+  if (isLocation) {
+    const mapsUrl = buildMapsUrl(latitude, longitude);
+    const ubicacionTexto = [
+      '📍 ubicación compartida',
+      mapsUrl
+    ].filter(Boolean).join('\n');
+
+    body = body ? `${body}\n\n${ubicacionTexto}` : ubicacionTexto;
+  }
 
   if (!body && emoji) body = emoji;
   if (typeof body === 'string') body = body.toLowerCase();
@@ -59,8 +80,9 @@ if (phoneId !== PHONE_FILTER) return next();
 
   if (index !== -1) {
     // Actualizar SOLO campos volátiles, sin tocar etapa
+    const previo = EtapasMSG[index];
     EtapasMSG[index] = {
-      ...EtapasMSG[index], // preserva etapa existente
+      ...previo, // preserva etapa existente y otros campos
       from,
       body,
       name,
@@ -76,7 +98,16 @@ if (phoneId !== PHONE_FILTER) return next();
       Idp: 1,            // pendiente para tus procesadores
       Cambio: 1,
       enProceso: false,
-     
+      // NUEVO: solo pisa location si llegó una nueva ubicación
+      ...(isLocation && {
+        location: {
+          latitude,
+          longitude,
+          name: locName,
+          address: locAddress,
+          mapsUrl: buildMapsUrl(latitude, longitude)
+        }
+      }),
       // NO escribir 'etapa' aquí
     };
   } else {
@@ -101,7 +132,17 @@ if (phoneId !== PHONE_FILTER) return next();
       enProceso: false,
       timestamp,
       IDNAN: maxIDNAN + 1,
-      confirmado: false
+      confirmado: false,
+      // NUEVO: incluir location solo si aplica
+      ...(isLocation && {
+        location: {
+          latitude,
+          longitude,
+          name: locName,
+          address: locAddress,
+          mapsUrl: buildMapsUrl(latitude, longitude)
+        }
+      })
     });
   }
 
@@ -113,5 +154,7 @@ if (phoneId !== PHONE_FILTER) return next();
 
   return res.sendStatus(200);
 });
+
+
 
 module.exports = router;
