@@ -48,19 +48,27 @@ app.get('/', (req, res) => {
 
 const cliente1Router = require('./clientes/cliente1/routesLoader');
 const cliente2Router = require('./clientes/cliente2/routesLoader');
+const cliente3Router = require('./clientes/cliente3/routesLoader');
 
 
 app.use('/cliente1', cliente1Router);
 app.use('/cliente2', cliente2Router);
+app.use('/cliente3', cliente3Router);
 
 app.use(express.json());
 
 
 const webhook1 = require('./routes/webhook1'); 
 const webhook2 = require('./routes/webhook2'); 
+const webhook3 = require('./routes/webhook3'); 
 
 app.use('/webhook', webhook1);
 app.use('/webhook', webhook2);
+app.use('/webhook', webhook3);
+
+
+const login = require('./routes/auth.js'); 
+app.use('/', login);
 
 
 

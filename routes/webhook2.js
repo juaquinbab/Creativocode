@@ -7,8 +7,25 @@ require('dotenv').config();
 
 const manejarBienvenida = require('../clientes/cliente2/bienvenida');
 
+
+const usuariosPath = path.join(__dirname, '../data/usuarios.json');
+
+let IDNUMERO = ''; // Valor por defecto si no se encuentra
+
+try {
+  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
+  if (usuariosData.cliente2 && usuariosData.cliente2.iduser) {
+    IDNUMERO = usuariosData.cliente2.iduser;
+  } else {
+    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
+  }
+} catch (err) {
+  console.error('❌ Error al leer usuarios.json:', err);
+}
+
+
 const ETAPAS_PATH = path.join(__dirname, '../data/EtapasMSG2.json');
-const PHONE_FILTER = '789862370866920'; // el que estás filtrando
+const PHONE_FILTER = IDNUMERO; // el que estás filtrando
 
 function loadEtapas() {
   try {

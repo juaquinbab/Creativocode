@@ -10,5 +10,12 @@
     "password": "1234",
     "ruta": "/clientes/cliente2/index.html",
     "iduser": "789862370866920"
+  },
+
+  "cliente3": {
+    "usuario": "cliente3",
+    "password": "1234",
+    "ruta": "/clientes/cliente3/index.html",
+    "iduser": "7898623708"
   }
 }
