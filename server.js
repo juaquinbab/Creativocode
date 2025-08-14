@@ -247,137 +247,92 @@ app.get("/mensajes", (req, res) => {
 ////////////////////////// 
 ////////////////////////////////////////////////////
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Sirve tu frontend (ajusta si tu index está en otro lugar)
-app.use(express.static(path.join(__dirname, 'data')));
 
-// Directorio base /data en la RAÍZ del proyecto
-const DATA_DIR = path.join(process.cwd(), 'data');
+const HOST = '0.0.0.0';
 
-// Asegura que /data exista
+// Carpeta donde estarán los archivos
+const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// Utilidades seguras
-function carpetaCuenta(cuenta) {
-  // evita path traversal
-  if (!/^[a-zA-Z0-9_-]+$/.test(cuenta)) {
-    throw new Error('Nombre de cuenta inválido');
+// Helper para evitar rutas peligrosas
+function safeJoinDataDir(filename) {
+  const base = path.basename(filename);
+  const full = path.join(DATA_DIR, base);
+  const rel = path.relative(DATA_DIR, full);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error('Nombre de archivo inválido');
   }
-  const dir = path.join(DATA_DIR, cuenta);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return dir;
+  return full;
 }
 
-function listarArchivosSeguro(dir) {
-  return fs.readdirSync(dir).filter(n => {
-    // Evita directorios y oculta archivos peligrosos
-    const fp = path.join(dir, n);
-    try {
-      const stat = fs.statSync(fp);
-      return stat.isFile();
-    } catch {
-      return false;
-    }
-  });
-}
-
-// --- Multer para uploads a memoria temporal ---
-const almacenamiento = multer.diskStorage({
-  destination: (req, file, cb) => {
-    try {
-      const dir = carpetaCuenta(req.params.cuenta);
-      cb(null, dir);
-    } catch (e) {
-      cb(e);
-    }
-  },
-  filename: (req, file, cb) => {
-    // Mantén el nombre original (ajusta si quieres sanearlo)
-    cb(null, file.originalname);
+// Multer para subir archivos
+const almacenArchivos = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, DATA_DIR),
+  filename: (_req, file, cb) => {
+    const original = path.basename(file.originalname).replace(/\s+/g, '_');
+    cb(null, original);
   }
 });
-const subir = multer({ storage: almacenamiento });
+const subirArchivos = multer({ storage: almacenArchivos });
 
-// --- Rutas API (todas bajo /files/:cuenta/...) ---
+// Servir la UI estática
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Listar
-app.get('/files/:cuenta/list', (req, res) => {
+// Listar archivos
+app.get('/api/files', async (_req, res) => {
   try {
-    const dir = carpetaCuenta(req.params.cuenta);
-    const items = listarArchivosSeguro(dir);
+    const names = await fsp.readdir(DATA_DIR);
+    const items = await Promise.all(
+      names.map(async (name) => {
+        const fp = safeJoinDataDir(name);
+        const st = await fsp.stat(fp);
+        return { name, size: st.size, mtime: st.mtime };
+      })
+    );
+    items.sort((a, b) => b.mtime - a.mtime);
     res.json(items);
-  } catch (e) {
-    res.status(400).json({ error: String(e.message || e) });
+  } catch (err) {
+    console.error('Error listando archivos:', err);
+    res.status(500).json({ error: 'No se pudieron listar los archivos' });
   }
 });
 
-// Subir (campo: "archivos")
-app.post('/files/:cuenta/upload', subir.array('archivos'), (req, res) => {
-  res.json({ ok: true, subidos: (req.files || []).map(f => f.filename) });
-});
-
-// Descargar ZIP con todo
-app.get('/files/:cuenta/download', (req, res) => {
+// Descargar un archivo
+app.get('/api/files/:name', (req, res) => {
   try {
-    const dir = carpetaCuenta(req.params.cuenta);
-    const nombreZip = `${req.params.cuenta}.zip`;
-
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${nombreZip}"`);
-
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.on('error', err => { throw err; });
-    archive.pipe(res);
-    archive.directory(dir, false);
-    archive.finalize();
-  } catch (e) {
-    res.status(400).json({ error: String(e.message || e) });
+    const fp = safeJoinDataDir(req.params.name);
+    if (!fs.existsSync(fp)) return res.status(404).json({ error: 'No existe' });
+    res.download(fp, path.basename(fp));
+  } catch (err) {
+    console.error('Error al descargar:', err);
+    res.status(400).json({ error: 'Nombre de archivo inválido' });
   }
 });
 
+// Subir un archivo
+app.post('/api/upload', subirArchivos.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No se recibió archivo' });
+  res.json({ ok: true, file: req.file.filename });
+});
 
-/////////
-
-
-
-// Eliminar seleccionados
-app.post('/files/:cuenta/delete', (req, res) => {
+// Borrar un archivo
+app.delete('/api/files/:name', async (req, res) => {
   try {
-    const dir = carpetaCuenta(req.params.cuenta);
-    const { archivos } = req.body;
-    if (!Array.isArray(archivos) || archivos.length === 0) {
-      return res.status(400).json({ error: 'Debes enviar "archivos": [..]' });
-    }
-    const eliminados = [];
-    const fallidos = [];
-
-    archivos.forEach(nombre => {
-      // evita traversal
-      if (!nombre || nombre.includes('..') || path.isAbsolute(nombre)) {
-        fallidos.push(nombre);
-        return;
-      }
-      const fp = path.join(dir, nombre);
-      if (fs.existsSync(fp) && fs.statSync(fp).isFile()) {
-        try {
-          fs.unlinkSync(fp);
-          eliminados.push(nombre);
-        } catch {
-          fallidos.push(nombre);
-        }
-      } else {
-        fallidos.push(nombre);
-      }
-    });
-
-    res.json({ ok: true, eliminados, fallidos });
-  } catch (e) {
-    res.status(400).json({ error: String(e.message || e) });
+    const fp = safeJoinDataDir(req.params.name);
+    if (!fs.existsSync(fp)) return res.status(404).json({ error: 'No existe' });
+    await fsp.unlink(fp);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Error al borrar:', err);
+    res.status(400).json({ error: 'No se pudo borrar' });
   }
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`Servidor listo en http://${HOST}:${PORT}`);
 });
 
 
