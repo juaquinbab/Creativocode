@@ -15,7 +15,7 @@ const app = express();
 const archiver = require('archiver');
 app.use(bodyParser.json());
 const router = express.Router();
-const { pipeline } = require('stream');
+const fsp = require('fs/promises');
 
 
 
@@ -249,10 +249,9 @@ app.get("/mensajes", (req, res) => {
 
 
 
-const HOST = '0.0.0.0';
-
 // Carpeta donde estarán los archivos
 const DATA_DIR = path.join(__dirname, 'data');
+
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
@@ -279,7 +278,7 @@ const almacenArchivos = multer.diskStorage({
 const subirArchivos = multer({ storage: almacenArchivos });
 
 // Servir la UI estática
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'data')));
 
 // Listar archivos
 app.get('/api/files', async (_req, res) => {
@@ -329,10 +328,6 @@ app.delete('/api/files/:name', async (req, res) => {
     console.error('Error al borrar:', err);
     res.status(400).json({ error: 'No se pudo borrar' });
   }
-});
-
-app.listen(PORT, HOST, () => {
-  console.log(`Servidor listo en http://${HOST}:${PORT}`);
 });
 
 
