@@ -30,7 +30,10 @@ function encontrarResumenEnMensajes(arr) {
   const frases = [
     'resumen del pedido:',
     'detalle del pedido:',
-    'detalle del pedido'
+    'detalle del pedido',
+    'El resumen de tu pedido es el siguiente:',
+    'El resumen de tu pedido es el siguiente'
+ 
   ];
 
   const candidato = arr.find(d => {
