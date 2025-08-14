@@ -55,6 +55,7 @@ const cliente2Router = require('./clientes/cliente2/routesLoader');
 const cliente3Router = require('./clientes/cliente3/routesLoader');
 
 
+
 app.use('/cliente1', cliente1Router);
 app.use('/cliente2', cliente2Router);
 app.use('/cliente3', cliente3Router);
@@ -71,9 +72,10 @@ app.use('/webhook', webhook2);
 app.use('/webhook', webhook3);
 
 
-const login = require('./routes/auth.js'); 
-app.use('/', login);
 
+
+const authRouter = require('./routes/auth');
+app.use('/auth', authRouter);
 
 
 

@@ -583,6 +583,11 @@
         Soporte</button>
 
 
+       <button class="custom-btn" id="btnEnviarVideo" onclick="irAPedidos()">
+  Ir a Pedidos
+</button>
+
+
 
     </div>
 
@@ -630,9 +635,17 @@
 
 <script>
   const basePath = `/${window.location.pathname.split('/')[1]}`;
-
 </script>
 
+
+
+<script>
+ 
+  function irAPedidos() {
+    const url = `${window.location.origin}${basePath}/pedidos.html`;
+    window.open(url, '_blank'); // Abre en nueva pestaña
+  }
+</script>
 
 
 <script>

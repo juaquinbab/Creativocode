@@ -5,80 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login Cliente</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
     body {
       background: linear-gradient(135deg, #d9f5e5, #b8e4c4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: flex; justify-content: center; align-items: center;
     }
-
     .login-container {
-      background-color: #ffffff;
-      padding: 30px;
-      border-radius: 20px;
+      background-color: #ffffff; padding: 30px; border-radius: 20px;
       box-shadow: 0 10px 30px rgba(0, 128, 0, 0.2);
-      width: 100%;
-      max-width: 380px;
-      text-align: center;
+      width: 100%; max-width: 380px; text-align: center;
     }
-
-    .login-container h2 {
-      margin-bottom: 25px;
-      color: #2e7d32;
-    }
-
+    .login-container h2 { margin-bottom: 25px; color: #2e7d32; }
     .login-container input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #a5d6a7;
-      border-radius: 10px;
-      background-color: #f1f8f4;
-      transition: all 0.3s ease;
+      width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #a5d6a7;
+      border-radius: 10px; background-color: #f1f8f4; transition: all 0.3s ease;
     }
-
-    .login-container input:focus {
-      outline: none;
-      border-color: #66bb6a;
-      background-color: #e8f5e9;
-    }
-
+    .login-container input:focus { outline: none; border-color: #66bb6a; background-color: #e8f5e9; }
     .login-container button {
-      width: 100%;
-      padding: 12px;
-      background-color: #43a047;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-      margin-top: 10px;
+      width: 100%; padding: 12px; background-color: #43a047; color: white; border: none;
+      border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 10px;
     }
-
-    .login-container button:hover {
-      background-color: #388e3c;
-    }
-
-    .alert {
-      color: #d32f2f;
-      margin-top: 15px;
-      font-weight: bold;
-    }
+    .login-container button:hover { background-color: #388e3c; }
+    .alert { color: #d32f2f; margin-top: 15px; font-weight: bold; display: none; }
   </style>
 </head>
-
 <body>
   <div class="login-container">
     <h2>Acceso de Cliente</h2>
@@ -86,40 +37,47 @@
       <input type="text" name="usuario" placeholder="Usuario" required>
       <input type="password" name="password" placeholder="Contraseña" required>
       <button type="submit">Ingresar</button>
-      <div class="alert" id="alertBox" style="display: none;">Credenciales incorrectas</div>
+      <div class="alert" id="alertBox">Credenciales incorrectas</div>
     </form>
   </div>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    const formEl = document.getElementById('loginForm');
+    const alertBox = document.getElementById('alertBox');
+
+    formEl.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = new FormData(e.target);
+      alertBox.style.display = 'none';
+
+      const form = new FormData(formEl);
       const data = {
         usuario: form.get('usuario'),
-        password: form.get('password'),
+        password: form.get('password')
       };
 
-      const res = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
 
-      const alertBox = document.getElementById('alertBox');
+        const result = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        alertBox.textContent = "Error interno del servidor.";
-        alertBox.style.display = "block";
-        return;
-      }
+        if (res.ok && result.success) {
+          // Redirigir a la ruta definida en usuarios.json
+          window.location.href = result.ruta;
+          return;
+        }
 
-      const result = await res.json();
-
-      if (result.success) {
-        window.location.href = result.ruta;
-      } else {
-        alertBox.textContent = "Credenciales incorrectas";
-        alertBox.style.display = "block";
+        // Mostrar mensaje del servidor si viene, si no, mensajes por defecto
+        alertBox.textContent =
+          result.message ||
+          (res.status === 401 ? 'Credenciales incorrectas' : 'Error en la autenticación');
+        alertBox.style.display = 'block';
+      } catch (err) {
+        alertBox.textContent = 'No se pudo conectar con el servidor.';
+        alertBox.style.display = 'block';
       }
     });
   </script>
