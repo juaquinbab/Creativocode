@@ -13,8 +13,8 @@
   },
 
   "cliente3": {
-    "usuario": "cliente3",
-    "password": "1234",
+    "usuario": "piceroos",
+    "password": "picerros123",
     "ruta": "/cliente3/index.html",
     "iduser": "789862370866920"
   }
