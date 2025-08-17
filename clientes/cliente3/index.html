@@ -654,7 +654,7 @@
     })
       .then(response => response.text())
       .then(data => {
-        console.log(data); // Muestra la respuesta del servidor en la consola
+       // console.log(data); // Muestra la respuesta del servidor en la consola
         // Puedes hacer algo más con la respuesta del servidor aquí
       })
       .catch(error => {
@@ -784,10 +784,10 @@
       // Accede al contenido del archivo JSON en loadedFiles
       const fileContent = loadedFiles[fileKey];
 
-      console.log(`FileName extracted: ${rawFileName}`);
-      console.log(`Cleaned FileName: ${fileName}`);
-      console.log(`FileKey: ${fileKey}`);
-      console.log(`FileContent:`, fileContent); // Imprime el objeto completo
+    //  console.log(`FileName extracted: ${rawFileName}`);
+     //  console.log(`Cleaned FileName: ${fileName}`);
+     // console.log(`FileKey: ${fileKey}`);
+     // console.log(`FileContent:`, fileContent); // Imprime el objeto completo
 
       if (filterActive) {
         if (fileContent && fileContent.circleSpan.style.color === 'red') {

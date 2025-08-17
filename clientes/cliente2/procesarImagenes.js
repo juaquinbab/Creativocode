@@ -206,7 +206,7 @@ async function processOneImage(entry) {
   processed.add(imgID);
   await saveProcessed();
 
-  console.log(`✅ Imagen procesada y confirmada: ${from} :: ${imgID} -> ${filePath}`);
+ // console.log(`✅ Imagen procesada y confirmada: ${from} :: ${imgID} -> ${filePath}`);
 }
 
 async function processPendingImages() {

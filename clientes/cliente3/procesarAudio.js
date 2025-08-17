@@ -212,7 +212,7 @@ async function processOneAudio(entry) {
   processed.add(audioID);
   await saveProcessed();
 
-  console.log(`✅ Audio procesado y confirmado: ${from} :: ${audioID}`);
+ // console.log(`✅ Audio procesado y confirmado: ${from} :: ${audioID}`);
 }
 
 async function processPendingAudios() {

@@ -210,7 +210,7 @@ async function processOnePDF(entry, etapas) {
   processed.add(documentId);
   await saveProcessed();
 
-  console.log(`✅ PDF procesado: ${from} :: ${documentId}`);
+ // console.log(`✅ PDF procesado: ${from} :: ${documentId}`);
 }
 
 async function processPendingPDFs() {

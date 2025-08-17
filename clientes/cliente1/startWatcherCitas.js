@@ -44,7 +44,7 @@ const MAX_RETRIES = 3;
 let lastStatMtime = 0;
 
 // ---------- Utils ----------
-const log = (...a) => console.log('[CITAS]', ...a);
+// const log = (...a) => console.log('[CITAS]', ...a);
 function ensureDir(filePath) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

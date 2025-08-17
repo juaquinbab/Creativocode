@@ -207,7 +207,7 @@ async function processOneVideo(entry) {
   processed.add(videoID);
   await saveProcessed();
 
-  console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
+  // console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
 }
 
 async function processPendingVideos() {

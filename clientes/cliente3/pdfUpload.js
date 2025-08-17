@@ -114,7 +114,7 @@ function enviarPDFporWhatsApp(from) {
     }
   })
     .then(response => {
-      console.log('✅ PDF enviado a', from, ':', response.data);
+    //  console.log('✅ PDF enviado a', from, ':', response.data);
     })
     .catch(error => {
       console.error('❌ Error al enviar PDF a', from, ':', error.response?.data || error.message);

@@ -53,7 +53,7 @@ function guardarProcesados() {
 function limpiarProcesados() {
   const LIMITE = 5000; // Máximo de entradas
   if (mensajesProcesados.length > LIMITE) {
-    console.log(`🧹 Limpiando registro de procesados, tamaño actual: ${mensajesProcesados.length}`);
+   // console.log(`🧹 Limpiando registro de procesados, tamaño actual: ${mensajesProcesados.length}`);
     mensajesProcesados = mensajesProcesados.slice(-LIMITE / 2); // Mantener solo los más recientes
     guardarProcesados();
   }
@@ -143,7 +143,7 @@ ${texto}
 
     fs.writeFileSync(historialPath, JSON.stringify(historialActualizado, null, 2), 'utf8');
 
-    console.log(`✅ Mensaje enviado a ${mensaje.from}: ${reply}`);
+   // console.log(`✅ Mensaje enviado a ${mensaje.from}: ${reply}`);
 
   } catch (err) {
     console.error('❌ Error en responderConGPT:', err.response?.data || err.message);
@@ -170,7 +170,7 @@ const procesarEtapas = (mensajes) => {
 
 // ====== Monitoreo continuo ======
 function iniciarWatcher() {
-  console.log('👀 Monitoreando EtapasMSG.json...');
+ // console.log('👀 Monitoreando EtapasMSG.json...');
 
   fs.watchFile(ETAPAS_PATH, { interval: 1000 }, () => {
     try {
@@ -188,7 +188,7 @@ function iniciarWatcher() {
       });
 
       if (nuevosMensajes.length > 0) {
-        console.log(`📩 Detectados ${nuevosMensajes.length} mensajes nuevos o modificados`);
+      //  console.log(`📩 Detectados ${nuevosMensajes.length} mensajes nuevos o modificados`);
         nuevosMensajes.forEach(mensaje => {
           procesarEtapas([mensaje]);
           mensajesProcesados.push(`${mensaje.id}::${mensaje.body}::${mensaje.timestamp}`);

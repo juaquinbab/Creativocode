@@ -6,7 +6,7 @@ const path = require('path');
 require('dotenv').config();
 
 
-console.log('Webhook cliente1 activado');
+// console.log('Webhook cliente1 activado');
 
 
 const manejarBienvenida = require('../clientes/cliente1/bienvenida');

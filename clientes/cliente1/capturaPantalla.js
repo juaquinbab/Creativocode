@@ -116,7 +116,7 @@ function enviarMensajeWhatsApp(from) {
       'Content-Type': 'application/json'
     }
   }).then(response => {
-    console.log('✅ Imagen enviada a WhatsApp:', response.data);
+   // console.log('✅ Imagen enviada a WhatsApp:', response.data);
   }).catch(error => {
     console.error('❌ Error al enviar imagen a WhatsApp:', error.response?.data || error.message);
   });

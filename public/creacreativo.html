@@ -495,7 +495,7 @@
           // if user finishes the Embedded Signup flow
           if (data.event === 'FINISH') {
             const {phone_number_id, waba_id} = data.data;
-            console.log("Phone number ID ", phone_number_id, " WhatsApp business account ID ", waba_id);
+          //  console.log("Phone number ID ", phone_number_id, " WhatsApp business account ID ", waba_id);
             // if user cancels the Embedded Signup flow
           } else if (data.event === 'CANCEL') {
             const {current_step} = data.data;
@@ -508,7 +508,7 @@
         }
         document.getElementById("session-info-response").textContent = JSON.stringify(data, null, 2);
       } catch {
-        console.log('Non JSON Responses', event.data);
+      //  console.log('Non JSON Responses', event.data);
       }
     });
   </script>

@@ -50,7 +50,7 @@ async function manejarBienvenida(from, body,) {
 
   // 2) Si ya está registrado, no enviamos de nuevo
   if (registro[from]) {
-    console.log(`⏭️ Usuario ${from} ya registrado. No se envía bienvenida.`);
+   // console.log(`⏭️ Usuario ${from} ya registrado. No se envía bienvenida.`);
     return;
   }
 
@@ -139,7 +139,7 @@ async function manejarBienvenida(from, body,) {
                   },
                 }
               );
-              console.log('PDF enviado:', responsePDF.data);
+            //  console.log('PDF enviado:', responsePDF.data);
 
               
   } catch (err) {
@@ -178,7 +178,7 @@ async function manejarBienvenida(from, body,) {
       guardarJSON(etapasPath, etapasRaw);
     }
   } else {
-    console.log('⚠️ No se encontró candidato en EtapasMSG para este from; no se actualizó etapa.');
+  //  console.log('⚠️ No se encontró candidato en EtapasMSG para este from; no se actualizó etapa.');
   }
 
   // 6) Marcar en registro que ya se envió

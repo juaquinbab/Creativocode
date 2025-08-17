@@ -74,7 +74,7 @@ router.post('/send-audio', (req, res) => {
       .audioCodec('libopus')
       .format('ogg')
       .on('end', async () => {
-        console.log('[INFO] Conversión a OGG lista:', outputPath);
+       // console.log('[INFO] Conversión a OGG lista:', outputPath);
 
         const audioUrl = `${PUBLIC_BASE.replace(/\/+$/, '')}/sala1Audio/${outputFileName}`;
 
@@ -90,7 +90,7 @@ router.post('/send-audio', (req, res) => {
 
         // 3) Antiduplicado rápido
         if (sentAudioUrls.has(audioUrl)) {
-          console.log('⏭️ Audio ya enviado recientemente, se omite:', audioUrl);
+         // console.log('⏭️ Audio ya enviado recientemente, se omite:', audioUrl);
           return res.status(200).send('Audio ya fue enviado recientemente.');
         }
 
@@ -100,7 +100,7 @@ router.post('/send-audio', (req, res) => {
         if (historial.length > 0) {
           const ultimo = historial[historial.length - 1];
           if (ultimo?.tipo === 'audio' && ultimo?.body?.includes(audioUrl)) {
-            console.log('⏭️ Audio duplicado detectado en historial, se omite envío.');
+          //  console.log('⏭️ Audio duplicado detectado en historial, se omite envío.');
             return res.status(200).send('Audio duplicado detectado, no se envía nuevamente.');
           }
         }
@@ -137,7 +137,7 @@ router.post('/send-audio', (req, res) => {
             audio: { link: audioUrl }
           };
 
-          console.log('[INFO] Payload para WhatsApp:', payload);
+         // console.log('[INFO] Payload para WhatsApp:', payload);
 
           axios.post(`https://graph.facebook.com/v23.0/${IDNUMERO}/messages`, payload, {
             headers: {
@@ -146,7 +146,7 @@ router.post('/send-audio', (req, res) => {
             }
           })
           .then(response => {
-            console.log('[INFO] Audio enviado a WhatsApp:', response.data);
+          //  console.log('[INFO] Audio enviado a WhatsApp:', response.data);
             sentAudioUrls.add(audioUrl); // marcar como enviado
             res.status(200).send('✅ Audio guardado y enviado correctamente.');
           })

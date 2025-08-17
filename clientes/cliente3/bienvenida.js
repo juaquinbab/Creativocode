@@ -50,7 +50,7 @@ async function manejarBienvenida(from, body,) {
 
   // 2) Si ya está registrado, no enviamos de nuevo
   if (registro[from]) {
-    console.log(`⏭️ Usuario ${from} ya registrado. No se envía bienvenida.`);
+   // console.log(`⏭️ Usuario ${from} ya registrado. No se envía bienvenida.`);
     return;
   }
 
@@ -107,7 +107,7 @@ Descubre nuestra carta llena de sabores irresistibles, con precios y tamaños pa
         },
       }
     );
-    console.log('📨 Bienvenida enviada:', resp.data);
+  //  console.log('📨 Bienvenida enviada:', resp.data);
   } catch (err) {
     console.error('❌ Error al enviar bienvenida:', err.response?.data || err.message);
     // Si falló el envío, quitamos el registro para permitir reintentar luego
@@ -144,7 +144,7 @@ Descubre nuestra carta llena de sabores irresistibles, con precios y tamaños pa
       guardarJSON(etapasPath, etapasRaw);
     }
   } else {
-    console.log('⚠️ No se encontró candidato en EtapasMSG para este from; no se actualizó etapa.');
+   // console.log('⚠️ No se encontró candidato en EtapasMSG para este from; no se actualizó etapa.');
   }
 
   // 6) Marcar en registro que ya se envió

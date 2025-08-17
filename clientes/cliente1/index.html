@@ -657,7 +657,7 @@
     })
       .then(response => response.text())
       .then(data => {
-        console.log(data); // Muestra la respuesta del servidor en la consola
+      //  console.log(data); // Muestra la respuesta del servidor en la consola
         // Puedes hacer algo más con la respuesta del servidor aquí
       })
       .catch(error => {
@@ -787,10 +787,10 @@
       // Accede al contenido del archivo JSON en loadedFiles
       const fileContent = loadedFiles[fileKey];
 
-      console.log(`FileName extracted: ${rawFileName}`);
-      console.log(`Cleaned FileName: ${fileName}`);
-      console.log(`FileKey: ${fileKey}`);
-      console.log(`FileContent:`, fileContent); // Imprime el objeto completo
+      //console.log(`FileName extracted: ${rawFileName}`);
+      //console.log(`Cleaned FileName: ${fileName}`);
+      //console.log(`FileKey: ${fileKey}`);
+      //console.log(`FileContent:`, fileContent); // Imprime el objeto completo
 
       if (filterActive) {
         if (fileContent && fileContent.circleSpan.style.color === 'red') {
@@ -856,7 +856,7 @@
         bloqueadoPorCarga = true;
         cargaCompleta = false;
 
-        console.log(`Clic en: ${fileName}`);
+       // console.log(`Clic en: ${fileName}`);
 
         // Desmarcar visual anterior y marcar actual
         if (selectedDiv) selectedDiv.classList.remove('selected');
@@ -921,10 +921,10 @@
 
     // Si el contenido del archivo ha cambiado, actualizar MensajeIndex
     if (MensajeIndex.length !== fileContent.length) {
-      console.log(`Detectados nuevos datos en ${fileName}, actualizando MensajeIndexS2`);
+     // console.log(`Detectados nuevos datos en ${fileName}, actualizando MensajeIndexS2`);
       MensajeIndex.length = 0;
       MensajeIndex.push(...fileContent);
-      console.log('MensajeIndex actualizado:', MensajeIndex);
+     // console.log('MensajeIndex actualizado:', MensajeIndex);
 
       const updateServerResponse = await fetch(`${basePath}/mensajeIndex`, {
         method: 'PUT',
@@ -935,9 +935,9 @@
       });
 
       if (updateServerResponse.ok) {
-        console.log('MensajeIndex enviado al servidor');
+       // console.log('MensajeIndex enviado al servidor');
       } else {
-        console.error('Error al enviar MensajeIndex al servidor');
+       // console.error('Error al enviar MensajeIndex al servidor');
       }
     }
   }
@@ -1305,10 +1305,10 @@
       fetch(`${basePath}/actualizar1`, { method: 'POST' })
         .then(response => response.json())
         .then(data => {
-          console.log('Solicitud automática completada:', data);
+         // console.log('Solicitud automática completada:', data);
         })
         .catch(error => {
-          console.error('Error al realizar la solicitud automática:', error);
+        //  console.error('Error al realizar la solicitud automática:', error);
         });
     }, 750);
   }
