@@ -1,71 +1,106 @@
-// archivo: clientes/cliente1/procesarEtapas.js
-
+// optimizado.js
 const fs = require('fs');
+const fsp = require('fs').promises;
 const path = require('path');
 
 const rutaEtapas = path.join(__dirname, '../../data/EtapasMSG3.json');
 const rutaSalida = path.join(__dirname, './salachat');
 
-if (!fs.existsSync(rutaSalida)) fs.mkdirSync(rutaSalida);
+async function ensureDir(p) {
+  try { await fsp.mkdir(p, { recursive: true }); } catch {}
+}
+(async () => { await ensureDir(rutaSalida); })();
 
-function leerEtapas() {
+async function readJsonSafe(file, fallback) {
   try {
-    const data = fs.readFileSync(rutaEtapas, 'utf8');
+    const data = await fsp.readFile(file, 'utf8');
     return JSON.parse(data);
-  } catch (error) {
-    console.error('❌ Error al leer EtapasMSG:', error.message);
-    return [];
+  } catch { return fallback; }
+}
+async function writeJsonAtomic(file, obj) {
+  const tmp = `${file}.tmp`;
+  await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
+  await fsp.rename(tmp, file);
+}
+
+// --- Caché de duplicados por usuario ---
+const seenByUser = new Map();
+const queueByUser = new Map();
+const flushTimers = new Map();
+
+async function loadUserSeen(from) {
+  if (seenByUser.has(from)) return seenByUser.get(from);
+  const archivo = path.join(rutaSalida, `${from}.json`);
+  const prev = await readJsonSafe(archivo, []);
+  const set = new Set(prev.map(m => `${m.body}|${m.timestamp}`));
+  seenByUser.set(from, set);
+  return set;
+}
+
+async function flushUser(from) {
+  const items = queueByUser.get(from);
+  if (!items || items.length === 0) return;
+
+  const archivo = path.join(rutaSalida, `${from}.json`);
+  const current = await readJsonSafe(archivo, []);
+  current.push(...items);
+  await writeJsonAtomic(archivo, current);
+
+  queueByUser.set(from, []);
+}
+
+function scheduleFlush(from, delay = 500) {
+  if (flushTimers.has(from)) return;
+  const t = setTimeout(async () => {
+    flushTimers.delete(from);
+    try { await flushUser(from); } catch (e) { console.error('❌ Flush error:', e.message); }
+  }, delay);
+  flushTimers.set(from, t);
+}
+
+async function enqueueMessage(mensaje) {
+  const { from, body, timestamp } = mensaje || {};
+  if (!from) return;
+  const key = `${body}|${timestamp}`;
+  const seen = await loadUserSeen(from);
+  if (seen.has(key)) return;
+
+  seen.add(key);
+  if (!queueByUser.has(from)) queueByUser.set(from, []);
+  queueByUser.get(from).push(mensaje);
+
+  scheduleFlush(from);
+}
+
+// --- Esta es la función principal con el mismo nombre que usabas ---
+async function procesarEtapasPorLotes() {
+  const mensajes = await readJsonSafe(rutaEtapas, []);
+  if (!Array.isArray(mensajes) || mensajes.length === 0) return;
+
+  for (const m of mensajes) {
+    if (m && m.from && Number.isInteger(m.etapa) && m.etapa >= 0 && m.etapa <= 9) {
+      await enqueueMessage(m);
+    }
   }
 }
 
-function guardarMensajeEnArchivo(mensaje) {
-  const archivo = path.join(rutaSalida, `${mensaje.from}.json`);
-  let mensajesPrevios = [];
-
-  if (fs.existsSync(archivo)) {
-    try {
-      mensajesPrevios = JSON.parse(fs.readFileSync(archivo, 'utf8'));
-    } catch (e) {
-      console.warn('⚠️ Archivo dañado o vacío:', archivo);
-    }
-  }
-
-  const duplicado = mensajesPrevios.some(
-    m => m.body === mensaje.body && m.timestamp === mensaje.timestamp
-  );
-
-  if (!duplicado) {
-    mensajesPrevios.push(mensaje);
-    fs.writeFileSync(archivo, JSON.stringify(mensajesPrevios, null, 2));
-   // console.log(`✅ [${mensaje.from}] mensaje agregado`);
-  } else {
-   // console.log(`⛔ [${mensaje.from}] mensaje duplicado`);
-  }
+// --- Watcher con debounce ---
+let debounceTimer = null;
+function onChange() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    procesarEtapasPorLotes().catch(e => console.error('❌ procesarEtapasPorLotes error:', e.message));
+  }, 200);
 }
 
-function procesarEtapasPorLotes() {
-  const mensajes = leerEtapas();
-  if (!Array.isArray(mensajes)) return;
-
-  mensajes.forEach((mensaje) => {
-    if (mensaje.etapa >= 0 && mensaje.etapa <= 9 && mensaje.from) {
-      guardarMensajeEnArchivo(mensaje);
-    }
+try {
+  const watcher = fs.watch(rutaEtapas, { persistent: true }, (eventType) => {
+    if (eventType === 'change' || eventType === 'rename') onChange();
   });
+  watcher.on('error', () => setInterval(onChange, 2000));
+} catch {
+  setInterval(onChange, 2000);
 }
 
-// Monitoreo optimizado sin consumir CPU excesiva
-let contenidoAnterior = '';
-setInterval(() => {
-  try {
-    const contenidoActual = fs.readFileSync(rutaEtapas, 'utf8');
-    if (contenidoActual !== contenidoAnterior) {
-      contenidoAnterior = contenidoActual;
-      procesarEtapasPorLotes();
-    }
-  } catch (e) {
-    console.error('❌ Error al leer para detectar cambios:', e.message);
-  }
-}, 500);
-
+// 👇 Exporta igual que tu código original
 module.exports = procesarEtapasPorLotes;
