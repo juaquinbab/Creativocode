@@ -5,79 +5,96 @@ const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
+const https = require("https");
 
+// --- Rutas ---
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_videos.json");
-
-const BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com//";
-const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
-
 const usuariosPath = path.join(__dirname, "../../data/usuarios.json");
-let WABA_PHONE_ID = ""; // se obtiene de usuarios.json
 
+// --- Entorno / Config ---
+const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/";
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, ""); // sin slash final
+const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
+const MAX_VIDEO_CONCURRENCY = Number(process.env.MAX_VIDEO_CONCURRENCY || 2);
+
+// Keep-Alive para reducir overhead de TLS/handshakes
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
+const http = axios.create({ timeout: 15000, httpsAgent });
+
+// --- WABA_PHONE_ID (defensivo) ---
+let WABA_PHONE_ID = "";
 try {
   const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, "utf8"));
-  if (usuariosData.cliente1 && usuariosData.cliente1.iduser) {
-    WABA_PHONE_ID = usuariosData.cliente1.iduser;
-  } else {
-    console.warn("⚠️ No se encontró iduser para cliente1 en usuarios.json");
-  }
+  const candidate = usuariosData?.cliente1?.iduser || usuariosData?.cliente1?.iduser;
+  if (candidate) WABA_PHONE_ID = candidate;
+  else console.warn("⚠️ No se encontró iduser para cliente1/cliente2 en usuarios.json");
 } catch (err) {
-  console.error("❌ Error al leer usuarios.json:", err);
+  console.error("❌ Error al leer usuarios.json:", err.message);
 }
 
 // Directorios
 const PUBLIC_VIDEO_DIR = path.join(process.cwd(), "public/video");
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 
-// Crear dirs si no existen
-if (!fs.existsSync(PUBLIC_VIDEO_DIR)) fs.mkdirSync(PUBLIC_VIDEO_DIR, { recursive: true });
-if (!fs.existsSync(SALA_CHAT_DIR)) fs.mkdirSync(SALA_CHAT_DIR, { recursive: true });
-
-// Axios base con timeouts
-const http = axios.create({ timeout: 15000 });
+async function ensureDir(p) { try { await fsp.mkdir(p, { recursive: true }); } catch {} }
+(async () => {
+  await ensureDir(PUBLIC_VIDEO_DIR);
+  await ensureDir(SALA_CHAT_DIR);
+})();
 
 // Estado en memoria
 let processing = false;
 let processed = new Set();
 
 // === Utilidades ===
-async function loadJSONSafe(file, fallback) {
+async function readJsonSafe(file, fallback) {
   try {
     const raw = await fsp.readFile(file, "utf8");
     return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
+  } catch { return fallback; }
 }
 
-async function saveProcessed() {
-  try {
-    await fsp.writeFile(PROCESSED_PATH, JSON.stringify([...processed], null, 2));
-  } catch (e) {
-    console.error("❌ Error guardando processed_videos:", e.message);
-  }
+async function writeJsonAtomic(file, obj) {
+  const tmp = `${file}.tmp`;
+  await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
+  await fsp.rename(tmp, file);
+}
+
+async function fileExists(p) {
+  try { await fsp.access(p, fs.constants.F_OK); return true; }
+  catch { return false; }
+}
+
+async function saveProcessedImmediate() {
+  try { await writeJsonAtomic(PROCESSED_PATH, [...processed]); }
+  catch (e) { console.error("❌ Error guardando processed_videos:", e.message); }
+}
+
+let processedDirty = false;
+let processedTimer = null;
+function scheduleSaveProcessed(delay = 1500) {
+  processedDirty = true;
+  if (processedTimer) return;
+  processedTimer = setTimeout(async () => {
+    processedTimer = null;
+    if (!processedDirty) return;
+    processedDirty = false;
+    await saveProcessedImmediate();
+  }, delay);
 }
 
 async function initProcessed() {
-  const list = await loadJSONSafe(PROCESSED_PATH, []);
+  const list = await readJsonSafe(PROCESSED_PATH, []);
   processed = new Set(list);
 }
 
-function sleep(ms) {
-  return new Promise((res) => setTimeout(res, ms));
-}
-
+function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
   let lastErr;
   for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      lastErr = e;
-      const wait = baseDelay * Math.pow(2, i);
-      await sleep(wait);
-    }
+    try { return await fn(); }
+    catch (e) { lastErr = e; await sleep(baseDelay * Math.pow(2, i)); }
   }
   throw lastErr;
 }
@@ -97,14 +114,9 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "video Recibido" },
+        text: { preview_url: false, body: "Video recibido." },
       },
-      {
-        headers: {
-          Authorization: `Bearer ${WABA_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
+      { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
     )
   );
 }
@@ -119,12 +131,9 @@ async function fetchVideoMeta(videoID) {
 }
 
 async function downloadToFile(fileUrl, destPath) {
-  const tmpPath = destPath + ".download";
+  const tmpPath = `${destPath}.download`;
   const resp = await withRetry(() =>
-    http.get(fileUrl, {
-      headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-      responseType: "stream",
-    })
+    http.get(fileUrl, { headers: { Authorization: `Bearer ${WABA_TOKEN}` }, responseType: "stream" })
   );
   await new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(tmpPath);
@@ -135,40 +144,60 @@ async function downloadToFile(fileUrl, destPath) {
   await fsp.rename(tmpPath, destPath);
 }
 
-async function appendHistorial(from, record) {
-  const historialPath = path.join(SALA_CHAT_DIR, `${from}.json`);
-  const historial = await loadJSONSafe(historialPath, []);
-  historial.push(record);
-  await fsp.writeFile(historialPath, JSON.stringify(historial, null, 2));
+// === Batching: historial por usuario ===
+const historyQueues = new Map(); // from => [{...}, ...]
+const historyTimers = new Map(); // from => timeoutId
+
+function queueHistory(from, record) {
+  if (!historyQueues.has(from)) historyQueues.set(from, []);
+  historyQueues.get(from).push(record);
+  scheduleHistoryFlush(from);
 }
 
+function scheduleHistoryFlush(from, delay = 600) {
+  if (historyTimers.has(from)) return;
+  const t = setTimeout(async () => {
+    historyTimers.delete(from);
+    try { await flushUserHistory(from); }
+    catch (e) { console.error(`❌ Error guardando historial de ${from}:`, e.message); }
+  }, delay);
+  historyTimers.set(from, t);
+}
+
+async function flushUserHistory(from) {
+  const items = historyQueues.get(from);
+  if (!items || items.length === 0) return;
+  const historialPath = path.join(SALA_CHAT_DIR, `${from}.json`);
+  const historial = await readJsonSafe(historialPath, []);
+  historial.push(...items);
+  historyQueues.set(from, []);
+  await writeJsonAtomic(historialPath, historial);
+}
+
+// === Candidatos ===
 function isVideoCandidate(e) {
   return (
-    e &&
-    e.videoID &&
-    typeof e.videoID === "string" &&
-    e.etapa >= 0 &&
-    e.etapa <= 300 &&
+    e && typeof e.videoID === "string" &&
+    e.etapa >= 0 && e.etapa <= 300 &&
     e.Idp !== -999
   );
 }
 
+// === Procesamiento individual ===
 async function processOneVideo(entry) {
   const { from, id, videoID, timestamp, etapa } = entry;
-
   if (processed.has(videoID)) return;
 
-  // nombre de archivo único (incluye id y videoID)
   const filename = `${from}-${id}-${videoID}.mp4`;
   const filePath = path.join(PUBLIC_VIDEO_DIR, filename);
 
-  if (fs.existsSync(filePath)) {
+  if (await fileExists(filePath)) {
     processed.add(videoID);
-    await saveProcessed();
+    scheduleSaveProcessed();
     return;
   }
 
-  // 1) Meta -> URL del video
+  // 1) Meta -> URL
   const meta = await fetchVideoMeta(videoID);
   const videoUrl = meta?.url;
   if (!videoUrl) {
@@ -176,13 +205,13 @@ async function processOneVideo(entry) {
     return;
   }
 
-  // 2) Descargar video
+  // 2) Descargar
   await downloadToFile(videoUrl, filePath);
 
-  // 3) Guardar en historial del usuario
+  // 3) Encolar historial (batch)
   const nuevo = {
     from,
-    body: `${BASE_URL.replace(/\/+$/, "")}/video/${filename}`,
+    body: `${BASE_URL}/video/${filename}`,
     filename,
     etapa: typeof etapa === "number" ? etapa : 32,
     timestamp: Date.now(),
@@ -194,68 +223,98 @@ async function processOneVideo(entry) {
     message_id: id,
     videoID,
   };
-  await appendHistorial(from, nuevo);
+  queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp
-  try {
-    await confirmToUser(from);
-  } catch (e) {
-    console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message);
-  }
+  // 4) Confirmar por WhatsApp (no bloquea)
+  confirmToUser(from).catch(e =>
+    console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
+  );
 
-  // 5) Marcar como procesado
+  // 5) Marcar procesado (batch persist)
   processed.add(videoID);
-  await saveProcessed();
+  scheduleSaveProcessed();
 
-//  console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
+  // console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
 }
 
+// === Pool de concurrencia controlada ===
+async function runPool(items, worker, concurrency = 2) {
+  let idx = 0;
+  const workers = Array(Math.min(concurrency, items.length)).fill(0).map(async () => {
+    while (true) {
+      const i = idx++;
+      if (i >= items.length) break;
+      await worker(items[i]);
+    }
+  });
+  await Promise.all(workers);
+}
+
+// === Procesamiento de pendientes ===
 async function processPendingVideos() {
   if (processing) return;
   processing = true;
   try {
-    const etapas = await loadJSONSafe(ETA_PATH, []);
-    const candidates = etapas.filter(isVideoCandidate).filter((e) => !processed.has(e.videoID));
-    if (!candidates.length) return;
+    const etapas = await readJsonSafe(ETA_PATH, []);
+    if (!Array.isArray(etapas) || etapas.length === 0) return;
 
-    // Orden por timestamp asc para mantener la secuencia
+    const candidates = etapas.filter(isVideoCandidate).filter(e => !processed.has(e.videoID));
+    if (candidates.length === 0) return;
+
     candidates.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
-
-    for (const entry of candidates) {
-      try {
-        await processOneVideo(entry);
-      } catch (e) {
-        console.error(`❌ Error procesando video ${entry.videoID}:`, e.response?.data || e.message);
-      }
-    }
+    await runPool(candidates, processOneVideo, MAX_VIDEO_CONCURRENCY);
   } finally {
     processing = false;
   }
 }
 
-// === Monitor del archivo ===
-let lastMtimeMs = 0;
+// === Monitor de cambios (watch + debounce, fallback a polling) ===
+let debounceTimer = null;
+function triggerProcessDebounced(delay = 250) {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    processPendingVideos().catch(e => console.error("❌ processPendingVideos error:", e.message));
+  }, delay);
+}
 
-async function checkForChanges() {
+function startWatch() {
   try {
-    const stat = await fsp.stat(ETA_PATH);
-    const mtimeMs = stat.mtimeMs || stat.mtime?.getTime?.() || 0;
-    if (mtimeMs > lastMtimeMs) {
-      lastMtimeMs = mtimeMs;
-      await processPendingVideos();
-    }
+    const watcher = fs.watch(ETA_PATH, { persistent: true }, (eventType) => {
+      if (eventType === "change" || eventType === "rename") triggerProcessDebounced();
+    });
+    watcher.on("error", (e) => {
+      console.warn("⚠️ fs.watch no disponible, usando polling cada 2s:", e.message);
+      setInterval(triggerProcessDebounced, 2000);
+    });
   } catch (e) {
-    console.error("❌ Error al stat EtapasMSG:", e.message);
+    console.warn("⚠️ fs.watch no soportado, usando polling cada 2s:", e.message);
+    setInterval(triggerProcessDebounced, 2000);
   }
 }
 
+// === Flush en apagado para no perder colas ===
+async function gracefulShutdown() {
+  try {
+    const froms = [...historyQueues.keys()];
+    await Promise.all(froms.map(f => flushUserHistory(f)));
+    if (processedDirty) await saveProcessedImmediate();
+  } catch (e) {
+    console.error("⚠️ Error en flush de apagado:", e.message);
+  } finally {
+    process.exit(0);
+  }
+}
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+
+// === API pública ===
 async function iniciarMonitoreoVideo() {
   if (!WABA_TOKEN) {
-    console.warn("⚠️ Falta WHATSAPP_API_TOKEN. Solo se descargará si Meta permite públicos (no usual).");
+    console.warn("⚠️ Falta WHATSAPP_API_TOKEN. Meta suele requerir token para descargar media.");
   }
   await initProcessed();
-  await processPendingVideos();
-  setInterval(checkForChanges, 700);
+  await processPendingVideos(); // corrida inicial
+  startWatch();                 // luego, reactivo por cambios
 }
 
 module.exports = iniciarMonitoreoVideo;
