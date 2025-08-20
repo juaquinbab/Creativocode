@@ -5,7 +5,7 @@ const axios = require('axios');
 require('dotenv').config();
 
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_citas.json");
 
 
@@ -16,8 +16,8 @@ let WABA_PHONE_ID = ''; // Valor por defecto si no se encuentra
 
 try {
   const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente1 && usuariosData.cliente1.iduser) {
-    WABA_PHONE_ID = usuariosData.cliente1.iduser;
+  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
+    WABA_PHONE_ID = usuariosData.cliente4.iduser;
   } else {
     console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
   }
@@ -53,7 +53,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican confirmación
-const PALABRAS_CONFIRMACION = ["@"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
+const PALABRAS_CONFIRMACION = ["confirmar", "confirmo"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
 
 function loadProcessed() {
   try {
@@ -154,7 +154,12 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
       console.warn(`[CITAS] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
     }
 
-    const textoGracias =  `Estás a punto de hablar con un ingeniero especializado. La automatización de tu WhatsApp está cada vez más cerca. Recuerda que en Creativo Code desarrollamos sistemas a la medida de tus necesidades.`;
+    const textoGracias =  `
+    
+    Asesor: 🎉 ¡Gracias por tu pedido! 
+    Estamos trabajando 🔥 para que disfrutes de lo mejor 🎉
+
+    `;
 
     mensajes.push({
       from,

@@ -1,13 +1,11 @@
-// watcherCitas.js
+// watcherAsesor.js
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG.json");
-const PROCESSED_PATH = path.join(__dirname, "../../data/processed_citas.json");
-
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
+const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 
 
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
@@ -16,15 +14,14 @@ let WABA_PHONE_ID = ''; // Valor por defecto si no se encuentra
 
 try {
   const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente1 && usuariosData.cliente1.iduser) {
-    WABA_PHONE_ID = usuariosData.cliente1.iduser;
+  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
+    WABA_PHONE_ID = usuariosData.cliente4.iduser;
   } else {
     console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
   }
 } catch (err) {
   console.error('❌ Error al leer usuarios.json:', err);
 }
-
 
 
 
@@ -44,7 +41,7 @@ const MAX_RETRIES = 3;
 let lastStatMtime = 0;
 
 // ---------- Utils ----------
-const log = (...a) => console.log('[CITAS]', ...a);
+const log = (...a) => console.log('[ASESOR]', ...a);
 function ensureDir(filePath) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -52,8 +49,8 @@ function ensureDir(filePath) {
 const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-// Palabras/raíces que indican confirmación
-const PALABRAS_CONFIRMACION = ["@"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
+// Palabras/raíces que indican solicitud de asesor
+const PALABRAS_ASESOR = ["asesor", "asesora", "asesores"];
 
 function loadProcessed() {
   try {
@@ -68,7 +65,7 @@ function loadProcessed() {
       }
     }
   } catch (e) {
-    console.error("[CITAS] No se pudo cargar processed_citas.json:", e.message);
+    console.error("[ASESOR] No se pudo cargar processed_asesor.json:", e.message);
     processedMap = new Map();
   }
 }
@@ -82,7 +79,7 @@ function saveProcessed() {
     }
     fs.writeFileSync(PROCESSED_PATH, JSON.stringify(Array.from(processedMap.entries()), null, 2), 'utf8');
   } catch (e) {
-    console.error("[CITAS] No se pudo guardar processed_citas.json:", e.message);
+    console.error("[ASESOR] No se pudo guardar processed_asesor.json:", e.message);
   }
 }
 
@@ -101,23 +98,23 @@ function buildSignature(m) {
   ].join('|');
 }
 
-// Es candidato de “cita confirmada”
-function esCandidatoConfirmacion(m) {
+// Es candidato de “asesor”
+function esCandidatoAsesor(m) {
   if (!m || !m.id) return false;
   if (m.enProceso === true) return false;
   if (m.etapa !== 1) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
-  // Debe contener confirm*
-  const esConfirm = PALABRAS_CONFIRMACION.some(p => nb.includes(p));
-  return esConfirm;
+  // Debe contener asesor/asesora/asesores
+  const esAsesor = PALABRAS_ASESOR.some(p => nb.includes(p));
+  return esAsesor;
 }
 
 // Encola si es nuevo o se actualizó
 function enqueueIfNewOrUpdated(m) {
   if (!m || !m.id) return;
-  if (!esCandidatoConfirmacion(m)) { log('skip: no es confirmación válida', m.id); return; }
+  if (!esCandidatoAsesor(m)) { log('skip: no es solicitud de asesor válida', m?.id); return; }
 
   const id = String(m.id);
   const sig = buildSignature(m);
@@ -137,43 +134,43 @@ function enqueueIfNewOrUpdated(m) {
   }
 }
 
-// ---------- Worker principal ----------
+// ---------- Worker ----------
 async function workerHandle(item, WHATSAPP_API_TOKEN) {
   const id = String(item.id);
   try {
     log('procesando', id);
 
-    // 1) Guardar mensaje de confirmación en ./sala1/<from>.json
     const from = String(item.from);
-    const filePath = path.join(__dirname, './salachat', `${from}.json`);
+    const filePath = path.join(__dirname, '../salachat', `${from}.json`);
     let mensajes = [];
     if (fs.existsSync(filePath)) {
       mensajes = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       if (!Array.isArray(mensajes)) mensajes = [];
     } else {
-      console.warn(`[CITAS] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
+      console.warn(`[ASESOR] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
     }
 
-    const textoGracias =  `Estás a punto de hablar con un ingeniero especializado. La automatización de tu WhatsApp está cada vez más cerca. Recuerda que en Creativo Code desarrollamos sistemas a la medida de tus necesidades.`;
+    const textoRespuesta = `✅ ¡Gracias!
+Muy pronto uno de nuestros asesores te estará contactando 🤝
+ `;
 
+    // 1) Guardar en historial local
     mensajes.push({
       from,
-      body: `Asesor: ${textoGracias}`,
-      timestamp: new Date().toISOString(),
-      Cambio: 0,
-      confirmado: true
+      body: `Asesor: ${textoRespuesta}`,
+      timestamp: new Date().toISOString()
     });
     ensureDir(filePath);
     fs.writeFileSync(filePath, JSON.stringify(mensajes, null, 2));
     log('historial actualizado', `${from}.json`);
 
-    // 2) Enviar WhatsApp de confirmación
+    // 2) Enviar WhatsApp
     const payload = {
       messaging_product: 'whatsapp',
       recipient_type: 'individual',
       to: from,
       type: 'text',
-      text: { preview_url: false, body: textoGracias },
+      text: { preview_url: false, body: textoRespuesta },
     };
 
     await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
@@ -199,16 +196,15 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
         const indexToUpdate = EtapasMSG.findIndex((x) => x && x.id === id);
         if (indexToUpdate !== -1) {
           EtapasMSG[indexToUpdate].etapa = 3;
-          EtapasMSG[indexToUpdate].confirmado = true;
           EtapasMSG[indexToUpdate].idp = 0;
           fs.writeFileSync(ETA_PATH, JSON.stringify(EtapasMSG, null, 2), 'utf8');
           log(`etapa/idp actualizados en EtapasMSG.json para id=${id}`);
         } else {
-          log(`id=${id} no encontrado al persistir etapa (probable reemplazo concurrente)`);
+          log(`id=${id} no encontrado al persistir etapa (posible reemplazo concurrente)`);
         }
       }
     } catch (e) {
-      console.error('[CITAS] Error actualizando EtapasMSG.json:', e.message);
+     // console.error('[ASESOR] Error actualizando EtapasMSG.json:', e.message);
     }
 
     // 4) Marcar firma como procesada
@@ -217,9 +213,8 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
     saveProcessed();
     log('ok', id);
   } catch (e) {
-    console.error('[CITAS] error', id, e?.response?.data || e?.message || e);
-    // reintentos gestionados arriba en el loop
-    throw e;
+   // console.error('[ASESOR] error', id, e?.response?.data || e?.message || e);
+    throw e; // que el scheduler gestione reintentos
   } finally {
     // permitir re-encolar si llega otra actualización del mismo id
     enqueuedMap.delete(id);
@@ -237,7 +232,7 @@ function workerTick(WHATSAPP_API_TOKEN) {
           setTimeout(() => pendingQueue.push(item), 300 * item.__retries);
           log('requeue', item.id, 'retry', item.__retries);
         } else {
-          console.error('[CITAS] agotados reintentos', item.id);
+          console.error('[ASESOR] agotados reintentos', item.id);
         }
       })
       .finally(() => { running--; });
@@ -245,7 +240,7 @@ function workerTick(WHATSAPP_API_TOKEN) {
 }
 
 // ---------- Watcher ----------
-const startWatcherCitas = (WHATSAPP_API_TOKEN) => {
+const startWatcherAsesor = (WHATSAPP_API_TOKEN) => {
   loadProcessed();
 
   setInterval(() => {
@@ -257,11 +252,11 @@ const startWatcherCitas = (WHATSAPP_API_TOKEN) => {
 
       const contenido = fs.readFileSync(ETA_PATH, 'utf8');
       let EtapasMSG = [];
-      try{ 
+      try {
         EtapasMSG = JSON.parse(contenido);
         if (!Array.isArray(EtapasMSG)) EtapasMSG = [];
       } catch (e) {
-        console.error('[CITAS] JSON inválido:', e.message);
+        console.error('[ASESOR] JSON inválido:', e.message);
         return;
       }
 
@@ -280,9 +275,9 @@ const startWatcherCitas = (WHATSAPP_API_TOKEN) => {
 
       workerTick(WHATSAPP_API_TOKEN);
     } catch (err) {
-      console.error('[CITAS] Error watcher:', err.message);
+      console.error('[ASESOR] Error watcher:', err.message);
     }
   }, FILE_POLL_MS);
 };
 
-module.exports = { startWatcherCitas };
+module.exports = { startWatcherAsesor };

@@ -16,6 +16,13 @@
     "usuario": "piceroos",
     "password": "picerros123",
     "ruta": "/cliente3/index.html",
+    "iduser": "7898623"
+  },
+
+  "cliente4": {
+    "usuario": "David",
+    "password": "picerros123",
+    "ruta": "/cliente4/index.html",
     "iduser": "789862370866920"
   }
 }

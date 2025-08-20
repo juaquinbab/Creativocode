@@ -5,7 +5,7 @@ const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG3.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_pdfs.json");
 
@@ -25,7 +25,7 @@ if (!fs.existsSync(PUBLIC_PDF_DIR)) fs.mkdirSync(PUBLIC_PDF_DIR, { recursive: tr
 // Cargar IDNUMERO desde usuarios.json si no viene por ENV
 try {
   const usuarios = JSON.parse(fs.readFileSync(USUARIOS_PATH, "utf8"));
-  if (!WABA_PHONE_ID) WABA_PHONE_ID = usuarios?.cliente3?.iduser || "";
+  if (!WABA_PHONE_ID) WABA_PHONE_ID = usuarios?.cliente4?.iduser || "";
 } catch (e) {
   console.warn("⚠️ No se pudo leer usuarios.json para WABA_PHONE_ID (opcional).");
 }
