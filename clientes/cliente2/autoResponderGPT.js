@@ -89,18 +89,21 @@ const responderConGPT = async (mensaje) => {
     }
 
     // Fecha formateada
- const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-const hoy = new Date();
+// Obtener fecha y hora en zona horaria de Colombia
+const hoyColombia = new Date(
+  new Date().toLocaleString("en-US", { timeZone: "America/Bogota" })
+);
 
 // Hora
-const horas = String(hoy.getHours()).padStart(2, '0');
-const minutos = String(hoy.getMinutes()).padStart(2, '0');
+const horas = String(hoyColombia.getHours()).padStart(2, '0');
+const minutos = String(hoyColombia.getMinutes()).padStart(2, '0');
 const horaFormateada = `${horas}:${minutos}`;
 
 // Fecha
-const fechaFormateada = `${diasSemana[hoy.getDay()]} ${String(hoy.getDate()).padStart(2, '0')} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
+const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombia.getDate()).padStart(2, '0')} de ${meses[hoyColombia.getMonth()]} de ${hoyColombia.getFullYear()}`;
 
 // Ejemplo de uso
 // console.log("📅 Fecha:", fechaFormateada);
