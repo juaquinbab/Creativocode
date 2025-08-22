@@ -10,6 +10,8 @@ const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
+
+
 let WABA_PHONE_ID = ''; // Valor por defecto si no se encuentra
 
 try {
@@ -31,6 +33,7 @@ let processedMap = new Map();     // id -> signature última procesada
 let enqueuedMap = new Map();      // id -> signature en cola (evita duplicado de misma versión)
 const PROCESSED_LIMIT = 10000;
 
+
 // ---------- Cola / Worker ----------
 const pendingQueue = [];
 let running = 0;
@@ -39,6 +42,8 @@ const WORKER_CONCURRENCY = 1;
 const WORKER_INTERVAL_MS = 50;
 const MAX_RETRIES = 3;
 let lastStatMtime = 0;
+
+
 
 // ---------- Utils ----------
 const log = (...a) => console.log('[ASESOR]', ...a);

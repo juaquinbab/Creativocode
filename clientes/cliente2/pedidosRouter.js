@@ -28,7 +28,8 @@ function encontrarResumenEnMensajes(arr) {
   if (!Array.isArray(arr)) return null;
 
   const frases = [
-    'resumen del pedido:',
+    'resumen final pedido:',
+   'resumen del pedido:',
     'detalle del pedido:',
     'detalle del pedido',
     'resumen de tu pedido:'

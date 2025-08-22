@@ -567,6 +567,10 @@
     <img id="screenshotImage" style="display: none; max-width: 100%; height: auto;">
     <button id="saveButton" style="display: none;">Enviar Imagen</button>
 
+
+   
+
+
     <img id="screenshotImage" style="display: none; max-width: 100%; height: auto;">
     <button id="saveButton" style="display: none;">Enviar Imagen</button>
 
@@ -586,6 +590,13 @@
 <button class="custom-btn" id="btnEnviarVideo" onclick="irAPedidos()">
   Ir a Pedidos
 </button>
+
+
+ <button id="btnToggle">Cambiar estado IA</button>
+  <div class="status">
+    Estado actual: <span id="iaStatus">—</span>
+  </div>
+
 
     </div>
 
@@ -1702,6 +1713,48 @@
   });
 
 
+
+
+    // BasePath: primer segmento de la ruta actual (p.ej. /cliente2)
+
+    const $btn = document.getElementById('btnToggle');
+    const $status = document.getElementById('iaStatus');
+
+    async function loadStatus() {
+      try {
+        const res = await fetch(`${basePath}/api/ia/status`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('No se pudo obtener estado.');
+        const data = await res.json();
+        $status.textContent = String(data.ia);
+        $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+      } catch (err) {
+        console.error(err);
+        $status.textContent = 'Error';
+      }
+    }
+
+    async function toggleIA() {
+      try {
+        const res = await fetch(`${basePath}/api/ia/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('No se pudo cambiar el estado.');
+        const data = await res.json();
+        $status.textContent = String(data.ia);
+        $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+      } catch (err) {
+        console.error(err);
+        alert('Error al cambiar el estado de IA');
+      }
+    }
+
+    $btn.addEventListener('click', toggleIA);
+    loadStatus();
+
+
+  
 
 
 

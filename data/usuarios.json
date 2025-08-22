@@ -9,8 +9,12 @@
     "usuario": "zummy",
     "password": "zummy@",
     "ruta": "/cliente2/index.html",
-    "iduser": "546671438534457"
+    "iduser": "789862370866920",
+    "IA": true
+
   },
+
+
 
   "cliente3": {
     "usuario": "piceroos",
@@ -23,6 +27,6 @@
     "usuario": "David",
     "password": "picerros123",
     "ruta": "/cliente4/index.html",
-    "iduser": "789862370866920"
+    "iduser": "546671438534457"
   }
 }
