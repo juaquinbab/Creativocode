@@ -45,8 +45,8 @@ router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
 router.use('/:base', iaRoutes);
-router.get('/', (req, res) => {
-  res.redirect('/cliente2');
+router.get(/^\/$/, (req, res) => {
+  res.redirect('/');
 });
 
 // Procesos periódicos y watchers

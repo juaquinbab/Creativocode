@@ -592,10 +592,9 @@
 </button>
 
 
- <button id="btnToggle">Cambiar estado IA</button>
-  <div class="status">
-    Estado actual: <span id="iaStatus">—</span>
-  </div>
+  <button id="btnToggle">Cambiar estado IA</button>
+  <div class="status">Estado actual: <span id="iaStatus">—</span></div>
+
 
 
     </div>
@@ -1715,45 +1714,30 @@
 
 
 
+
+
+
     // BasePath: primer segmento de la ruta actual (p.ej. /cliente2)
 
-    const $btn = document.getElementById('btnToggle');
+   const $btn = document.getElementById('btnToggle');
     const $status = document.getElementById('iaStatus');
 
     async function loadStatus() {
-      try {
-        const res = await fetch(`${basePath}/api/ia/status`, { credentials: 'same-origin' });
-        if (!res.ok) throw new Error('No se pudo obtener estado.');
-        const data = await res.json();
-        $status.textContent = String(data.ia);
-        $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
-      } catch (err) {
-        console.error(err);
-        $status.textContent = 'Error';
-      }
+      const res = await fetch(`${basePath}/api/ia/status`);
+      const data = await res.json();
+      $status.textContent = String(data.ia);
+      $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
     }
 
     async function toggleIA() {
-      try {
-        const res = await fetch(`${basePath}/api/ia/toggle`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin'
-        });
-        if (!res.ok) throw new Error('No se pudo cambiar el estado.');
-        const data = await res.json();
-        $status.textContent = String(data.ia);
-        $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
-      } catch (err) {
-        console.error(err);
-        alert('Error al cambiar el estado de IA');
-      }
+      const res = await fetch(`${basePath}/api/ia/toggle`, { method: 'POST' });
+      const data = await res.json();
+      $status.textContent = String(data.ia);
+      $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
     }
 
     $btn.addEventListener('click', toggleIA);
     loadStatus();
-
-
   
 
 
