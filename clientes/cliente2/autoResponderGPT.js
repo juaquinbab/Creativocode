@@ -123,7 +123,7 @@ const fechaFormateada = `${diasSemana[hoy.getDay()]} ${String(hoy.getDate()).pad
           role: "system",
           content: `
 Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
-nuestro horario de atencion es de 5:00PM a 11:00PM la hoara es ${horaFormateada} si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
+solo atiende en nuestro horario de atencion es de 17:00 a 23:00 colombia la hoara es ${horaFormateada} si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
 ${texto}
 `
         },
