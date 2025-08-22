@@ -1716,29 +1716,38 @@
 
 
 
+  const apiBase = `${basePath}/api/ia`; // "/cliente2/api/ia"
 
-    // BasePath: primer segmento de la ruta actual (p.ej. /cliente2)
+  const $btn = document.getElementById('btnToggle');
+  const $status = document.getElementById('iaStatus');
 
-   const $btn = document.getElementById('btnToggle');
-    const $status = document.getElementById('iaStatus');
+  async function safeJson(res) {
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch { throw new Error(`Respuesta no-JSON (${res.status}): ${text.slice(0,120)}...`); }
+  }
 
-    async function loadStatus() {
-      const res = await fetch(`${basePath}/api/ia/status`);
-      const data = await res.json();
-      $status.textContent = String(data.ia);
-      $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
-    }
+  async function loadStatus() {
+    const res = await fetch(`${apiBase}/status`, { credentials: 'same-origin' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await safeJson(res);
+    $status.textContent = String(data.ia);
+    $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+  }
 
-    async function toggleIA() {
-      const res = await fetch(`${basePath}/api/ia/toggle`, { method: 'POST' });
-      const data = await res.json();
-      $status.textContent = String(data.ia);
-      $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
-    }
+  async function toggleIA() {
+    const res = await fetch(`${apiBase}/toggle`, {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await safeJson(res);
+    $status.textContent = String(data.ia);
+    $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+  }
 
-    $btn.addEventListener('click', toggleIA);
-    loadStatus();
-  
+  document.getElementById('btnToggle').addEventListener('click', toggleIA);
+  loadStatus();
 
 
 

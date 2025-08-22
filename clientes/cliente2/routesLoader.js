@@ -44,10 +44,8 @@ router.use(capturaPantallaCliente1);
 router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
-router.use('/:base', iaRoutes);
-router.get(/^\/$/, (req, res) => {
-  res.redirect('/');
-});
+router.use('/api/ia', iaRoutes);
+
 
 // Procesos periódicos y watchers
 setInterval(() => procesarEtapasPorLotes(), 300);
