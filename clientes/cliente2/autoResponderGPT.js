@@ -89,15 +89,23 @@ const responderConGPT = async (mensaje) => {
     }
 
     // Fecha formateada
-    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+ const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-    const hoy = new Date();
+const hoy = new Date();
 
-    const horas = String(hoy.getHours()).padStart(2, '0');
-    const minutos = String(hoy.getMinutes()).padStart(2, '0');
+// Hora
+const horas = String(hoy.getHours()).padStart(2, '0');
+const minutos = String(hoy.getMinutes()).padStart(2, '0');
+const horaFormateada = `${horas}:${minutos}`;
 
-    const fechaFormateada = `${diasSemana[hoy.getDay()]} ${String(hoy.getDate()).padStart(2, '0')} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()} a las ${horas}:${minutos}`;
+// Fecha
+const fechaFormateada = `${diasSemana[hoy.getDay()]} ${String(hoy.getDate()).padStart(2, '0')} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
+
+// Ejemplo de uso
+// console.log("📅 Fecha:", fechaFormateada);
+// console.log("⏰ Hora:", horaFormateada);
+
 
     // Contexto del historial
     const contexto = historialLectura
@@ -115,7 +123,7 @@ const responderConGPT = async (mensaje) => {
           role: "system",
           content: `
 Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
-nuestro horario de atencion es de 5:00PM a 11:00PM si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
+nuestro horario de atencion es de 5:00PM a 11:00PM la hoara es ${horaFormateada} si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
 ${texto}
 `
         },
