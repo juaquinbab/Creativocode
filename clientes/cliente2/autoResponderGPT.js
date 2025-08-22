@@ -114,8 +114,8 @@ const responderConGPT = async (mensaje) => {
         {
           role: "system",
           content: `
-Identifica el día de la semana y la hora: actualmente es  ${fechaFormateada}.
-nuestro horario de atencion es de 5:00PM a 11:00PM si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion.
+Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
+nuestro horario de atencion es de 5:00PM a 11:00PM si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
 ${texto}
 `
         },
