@@ -1,33 +1,30 @@
 // watcherCitas.js
+"use strict";
+
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_citas.json");
-
-
-
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
-let WABA_PHONE_ID = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
-    WABA_PHONE_ID = usuariosData.cliente4.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
+// === cargar usuarios.json SIEMPRE FRESCO ===
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
-
-
-
-
+function getWabaPhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
+    return usuariosData?.cliente4?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 // ---------- Estado persistente (id -> firma) ----------
 let processedMap = new Map();     // id -> signature última procesada
@@ -53,7 +50,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican confirmación
-const PALABRAS_CONFIRMACION = ["confirmar", "confirmo"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
+const PALABRAS_CONFIRMACION = ["confirmar", "confirmo"]; // cubre varias formas
 
 function loadProcessed() {
   try {
@@ -109,9 +106,7 @@ function esCandidatoConfirmacion(m) {
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
-  // Debe contener confirm*
-  const esConfirm = PALABRAS_CONFIRMACION.some(p => nb.includes(p));
-  return esConfirm;
+  return PALABRAS_CONFIRMACION.some(p => nb.includes(p));
 }
 
 // Encola si es nuevo o se actualizó
@@ -156,8 +151,9 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoGracias =  `
     
-    Asesor: 🎉 ¡Gracias por tu pedido! 
-    Estamos trabajando 🔥 para que disfrutes de lo mejor 🎉
+    Asesor: 🎉 ¡Gracias por tu pedido!
+Ya estamos cocinando con amor y toda la sazón 🔥 para que disfrutes algo ¡DELICIOSO! 🤤
+🍔✨ ¡Prepárate, Zummy va en camino! 🚀
 
     `;
 
@@ -172,22 +168,27 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
     fs.writeFileSync(filePath, JSON.stringify(mensajes, null, 2));
     log('historial actualizado', `${from}.json`);
 
-    // 2) Enviar WhatsApp de confirmación
-    const payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: from,
-      type: 'text',
-      text: { preview_url: false, body: textoGracias },
-    };
+    // 2) Enviar WhatsApp de confirmación (ID SIEMPRE FRESCO)
+    const WABA_PHONE_ID = getWabaPhoneId();
+    if (!WABA_PHONE_ID || !WHATSAPP_API_TOKEN) {
+      console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
+    } else {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: from,
+        type: 'text',
+        text: { preview_url: false, body: textoGracias },
+      };
 
-    await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
-      headers: {
-        Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    log('mensaje WhatsApp enviado', id);
+      await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      log('mensaje WhatsApp enviado', id);
+    }
 
     // 3) Actualizar etapa/idp en EtapasMSG.json (persistir)
     try {
@@ -223,10 +224,8 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
     log('ok', id);
   } catch (e) {
     console.error('[CITAS] error', id, e?.response?.data || e?.message || e);
-    // reintentos gestionados arriba en el loop
     throw e;
   } finally {
-    // permitir re-encolar si llega otra actualización del mismo id
     enqueuedMap.delete(id);
   }
 }

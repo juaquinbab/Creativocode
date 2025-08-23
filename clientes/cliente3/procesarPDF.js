@@ -16,18 +16,27 @@ const PUBLIC_PDF_DIR = path.join(process.cwd(), "public/pdf");
 // URL pública donde sirves /public (sin barra final)
 const BASE_URL = (process.env.PUBLIC_BASE_URL || "https://creativoscode.com//").replace(/\/+$/, "");
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
-let WABA_PHONE_ID = process.env.WABA_PHONE_ID; // fallback a usuarios.json si existe
 
 // Asegurar directorios
 if (!fs.existsSync(SALA_CHAT_DIR)) fs.mkdirSync(SALA_CHAT_DIR, { recursive: true });
 if (!fs.existsSync(PUBLIC_PDF_DIR)) fs.mkdirSync(PUBLIC_PDF_DIR, { recursive: true });
 
-// Cargar IDNUMERO desde usuarios.json si no viene por ENV
-try {
-  const usuarios = JSON.parse(fs.readFileSync(USUARIOS_PATH, "utf8"));
-  if (!WABA_PHONE_ID) WABA_PHONE_ID = usuarios?.cliente3?.iduser || "";
-} catch (e) {
-  console.warn("⚠️ No se pudo leer usuarios.json para WABA_PHONE_ID (opcional).");
+// --- cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getWabaPhoneId() {
+  // prioriza ENV; si no, toma de usuarios.json
+  const fromEnv = process.env.WABA_PHONE_ID;
+  if (fromEnv) return fromEnv;
+  try {
+    const usuarios = requireFresh(USUARIOS_PATH);
+    // ajusta la clave si necesitas otro cliente
+    return usuarios?.cliente3?.iduser || "";
+  } catch {
+    return "";
+  }
 }
 
 // Axios con timeout
@@ -88,6 +97,7 @@ async function fetchDocMeta(documentId) {
 }
 
 async function confirmToUser(to) {
+  const WABA_PHONE_ID = getWabaPhoneId(); // <- SIEMPRE FRESCO
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -135,13 +145,12 @@ async function appendHistorial(from, record) {
 
 // ==== Filtros/candidatos ====
 function isPdfCandidate(e) {
-  // Evita depender de Idp para no bloquear nuevos; ajusta si tu flujo lo requiere
   return (
     e &&
     e.documentId &&
     typeof e.documentId === "string" &&
     e.etapa >= 0 &&
-    e.etapa <= 300 && // ampliado frente a 0..9
+    e.etapa <= 300 &&
     !e.pdfProcesado
   );
 }
@@ -152,7 +161,6 @@ async function processOnePDF(entry, etapas) {
 
   if (processed.has(documentId)) return;
 
-  // Nombre único: usa id + documentId para robustez
   const filename = `${from}-${id}-${documentId}.pdf`;
   const pdfPath = path.join(PUBLIC_PDF_DIR, filename);
 
@@ -162,7 +170,6 @@ async function processOnePDF(entry, etapas) {
     return;
   }
 
-  // Meta -> URL
   const meta = await fetchDocMeta(documentId);
   const pdfUrl = meta?.url;
   if (!pdfUrl) {
@@ -170,10 +177,8 @@ async function processOnePDF(entry, etapas) {
     return;
   }
 
-  // Descargar
   await downloadToFile(pdfUrl, pdfPath);
 
-  // Guardar en historial
   const nuevo = {
     from,
     body: `${BASE_URL}/pdf/${filename}`,
@@ -190,27 +195,21 @@ async function processOnePDF(entry, etapas) {
   };
   await appendHistorial(from, nuevo);
 
-  // Marcar en EtapasMSG (pdfProcesado)
   const idx = etapas.findIndex((e) => e.id === id);
   if (idx !== -1) {
     etapas[idx].pdfProcesado = true;
-    // Opcional: también marcar Idp / idp si tu flujo lo necesita
-    // etapas[idx].Idp = 1;
-    // etapas[idx].idp = 0;
   }
 
-  // Confirmación al usuario
   try {
     await confirmToUser(from);
   } catch (e) {
     console.error("❌ Error al confirmar PDF al usuario:", e.response?.data || e.message);
   }
 
-  // Persistir “procesados”
   processed.add(documentId);
   await saveProcessed();
 
- // console.log(`✅ PDF procesado: ${from} :: ${documentId}`);
+  // console.log(`✅ PDF procesado: ${from} :: ${documentId}`);
 }
 
 async function processPendingPDFs() {
@@ -219,11 +218,9 @@ async function processPendingPDFs() {
   try {
     const etapas = await loadJSONSafe(ETA_PATH, []);
 
-    // Candidatos pendientes
     const candidates = etapas.filter(isPdfCandidate).filter((e) => !processed.has(e.documentId));
     if (!candidates.length) return;
 
-    // Ordenar por tiempo ascendente
     candidates.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
     for (const entry of candidates) {
@@ -234,7 +231,6 @@ async function processPendingPDFs() {
       }
     }
 
-    // Guardar EtapasMSG si hubo cambios (marcas pdfProcesado)
     await fsp.writeFile(ETA_PATH, JSON.stringify(etapas, null, 2));
   } finally {
     processing = false;
@@ -261,11 +257,8 @@ async function iniciarMonitoreoPDF() {
   }
   await initProcessed();
 
-  // Primer barrido
-  await processPendingPDFs();
-
-  // Polling (ajusta el intervalo según tu carga)
-  setInterval(checkForChanges, 700);
+  await processPendingPDFs(); // primer barrido
+  setInterval(checkForChanges, 700); // polling
 }
 
 module.exports = {

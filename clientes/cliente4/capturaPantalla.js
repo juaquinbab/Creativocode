@@ -9,22 +9,24 @@ const router = express.Router();
 
 const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
 
+// Ruta a usuarios.json
+const usuariosPath = path.resolve(__dirname, '../../data/usuarios.json');
 
-const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
-
-let IDNUMERO = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
-    IDNUMERO = usuariosData.cliente4.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
+// --- Cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
-
+function getIDNUMERO() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // Usando cliente4 como en tu ejemplo
+    return usuariosData?.cliente4?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 let lastScreenshotUrl10 = '';
 
@@ -35,7 +37,6 @@ const storage500 = multer.diskStorage({
     cb(null, file.originalname);
   }
 });
-
 const upload500 = multer({ storage: storage500 });
 
 // POST: guardar screenshot y enviar por WhatsApp
@@ -93,10 +94,16 @@ router.post('/save-screenshotsmagisterio', upload500.single('screenshot'), (req,
   });
 });
 
-// Función para enviar mensaje de imagen por WhatsApp
+// Función para enviar mensaje de imagen por WhatsApp (IDNUMERO siempre fresco)
 function enviarMensajeWhatsApp(from) {
   if (!lastScreenshotUrl10) {
     console.error('❌ No hay URL de captura de pantalla.');
+    return;
+  }
+
+  const IDNUMERO = getIDNUMERO(); // <- siempre fresco
+  if (!IDNUMERO) {
+    console.error('❌ IDNUMERO vacío (usuarios.json cliente4.iduser no encontrado)');
     return;
   }
 
@@ -105,9 +112,7 @@ function enviarMensajeWhatsApp(from) {
     recipient_type: 'individual',
     to: from,
     type: 'image',
-    image: {
-      link: lastScreenshotUrl10
-    }
+    image: { link: lastScreenshotUrl10 }
   };
 
   axios.post(`https://graph.facebook.com/v19.0/${IDNUMERO}/messages`, payload, {
@@ -116,7 +121,7 @@ function enviarMensajeWhatsApp(from) {
       'Content-Type': 'application/json'
     }
   }).then(response => {
-  //  console.log('✅ Imagen enviada a WhatsApp:', response.data);
+    // console.log('✅ Imagen enviada a WhatsApp:', response.data);
   }).catch(error => {
     console.error('❌ Error al enviar imagen a WhatsApp:', error.response?.data || error.message);
   });

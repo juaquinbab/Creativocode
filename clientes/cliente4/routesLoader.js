@@ -21,6 +21,7 @@ const { startWatcherCitas } = require('./startWatcherCitas');
 const { startWatcherAsesor } = require('./watcherAsesor');
 const pedidosRouter = require('./pedidosRouter');
 const resetnu = require('./resetnu');
+const iaRoutes = require('./iaRoutes');
 
 
 
@@ -43,6 +44,8 @@ router.use(capturaPantallaCliente1);
 router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
+router.use('/api/ia', iaRoutes);
+
 
 // Procesos periódicos y watchers
 setInterval(() => procesarEtapasPorLotes(), 300);

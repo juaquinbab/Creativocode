@@ -12,20 +12,21 @@ const urlserver = process.env.URL_SERVER || 'https://creativoscode.com//'; // Ca
 
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
-let IDNUMERO = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
-    IDNUMERO = usuariosData.cliente4.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
+// --- Cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
-
-// 
+function getIDNUMERO() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // Usando cliente4 como en tu ejemplo
+    return usuariosData?.cliente4?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 let lastScreenshotUrlpdf1 = '';
 
@@ -36,7 +37,6 @@ const storagePDF = multer.diskStorage({
     cb(null, file.originalname);
   }
 });
-
 const uploadPDF = multer({ storage: storagePDF });
 
 // POST: subir PDF, registrar en historial y enviar por WhatsApp
@@ -88,10 +88,16 @@ router.post('/save-PDF1', uploadPDF.single('pdf'), (req, res) => {
   });
 });
 
-// Función para enviar el PDF por WhatsApp
+// Función para enviar el PDF por WhatsApp (IDNUMERO siempre fresco)
 function enviarPDFporWhatsApp(from) {
   if (!lastScreenshotUrlpdf1) {
     console.error('❌ URL del PDF no definida');
+    return;
+  }
+
+  const IDNUMERO = getIDNUMERO(); // <- siempre fresco
+  if (!IDNUMERO) {
+    console.error('❌ IDNUMERO vacío (usuarios.json cliente4.iduser no encontrado)');
     return;
   }
 
@@ -113,12 +119,12 @@ function enviarPDFporWhatsApp(from) {
       'Content-Type': 'application/json'
     }
   })
-    .then(response => {
-    //  console.log('✅ PDF enviado a', from, ':', response.data);
-    })
-    .catch(error => {
-      console.error('❌ Error al enviar PDF a', from, ':', error.response?.data || error.message);
-    });
+  .then(() => {
+    // console.log('✅ PDF enviado a', from);
+  })
+  .catch(error => {
+    console.error('❌ Error al enviar PDF a', from, ':', error.response?.data || error.message);
+  });
 }
 
 module.exports = router;

@@ -1,4 +1,6 @@
 // watcherAsesor.js
+"use strict";
+
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -6,25 +8,23 @@ require('dotenv').config();
 
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
-
-
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
-let WABA_PHONE_ID = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
-    WABA_PHONE_ID = usuariosData.cliente4.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
+// === usuarios.json SIEMPRE FRESCO ===
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
-
-
-
+function getWabaPhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
+    return usuariosData?.cliente4?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 // ---------- Estado persistente (id -> firma) ----------
 let processedMap = new Map();     // id -> signature última procesada
@@ -106,9 +106,7 @@ function esCandidatoAsesor(m) {
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
-  // Debe contener asesor/asesora/asesores
-  const esAsesor = PALABRAS_ASESOR.some(p => nb.includes(p));
-  return esAsesor;
+  return PALABRAS_ASESOR.some(p => nb.includes(p));
 }
 
 // Encola si es nuevo o se actualizó
@@ -152,7 +150,8 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoRespuesta = `✅ ¡Gracias!
 Muy pronto uno de nuestros asesores te estará contactando 🤝
- `;
+
+— Zummy `;
 
     // 1) Guardar en historial local
     mensajes.push({
@@ -164,22 +163,27 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
     fs.writeFileSync(filePath, JSON.stringify(mensajes, null, 2));
     log('historial actualizado', `${from}.json`);
 
-    // 2) Enviar WhatsApp
-    const payload = {
-      messaging_product: 'whatsapp',
-      recipient_type: 'individual',
-      to: from,
-      type: 'text',
-      text: { preview_url: false, body: textoRespuesta },
-    };
+    // 2) Enviar WhatsApp (WABA_PHONE_ID SIEMPRE FRESCO)
+    const WABA_PHONE_ID = getWabaPhoneId();
+    if (!WABA_PHONE_ID || !WHATSAPP_API_TOKEN) {
+      console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
+    } else {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: from,
+        type: 'text',
+        text: { preview_url: false, body: textoRespuesta },
+      };
 
-    await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
-      headers: {
-        Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    log('mensaje WhatsApp enviado', id);
+      await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      log('mensaje WhatsApp enviado', id);
+    }
 
     // 3) Actualizar etapa/idp en EtapasMSG.json (persistir)
     try {
@@ -204,7 +208,7 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
         }
       }
     } catch (e) {
-     // console.error('[ASESOR] Error actualizando EtapasMSG.json:', e.message);
+      // console.error('[ASESOR] Error actualizando EtapasMSG.json:', e.message);
     }
 
     // 4) Marcar firma como procesada
@@ -213,7 +217,7 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
     saveProcessed();
     log('ok', id);
   } catch (e) {
-   // console.error('[ASESOR] error', id, e?.response?.data || e?.message || e);
+    // console.error('[ASESOR] error', id, e?.response?.data || e?.message || e);
     throw e; // que el scheduler gestione reintentos
   } finally {
     // permitir re-encolar si llega otra actualización del mismo id

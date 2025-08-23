@@ -1,29 +1,30 @@
-// clientes/cliente1/actualizarFiltro.js
 
 const express = require('express');
 const axios = require('axios');
-const fs = require('fs');
 const path = require('path');
 const { MensajeIndexRef } = require('./mensajeIndex');
 
 const router = express.Router();
 
-const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
+const usuariosPath = path.resolve(__dirname, '../../data/usuarios.json');
+const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
 
-let IDNUMERO = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente4 && usuariosData.cliente4.iduser) {
-    IDNUMERO = usuariosData.cliente4.iduser;
-  } else {
-   // console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
- // console.error('❌ Error al leer usuarios.json:', err);
+// --- Cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
 
-const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
+function getIDNUMERO() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // Mantengo tu clave original (cliente4). Cambia aquí si necesitas otro cliente.
+    return usuariosData?.cliente4?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 let mensajesEnviados = {};
 
@@ -47,7 +48,13 @@ function filtrarMensaje(mensajes) {
   return ultimoMensajeAsesor;
 }
 
-function enviarMensaje(mensaje) {
+async function enviarMensaje(mensaje) {
+  const IDNUMERO = getIDNUMERO(); // <- siempre fresco
+  if (!IDNUMERO) {
+    console.error('❌ IDNUMERO vacío (usuarios.json cliente4.iduser no encontrado)');
+    return;
+  }
+
   const payload = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -59,18 +66,21 @@ function enviarMensaje(mensaje) {
     }
   };
 
-  axios.post(`https://graph.facebook.com/v16.0/${IDNUMERO}/messages`, payload, {
-    headers: {
-      Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
-  })
-    .then(response => {
-    //  console.log('✅ Mensaje enviado:', response.data);
-    })
-    .catch(error => {
-    //  console.error('❌ Error al enviar mensaje:', error.response?.data || error.message);
-    });
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v16.0/${IDNUMERO}/messages`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    // console.log('✅ Mensaje enviado');
+  } catch (error) {
+    // console.error('❌ Error al enviar mensaje:', error.response?.data || error.message);
+  }
 }
 
 router.post('/actualizar1', (req, res) => {

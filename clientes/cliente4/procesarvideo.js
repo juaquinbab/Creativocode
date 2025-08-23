@@ -22,15 +22,20 @@ const MAX_VIDEO_CONCURRENCY = Number(process.env.MAX_VIDEO_CONCURRENCY || 2);
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
 const http = axios.create({ timeout: 15000, httpsAgent });
 
-// --- WABA_PHONE_ID (defensivo) ---
-let WABA_PHONE_ID = "";
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, "utf8"));
-  const candidate = usuariosData?.cliente4?.iduser || usuariosData?.cliente4?.iduser;
-  if (candidate) WABA_PHONE_ID = candidate;
-  else console.warn("⚠️ No se encontró iduser para cliente1/cliente2 en usuarios.json");
-} catch (err) {
-  console.error("❌ Error al leer usuarios.json:", err.message);
+// --- Cargar usuarios.json SIEMPRE FRESCO ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getWabaPhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // ajusta aquí si corresponde a cliente1/cliente4
+    return usuariosData?.cliente4?.iduser || "";
+  } catch (e) {
+    console.error("❌ Error leyendo usuarios.json:", e.message);
+    return "";
+  }
 }
 
 // Directorios
@@ -62,7 +67,7 @@ async function writeJsonAtomic(file, obj) {
 }
 
 async function fileExists(p) {
-  try { await fsp.access(p, fs.constants.F_OK); return true; }
+  try { await fsp.access(p, fs.constants.FOK); return true; }
   catch { return false; }
 }
 
@@ -99,8 +104,9 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
   throw lastErr;
 }
 
-// === Confirmación al usuario ===
+// === Confirmación al usuario (ID SIEMPRE FRESCO) ===
 async function confirmToUser(to) {
+  const WABA_PHONE_ID = getWabaPhoneId(); // <- aquí se lee fresco
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -225,7 +231,7 @@ async function processOneVideo(entry) {
   };
   queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp (no bloquea)
+  // 4) Confirmar por WhatsApp (ID fresco)
   confirmToUser(from).catch(e =>
     console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
   );

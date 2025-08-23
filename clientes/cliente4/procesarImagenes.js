@@ -22,16 +22,24 @@ const MAX_IMAGE_CONCURRENCY = Number(process.env.MAX_IMAGE_CONCURRENCY || 2);
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
 const http = axios.create({ timeout: 15000, httpsAgent });
 
-// --- WABA_PHONE_ID (defensivo) ---
-let WABA_PHONE_ID = "";
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, "utf8"));
-  // ajusta aquí si corresponde a cliente1/cliente2
-  const candidate = usuariosData?.cliente4?.iduser || usuariosData?.cliente4?.iduser;
-  if (candidate) WABA_PHONE_ID = candidate;
-  else console.warn("⚠️ No se encontró iduser en usuarios.json (cliente1/cliente2).");
-} catch (err) {
-  console.error("❌ Error al leer usuarios.json:", err.message);
+// --- Cargar usuarios.json siempre fresco ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getWabaPhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // Ajusta aquí la prioridad según tu caso:
+    return (
+      usuariosData?.cliente4?.iduser ||  // p.ej. cliente3
+      usuariosData?.cliente4?.iduser ||  // fallback a cliente1
+      ""
+    );
+  } catch (e) {
+    console.error("❌ Error leyendo usuarios.json:", e.message);
+    return "";
+  }
 }
 
 // --- Directorios ---
@@ -164,8 +172,9 @@ async function flushUserHistory(from) {
   await writeJsonAtomic(historialPath, historial);
 }
 
-// === Confirmación al usuario (opcional) ===
+// === Confirmación al usuario (ID fresco) ===
 async function confirmToUser(to) {
+  const WABA_PHONE_ID = getWabaPhoneId(); // <- siempre fresco
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -239,7 +248,7 @@ async function processOneImage(entry) {
   };
   queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp (no bloquea)
+  // 4) Confirmar por WhatsApp (ID fresco)
   confirmToUser(from).catch(e =>
     console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
   );

@@ -89,7 +89,7 @@ router.post('/reset-array', (req, res) => {
   if (!actualizado) {
     return res.json({
       success: false,
-      message: `No se encontró from="${fromObjetivo}" en EtapasMSG3.json`
+      message: `No se encontró from="${fromObjetivo}" en EtapasMSG2.json`
     });
   }
 

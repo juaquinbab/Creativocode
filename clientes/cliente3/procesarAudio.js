@@ -16,16 +16,20 @@ const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/"
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, ""); // sin slash final
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
 
-// --- WABA_PHONE_ID (defensivo) ---
-let WABA_PHONE_ID = "";
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, "utf8"));
-  // ajusta aquí si corresponde a cliente1/cliente2
-  const candidate = usuariosData?.cliente3?.iduser || usuariosData?.cliente3?.iduser;
-  if (candidate) WABA_PHONE_ID = candidate;
-  else console.warn("⚠️ No se encontró iduser en usuarios.json (cliente1/cliente2).");
-} catch (err) {
-  console.error("❌ Error al leer usuarios.json:", err.message);
+// --- util: cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getWabaPhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // ajusta aquí si corresponde a cliente1/cliente3
+    return usuariosData?.cliente3?.iduser || "";
+  } catch (e) {
+    console.error("❌ Error leyendo usuarios.json:", e.message);
+    return "";
+  }
 }
 
 // --- Directorios públicos/salida ---
@@ -95,8 +99,9 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
   throw lastErr;
 }
 
-// --- Confirmación al usuario (opcional) ---
+// --- Confirmación al usuario (ID siempre fresco) ---
 async function confirmToUser(to) {
+  const WABA_PHONE_ID = getWabaPhoneId(); // <- siempre fresco
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -223,7 +228,7 @@ async function processOneAudio(entry) {
   };
   queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp (no bloquea flujo crítico si falla)
+  // 4) Confirmar por WhatsApp (ID fresco)
   confirmToUser(from).catch(e =>
     console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
   );
