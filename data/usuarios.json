@@ -3,7 +3,7 @@
     "usuario": "cliente1",
     "password": "1234",
     "ruta": "/cliente1/index.html",
-     "iduser": "528202610374098"
+    "iduser": "528202610374098"
   },
   "cliente2": {
     "usuario": "zummy",
@@ -12,19 +12,18 @@
     "iduser": "546671438534457",
     "IA": true
   },
-
-
   "cliente3": {
     "usuario": "piceroos",
     "password": "picerros123",
     "ruta": "/cliente3/index.html",
-    "iduser": "7898623"
+    "iduser": "7898623",
+    "IA": true
   },
-
   "cliente4": {
     "usuario": "David",
     "password": "picerros123",
     "ruta": "/cliente4/index.html",
-    "iduser": "546671438534457"
+    "iduser": "546671438534457",
+    "IA": true
   }
 }
