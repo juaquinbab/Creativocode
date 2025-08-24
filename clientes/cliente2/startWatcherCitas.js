@@ -53,7 +53,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican confirmación
-const PALABRAS_CONFIRMACION = ["confirmar", "confirmo"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
+const PALABRAS_CONFIRMACION = ["confirmar", "confirmo", "confirmado"]; // cubre confirmar, confirmo, confirmé, confirmación, confirma…
 
 function loadProcessed() {
   try {
