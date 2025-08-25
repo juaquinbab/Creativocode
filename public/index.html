@@ -606,7 +606,18 @@
 }
 
 
+header { flex-wrap: wrap; }
+header nav { display:flex; align-items:center; gap:.5rem; flex-wrap: wrap; }
 
+/* Ajustes responsivos básicos */
+@media (max-width: 768px){
+  header { padding: .75rem 1rem; }
+  header .logo img { width: 140px; height:auto; }
+  header nav a, .btn { padding: .6rem 1rem; font-size: .95rem; }
+}
+
+/* Imágenes nunca desborden */
+img { max-width: 100%; height: auto; }
 
     </style>
   </header>
