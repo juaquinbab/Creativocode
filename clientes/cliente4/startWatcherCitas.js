@@ -151,9 +151,9 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoGracias =  `
     
-    Asesor: 🎉 ¡Gracias por tu pedido!
-Ya estamos cocinando con amor y toda la sazón 🔥 para que disfrutes algo ¡DELICIOSO! 🤤
-🍔✨ ¡Prepárate, Zummy va en camino! 🚀
+Asesor: 🎉 ¡Gracias por tu pedido!
+Ya estamos trabajando 🔥 para que recibas lo mejor.
+¡Prepárate, 🚀 lo que viene te va a encantar!
 
     `;
 
