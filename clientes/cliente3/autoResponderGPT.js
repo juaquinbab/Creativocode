@@ -202,7 +202,7 @@ const procesarEtapas = (mensajes) => {
 
   const mensaje = mensajes.find(m =>
     m.etapa === 1 &&
-    m.body?.length > 1 &&
+    m.body?.length >= 1 &&
     !m.enProceso &&
     !palabrasClave.some(palabra => normalizar(m.body).includes(palabra))
   );
