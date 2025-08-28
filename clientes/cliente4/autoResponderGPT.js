@@ -10,7 +10,7 @@ const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
 // --- Rutas absolutas (más seguras) ---
 const USUARIOS_PATH = path.resolve(__dirname, '../../data/usuarios.json');
-const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones4.json'); // ojo con el nombre del archivo
+const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones4.json');
 const ETAPAS_PATH = path.resolve(__dirname, '../../data/EtapasMSG4.json');
 const PROCESADOS_PATH = path.resolve(__dirname, '../../mensajes_procesados.json');
 
@@ -24,7 +24,6 @@ function requireFresh(p) {
 function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    // ajusta el cliente (cliente4 según tu ejemplo)
     return usuariosData?.cliente4?.iduser || '';
   } catch (err) {
     console.error('❌ Error cargando usuarios.json:', err.message);
@@ -36,9 +35,7 @@ function getTextoInstrucciones() {
   try {
     const data = requireFresh(INSTRUCCIONES_PATH);
     const arr = Array.isArray(data?.instrucciones) ? data.instrucciones : [];
-    // Por si quieres también loguearlas línea por línea:
-    // arr.forEach(linea => console.log(linea));
-    return arr.join('\n'); // texto final con saltos
+    return arr.join('\n');
   } catch (err) {
     console.error('❌ Error cargando instruciones2.json:', err.message);
     return '';
@@ -66,11 +63,75 @@ function guardarProcesados() {
 
 // ====== Limpiar registro si crece demasiado ======
 function limpiarProcesados() {
-  const LIMITE = 5000; // Máximo de entradas
+  const LIMITE = 5000;
   if (mensajesProcesados.length > LIMITE) {
-    mensajesProcesados = mensajesProcesados.slice(-LIMITE / 2); // Mantener solo los más recientes
+    mensajesProcesados = mensajesProcesados.slice(-LIMITE / 2);
     guardarProcesados();
   }
+}
+
+// ====== Agregador por remitente (debounce) ======
+const AGGREGATION_WINDOW_MS = 5000; // 7 seg de inactividad
+const MAX_SPAN_MS = 60000;          // no combinar mensajes separados >60s
+const buffers = new Map();
+
+function normalizarTexto(t) {
+  return (t || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+function claveMensaje(m) {
+  return `${m.id}::${m.body}::${m.timestamp}`;
+}
+function flushBuffer(from) {
+  const data = buffers.get(from);
+  if (!data || !data.parts.length) return;
+
+  const combinedBody = data.parts.map(p => p.body).join('\n');
+
+  const palabrasClave = ['confirmar'];
+  const combinadoNormalizado = normalizarTexto(combinedBody);
+  if (palabrasClave.some(p => combinadoNormalizado.includes(p))) {
+    data.parts.forEach(p => mensajesProcesados.push(claveMensaje(p)));
+    guardarProcesados();
+    limpiarProcesados();
+    buffers.delete(from);
+    return;
+  }
+
+  const base = data.parts[data.parts.length - 1];
+  const combinado = {
+    ...base,
+    body: combinedBody,
+    enProceso: true
+  };
+
+  data.parts.forEach(p => mensajesProcesados.push(claveMensaje(p)));
+  guardarProcesados();
+  limpiarProcesados();
+
+  responderConGPT(combinado).finally(() => buffers.delete(from));
+}
+function addToBuffer(m) {
+  const from = m.from;
+  if (!from) return;
+
+  const now = Date.now();
+  const ts = m.timestamp ? new Date(m.timestamp).getTime() || now : now;
+
+  if (!buffers.has(from)) {
+    buffers.set(from, { parts: [], timer: null, firstTs: ts });
+  }
+  const entry = buffers.get(from);
+
+  if (entry.parts.length && (ts - entry.firstTs) > MAX_SPAN_MS) {
+    clearTimeout(entry.timer);
+    flushBuffer(from);
+    buffers.set(from, { parts: [], timer: null, firstTs: ts });
+  }
+
+  entry.parts.push({ id: m.id, body: m.body || '', timestamp: m.timestamp || new Date().toISOString() });
+
+  if (entry.timer) clearTimeout(entry.timer);
+  entry.timer = setTimeout(() => flushBuffer(from), AGGREGATION_WINDOW_MS);
 }
 
 // ====== Función para responder con GPT ======
@@ -78,47 +139,29 @@ const responderConGPT = async (mensaje) => {
   try {
     const historialPath = path.join(__dirname, './salachat', `${mensaje.from}.json`);
 
-    // Leer historial para contexto
     let historialLectura = [];
     if (fs.existsSync(historialPath)) {
       try {
         historialLectura = JSON.parse(fs.readFileSync(historialPath, 'utf8'));
       } catch (e) {
-        console.warn('⚠ Historial corrupto o inválido, se ignora:', e.message);
+        console.warn('⚠ Historial corrupto o inválido:', e.message);
       }
     }
 
-    // Fecha formateada
-const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const hoyColombia = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Bogota" }));
+    const horas = String(hoyColombia.getHours()).padStart(2, '0');
+    const minutos = String(hoyColombia.getMinutes()).padStart(2, '0');
+    const horaFormateada = `${horas}:${minutos}`;
+    const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombia.getDate()).padStart(2, '0')} de ${meses[hoyColombia.getMonth()]} de ${hoyColombia.getFullYear()}`;
 
-// Obtener fecha y hora en zona horaria de Colombia
-const hoyColombia = new Date(
-  new Date().toLocaleString("en-US", { timeZone: "America/Bogota" })
-);
-
-// Hora
-const horas = String(hoyColombia.getHours()).padStart(2, '0');
-const minutos = String(hoyColombia.getMinutes()).padStart(2, '0');
-const horaFormateada = `${horas}:${minutos}`;
-
-// Fecha
-const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombia.getDate()).padStart(2, '0')} de ${meses[hoyColombia.getMonth()]} de ${hoyColombia.getFullYear()}`;
-
-// Ejemplo de uso
-// console.log("📅 Fecha:", fechaFormateada);
-// console.log("⏰ Hora:", horaFormateada);
-
-
-    // Contexto del historial
     const contexto = historialLectura
       .map(entry => `${entry.body?.startsWith("Asesor:") ? 'Asesor' : 'Usuario'}: ${entry.body}`)
       .join('\n');
 
-    // Cargar SIEMPRE fresco el texto de instrucciones
     const texto = getTextoInstrucciones();
 
-    // Prompt a OpenAI
     const openaiPayload = {
       model: "gpt-4.1",
       messages: [
@@ -126,7 +169,7 @@ const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombi
           role: "system",
           content: `
 Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
- la hoara es ${horaFormateada} 
+solo atiende en nuestro horario de atencion es de 17:00 a 23:00 colombia la hoara es ${horaFormateada} si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
 ${texto}
 `
         },
@@ -137,7 +180,6 @@ ${texto}
       ]
     };
 
-    // Llamada a OpenAI
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
@@ -146,13 +188,11 @@ ${texto}
     const response = await axios.post("https://api.openai.com/v1/chat/completions", openaiPayload, { headers });
     const reply = response.data.choices[0].message.content;
 
-    // Simular tiempo de escritura (opcional)
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Enviar respuesta por WhatsApp — leer SIEMPRE fresco el IDNUMERO
     const IDNUMERO = getIDNUMERO();
     if (!IDNUMERO) {
-      console.error('❌ No hay IDNUMERO válido para enviar el mensaje de WhatsApp');
+      console.error('❌ No hay IDNUMERO válido');
       return;
     }
 
@@ -170,16 +210,14 @@ ${texto}
       }
     });
 
-    // Guardar en historial
     let historialActualizado = [];
     if (fs.existsSync(historialPath)) {
       try {
         historialActualizado = JSON.parse(fs.readFileSync(historialPath, 'utf8'));
       } catch (e) {
-        console.warn('⚠ No se pudo leer historial actual, se reinicia:', e.message);
+        console.warn('⚠ No se pudo leer historial actual:', e.message);
       }
     }
-
     historialActualizado.push({
       from: mensaje.from,
       body: `Asesor: ${reply}`,
@@ -195,28 +233,22 @@ ${texto}
   }
 };
 
-// ====== Lógica para filtrar y procesar ======
+// ====== Lógica para filtrar y ENCOLAR al agregador ======
 const procesarEtapas = (mensajes) => {
-  const palabrasClave = ['confirmar'];
-  const normalizar = texto => texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
   const mensaje = mensajes.find(m =>
     m.etapa === 1 &&
     m.body?.length >= 1 &&
-    !m.enProceso &&
-    !palabrasClave.some(palabra => normalizar(m.body).includes(palabra))
+    !m.enProceso
   );
-
   if (mensaje) {
-    mensaje.enProceso = true;
-    responderConGPT(mensaje);
+    const claveUnica = `${mensaje.id}::${mensaje.body}::${mensaje.timestamp}`;
+    if (mensajesProcesados.includes(claveUnica)) return;
+    addToBuffer(mensaje);
   }
 };
 
 // ====== Monitoreo continuo ======
 function iniciarWatcher() {
-  // console.log('👀 Monitoreando EtapasMSG2.json...');
-
   fs.watchFile(ETAPAS_PATH, { interval: 1000 }, () => {
     try {
       const data = JSON.parse(fs.readFileSync(ETAPAS_PATH, 'utf8'));
@@ -233,13 +265,7 @@ function iniciarWatcher() {
       });
 
       if (nuevosMensajes.length > 0) {
-        // console.log(`📩 Detectados ${nuevosMensajes.length} mensajes nuevos o modificados`);
-        nuevosMensajes.forEach(mensaje => {
-          procesarEtapas([mensaje]);
-          mensajesProcesados.push(`${mensaje.id}::${mensaje.body}::${mensaje.timestamp}`);
-        });
-        guardarProcesados();
-        limpiarProcesados();
+        nuevosMensajes.forEach(mensaje => procesarEtapas([mensaje]));
       }
     } catch (err) {
       console.error('❌ Error procesando EtapasMSG2.json:', err.message);
