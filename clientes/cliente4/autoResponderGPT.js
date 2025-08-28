@@ -10,8 +10,8 @@ const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
 // --- Rutas absolutas (más seguras) ---
 const USUARIOS_PATH = path.resolve(__dirname, '../../data/usuarios.json');
-const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones2.json'); // ojo con el nombre
-const ETAPAS_PATH = path.resolve(__dirname, '../../data/EtapasMSG2.json');
+const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones4.json'); // ojo con el nombre
+const ETAPAS_PATH = path.resolve(__dirname, '../../data/EtapasMSG4.json');
 const PROCESADOS_PATH = path.resolve(__dirname, '../../mensajes_procesados.json');
 
 // --- Cargar con require invalidando caché ---
@@ -24,8 +24,8 @@ function requireFresh(p) {
 function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    // ajusta el cliente (cliente2 según tu ejemplo)
-    return usuariosData?.cliente2?.iduser || '';
+    // ajusta el cliente (cliente3 según tu ejemplo)
+    return usuariosData?.cliente4?.iduser || '';
   } catch (err) {
     console.error('❌ Error cargando usuarios.json:', err.message);
     return '';
@@ -38,7 +38,7 @@ function getTextoInstrucciones() {
     const arr = Array.isArray(data?.instrucciones) ? data.instrucciones : [];
     return arr.join('\n'); // texto final con saltos
   } catch (err) {
-    console.error('❌ Error cargando instruciones2.json:', err.message);
+    console.error('❌ Error cargando instruciones3.json:', err.message);
     return '';
   }
 }
@@ -72,7 +72,7 @@ function limpiarProcesados() {
 }
 
 // ====== Agregador por remitente (DEBOUNCE 5s) ======
-const AGGREGATION_WINDOW_MS = 5000; // ← espera de 5 segundos
+const AGGREGATION_WINDOW_MS = 5000; // espera de 5 segundos reales
 const buffers = new Map(); // from -> { parts: [{id, body, timestamp, etapa, from}], timer }
 
 function addToBuffer(m) {
@@ -85,7 +85,7 @@ function addToBuffer(m) {
   const b = buffers.get(from);
   b.parts.push({
     id: m.id,
-    body: m.body || '',
+    body: String(m.body ?? '').trim(), // <-- asegurar string
     timestamp: m.timestamp || new Date().toISOString(),
     etapa: m.etapa,
     from: m.from
@@ -104,7 +104,12 @@ function flushBuffer(from) {
   if (!b || b.parts.length === 0) return;
 
   // Combinar por saltos de línea
-  const combinedBody = b.parts.map(p => (p.body || '').trim()).filter(Boolean).join('\n').trim();
+  const combinedBody = b.parts
+    .map(p => String(p.body ?? '').trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+
   if (!combinedBody) {
     buffers.delete(from);
     return;
@@ -118,11 +123,8 @@ function flushBuffer(from) {
     enProceso: true
   };
 
-  // Ya que en el watcher marcamos como procesados cada fragmento al detectarlo,
-  // aquí solo eliminamos el buffer y disparamos la respuesta única.
   buffers.delete(from);
 
-  // Debug opcional:
   // console.log(`🚀 Flush ${from}: ${b.parts.length} fragmento(s) → 1 combinado`);
 
   responderConGPT(combinado).catch(err => {
@@ -169,8 +171,8 @@ const responderConGPT = async (mensaje) => {
         {
           role: "system",
           content: `
-Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
-solo atiende en nuestro horario de atencion es de 17:00 a 23:00 colombia la hoara es ${horaFormateada} si estamos fuera de este horario diles que estamos fuera de nuestro horario de atencion o no digas mas.
+fecha actual ${fechaFormateada}.
+Hora actual ${horaFormateada}
 ${texto}
 `
         },
@@ -241,14 +243,21 @@ ${texto}
 // ====== Lógica para filtrar y ENCOLAR (NO responder aquí) ======
 const procesarEtapas = (mensajes) => {
   const palabrasClave = ['confirmar'];
-  const normalizar = texto => (texto || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  const mensaje = mensajes.find(m =>
-    m.etapa === 1 &&
-    m.body?.length >= 1 &&
-    !m.enProceso &&
-    !palabrasClave.some(palabra => normalizar(m.body).includes(palabra))
-  );
+  const aTexto = (v) => String(v ?? '').trim();
+  const normalizar = (t) =>
+    aTexto(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  const mensaje = mensajes.find(m => {
+    if (Number(m?.etapa) !== 1) return false;
+    if (m?.enProceso) return false;
+
+    const bodyStr = aTexto(m?.body);       // <-- fuerza string
+    if (bodyStr.length < 1) return false;  // acepta "1" o 1
+
+    const textoNorm = normalizar(bodyStr);
+    return !palabrasClave.some(palabra => textoNorm.includes(palabra));
+  });
 
   if (mensaje) {
     // En vez de responder de una, lo encolamos con debounce 5s
@@ -258,7 +267,7 @@ const procesarEtapas = (mensajes) => {
 
 // ====== Monitoreo continuo ======
 function iniciarWatcher() {
-  // console.log('👀 Monitoreando EtapasMSG2.json...');
+  // console.log('👀 Monitoreando EtapasMSG3.json...');
 
   fs.watchFile(ETAPAS_PATH, { interval: 1000 }, () => {
     try {
@@ -266,10 +275,11 @@ function iniciarWatcher() {
       if (!Array.isArray(data)) return;
 
       const nuevosMensajes = data.filter(m => {
-        const claveUnica = `${m.id}::${m.body}::${m.timestamp}`;
+        const bodyStr = String(m?.body ?? '').trim(); // <-- fuerza string
+        const claveUnica = `${m.id}::${bodyStr}::${m.timestamp}`;
         return (
-          m.etapa === 1 &&
-          m.body?.length > 1 &&
+          Number(m?.etapa) === 1 &&
+          bodyStr.length >= 1 &&                // <-- antes era > 1 (descartaba "1")
           !m.enProceso &&
           !mensajesProcesados.includes(claveUnica)
         );
@@ -280,14 +290,15 @@ function iniciarWatcher() {
         nuevosMensajes.forEach(mensaje => {
           // 1) Encola para agrupar por 5s
           procesarEtapas([mensaje]);
-          // 2) Marcamos cada fragmento como procesado (mantén tu flujo actual)
-          mensajesProcesados.push(`${mensaje.id}::${mensaje.body}::${mensaje.timestamp}`);
+          // 2) Marca cada fragmento como procesado (usa el mismo bodyStr que en la clave)
+          const bodyStr = String(mensaje?.body ?? '').trim();
+          mensajesProcesados.push(`${mensaje.id}::${bodyStr}::${mensaje.timestamp}`);
         });
         guardarProcesados();
         limpiarProcesados();
       }
     } catch (err) {
-      console.error('❌ Error procesando EtapasMSG2.json:', err.message);
+      console.error('❌ Error procesando EtapasMSG3.json:', err.message);
     }
   });
 }
