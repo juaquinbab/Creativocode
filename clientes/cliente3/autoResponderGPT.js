@@ -10,7 +10,7 @@ const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
 // --- Rutas absolutas (más seguras) ---
 const USUARIOS_PATH = path.resolve(__dirname, '../../data/usuarios.json');
-const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones3.json'); // ojo con el nombre del archivo
+const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones3.json'); 
 const ETAPAS_PATH = path.resolve(__dirname, '../../data/EtapasMSG3.json');
 const PROCESADOS_PATH = path.resolve(__dirname, '../../mensajes_procesados.json');
 
@@ -24,7 +24,6 @@ function requireFresh(p) {
 function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    // ajusta el cliente (cliente3 según tu ejemplo)
     return usuariosData?.cliente3?.iduser || '';
   } catch (err) {
     console.error('❌ Error cargando usuarios.json:', err.message);
@@ -36,11 +35,9 @@ function getTextoInstrucciones() {
   try {
     const data = requireFresh(INSTRUCCIONES_PATH);
     const arr = Array.isArray(data?.instrucciones) ? data.instrucciones : [];
-    // Por si quieres también loguearlas línea por línea:
-    // arr.forEach(linea => console.log(linea));
-    return arr.join('\n'); // texto final con saltos
+    return arr.join('\n'); 
   } catch (err) {
-    console.error('❌ Error cargando instruciones2.json:', err.message);
+    console.error('❌ Error cargando instruciones3.json:', err.message);
     return '';
   }
 }
@@ -66,9 +63,9 @@ function guardarProcesados() {
 
 // ====== Limpiar registro si crece demasiado ======
 function limpiarProcesados() {
-  const LIMITE = 5000; // Máximo de entradas
+  const LIMITE = 5000; 
   if (mensajesProcesados.length > LIMITE) {
-    mensajesProcesados = mensajesProcesados.slice(-LIMITE / 2); // Mantener solo los más recientes
+    mensajesProcesados = mensajesProcesados.slice(-LIMITE / 2); 
     guardarProcesados();
   }
 }
@@ -78,7 +75,6 @@ const responderConGPT = async (mensaje) => {
   try {
     const historialPath = path.join(__dirname, './salachat', `${mensaje.from}.json`);
 
-    // Leer historial para contexto
     let historialLectura = [];
     if (fs.existsSync(historialPath)) {
       try {
@@ -88,37 +84,24 @@ const responderConGPT = async (mensaje) => {
       }
     }
 
-    // Fecha formateada
-const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-// Obtener fecha y hora en zona horaria de Colombia
-const hoyColombia = new Date(
-  new Date().toLocaleString("en-US", { timeZone: "America/Bogota" })
-);
+    const hoyColombia = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "America/Bogota" })
+    );
 
-// Hora
-const horas = String(hoyColombia.getHours()).padStart(2, '0');
-const minutos = String(hoyColombia.getMinutes()).padStart(2, '0');
-const horaFormateada = `${horas}:${minutos}`;
+    const horas = String(hoyColombia.getHours()).padStart(2, '0');
+    const minutos = String(hoyColombia.getMinutes()).padStart(2, '0');
+    const horaFormateada = `${horas}:${minutos}`;
+    const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombia.getDate()).padStart(2, '0')} de ${meses[hoyColombia.getMonth()]} de ${hoyColombia.getFullYear()}`;
 
-// Fecha
-const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombia.getDate()).padStart(2, '0')} de ${meses[hoyColombia.getMonth()]} de ${hoyColombia.getFullYear()}`;
-
-// Ejemplo de uso
-// console.log("📅 Fecha:", fechaFormateada);
-// console.log("⏰ Hora:", horaFormateada);
-
-
-    // Contexto del historial
     const contexto = historialLectura
       .map(entry => `${entry.body?.startsWith("Asesor:") ? 'Asesor' : 'Usuario'}: ${entry.body}`)
       .join('\n');
 
-    // Cargar SIEMPRE fresco el texto de instrucciones
     const texto = getTextoInstrucciones();
 
-    // Prompt a OpenAI
     const openaiPayload = {
       model: "gpt-4.1",
       messages: [
@@ -126,8 +109,8 @@ const fechaFormateada = `${diasSemana[hoyColombia.getDay()]} ${String(hoyColombi
           role: "system",
           content: `
 Identifica el día de la semana y la hora actual: actualmente son ${fechaFormateada}.
- la hoara es ${horaFormateada} 
- ${texto}
+la hora es ${horaFormateada} 
+${texto}
 `
         },
         {
@@ -137,7 +120,6 @@ Identifica el día de la semana y la hora actual: actualmente son ${fechaFormate
       ]
     };
 
-    // Llamada a OpenAI
     const headers = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
@@ -146,10 +128,8 @@ Identifica el día de la semana y la hora actual: actualmente son ${fechaFormate
     const response = await axios.post("https://api.openai.com/v1/chat/completions", openaiPayload, { headers });
     const reply = response.data.choices[0].message.content;
 
-    // Simular tiempo de escritura (opcional)
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Enviar respuesta por WhatsApp — leer SIEMPRE fresco el IDNUMERO
     const IDNUMERO = getIDNUMERO();
     if (!IDNUMERO) {
       console.error('❌ No hay IDNUMERO válido para enviar el mensaje de WhatsApp');
@@ -170,7 +150,6 @@ Identifica el día de la semana y la hora actual: actualmente son ${fechaFormate
       }
     });
 
-    // Guardar en historial
     let historialActualizado = [];
     if (fs.existsSync(historialPath)) {
       try {
@@ -198,51 +177,60 @@ Identifica el día de la semana y la hora actual: actualmente son ${fechaFormate
 // ====== Lógica para filtrar y procesar ======
 const procesarEtapas = (mensajes) => {
   const palabrasClave = ['confirmar'];
-  const normalizar = texto => texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  const mensaje = mensajes.find(m =>
-    m.etapa === 1 &&
-    m.body?.length >= 1 &&
-    !m.enProceso &&
-    !palabrasClave.some(palabra => normalizar(m.body).includes(palabra))
-  );
+  const aTexto = (v) => String(v ?? '').trim();
+  const normalizar = (t) =>
+    aTexto(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  const mensaje = mensajes.find(m => {
+    if (Number(m?.etapa) !== 1) return false;
+    if (m?.enProceso) return false;
+
+    const bodyStr = aTexto(m?.body);
+    if (bodyStr.length < 1) return false;
+
+    const textoNorm = normalizar(bodyStr);
+    return !palabrasClave.some(p => textoNorm.includes(p));
+  });
 
   if (mensaje) {
     mensaje.enProceso = true;
-    responderConGPT(mensaje);
+    responderConGPT(mensaje).catch(err => {
+      console.error('responderConGPT error:', err);
+      mensaje.enProceso = false;
+    });
   }
 };
 
 // ====== Monitoreo continuo ======
 function iniciarWatcher() {
-  // console.log('👀 Monitoreando EtapasMSG2.json...');
-
   fs.watchFile(ETAPAS_PATH, { interval: 1000 }, () => {
     try {
       const data = JSON.parse(fs.readFileSync(ETAPAS_PATH, 'utf8'));
       if (!Array.isArray(data)) return;
 
       const nuevosMensajes = data.filter(m => {
-        const claveUnica = `${m.id}::${m.body}::${m.timestamp}`;
+        const bodyStr = String(m?.body ?? '').trim();
+        const claveUnica = `${m.id}::${bodyStr}::${m.timestamp}`;
         return (
-          m.etapa === 1 &&
-          m.body?.length > 1 &&
+          Number(m?.etapa) === 1 &&
+          bodyStr.length >= 1 &&
           !m.enProceso &&
           !mensajesProcesados.includes(claveUnica)
         );
       });
 
       if (nuevosMensajes.length > 0) {
-        // console.log(`📩 Detectados ${nuevosMensajes.length} mensajes nuevos o modificados`);
         nuevosMensajes.forEach(mensaje => {
           procesarEtapas([mensaje]);
-          mensajesProcesados.push(`${mensaje.id}::${mensaje.body}::${mensaje.timestamp}`);
+          const bodyStr = String(mensaje?.body ?? '').trim();
+          mensajesProcesados.push(`${mensaje.id}::${bodyStr}::${mensaje.timestamp}`);
         });
         guardarProcesados();
         limpiarProcesados();
       }
     } catch (err) {
-      console.error('❌ Error procesando EtapasMSG2.json:', err.message);
+      console.error('❌ Error procesando EtapasMSG3.json:', err.message);
     }
   });
 }
