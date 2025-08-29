@@ -49,6 +49,7 @@ async function manejarBienvenida(from, body) {
 
   // 1) Validar si IA está activado en cliente2
   const cliente2 = getCliente2Config();
+  
   if (!cliente2.IA) {
     console.log("⚠️ IA desactivada para cliente2. No se ejecuta manejarBienvenida.");
     return;

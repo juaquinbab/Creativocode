@@ -193,7 +193,7 @@ ${texto}
     const reply = response.data.choices[0].message.content;
 
     // Simular tiempo de escritura (opcional)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Enviar respuesta por WhatsApp — leer SIEMPRE fresco el IDNUMERO
     const IDNUMERO = getIDNUMERO();

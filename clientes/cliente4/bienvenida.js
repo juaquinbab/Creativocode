@@ -4,12 +4,12 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const registroPath = path.join(__dirname, "bienvenida3.json");
-const etapasPath   = path.join(__dirname, "../../data/EtapasMSG3.json");
+const registroPath = path.join(__dirname, "bienvenida4.json");
+const etapasPath   = path.join(__dirname, "../../data/EtapasMSG4.json");
 const usuariosPath = path.join(__dirname, "../../data/usuarios.json");
 
 // ⬇️ Ruta del archivo que contiene el texto (se mantiene tal cual)
-const textoPath    = path.join(__dirname, "../../data/textoclinete3.json");
+const textoPath    = path.join(__dirname, "../../data/textoclinete4.json");
 
 // --- Utilidades ---
 function requireFresh(p) {
