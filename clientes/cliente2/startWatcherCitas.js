@@ -182,7 +182,7 @@ Ya estamos cocinando con amor y toda la sazón 🔥 para que disfrutes algo ¡DE
       text: { preview_url: false, body: textoGracias },
     };
 
-    await axios.post(`https://graph.facebook.com/v17.0/${WABA_PHONE_ID}/messages`, payload, {
+    await axios.post(`https://graph.facebook.com/v19.0/${WABA_PHONE_ID}/messages`, payload, {
       headers: {
         Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
         'Content-Type': 'application/json',

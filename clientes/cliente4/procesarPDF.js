@@ -89,7 +89,7 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
 
 // ==== WhatsApp / Meta ====
 async function fetchDocMeta(documentId) {
-  const url = `https://graph.facebook.com/v17.0/${documentId}`;
+  const url = `https://graph.facebook.com/v19.0/${documentId}`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );

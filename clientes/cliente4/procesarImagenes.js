@@ -1,5 +1,4 @@
-// clientes/cliente1/procesarImagen.js
-"use strict";
+
 
 const fs = require("fs");
 const fsp = require("fs/promises");
@@ -112,7 +111,7 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
 
 // === Meta/descarga ===
 async function fetchImageMeta(imgID) {
-  const url = `https://graph.facebook.com/v17.0/${imgID}`;
+  const url = `https://graph.facebook.com/v19.0/${imgID}`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );
@@ -188,7 +187,7 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "Tu pedido ha sido recibido no olvides escribir la palabra confirmar." },
+        text: { preview_url: false, body: "Imagen Recibida" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
     )

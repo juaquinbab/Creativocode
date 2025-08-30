@@ -104,7 +104,7 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
 
 // === Meta/descarga ===
 async function fetchImageMeta(imgID) {
-  const url = `https://graph.facebook.com/v17.0/${imgID}`;
+  const url = `https://graph.facebook.com/v19.0/${imgID}`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );

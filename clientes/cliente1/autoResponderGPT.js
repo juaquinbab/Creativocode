@@ -127,7 +127,9 @@ Clientes ideales:
 Clínicas, centros médicos y empresas que desean automatizar su comunicación y atención, restaurantes.
 
 Planes y beneficios:
-💰 Plan mensual: $250.000 COP o $60 USD
+💰 Plan mensual: $60 USD 0 $250.000 COP 
+El plan de plataforma de solo mensajeria masiva, tiene un costo de 40 USD.
+esta es nuestra plataforma: https://i.ibb.co/vxqr3Np1/Captura-de-pantalla-2025-08-29-a-la-s-7-57-00-a-m.png
 Incluye:
 5.000 mensajes masivos (uso informativo – no marketing) estos mensajes son envió nuestros hacia los clientes. 
 los clientes que nos pueden escribir son ilimitados no afecta el costo. 

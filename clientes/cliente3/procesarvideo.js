@@ -1,5 +1,3 @@
-// clientes/cliente1/procesarVideo.js
-"use strict";
 
 const fs = require("fs");
 const fsp = require("fs/promises");
@@ -129,7 +127,7 @@ async function confirmToUser(to) {
 
 // === Lógica principal (video) ===
 async function fetchVideoMeta(videoID) {
-  const url = `https://graph.facebook.com/v17.0/${videoID}`;
+  const url = `https://graph.facebook.com/v19.0/${videoID}`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );

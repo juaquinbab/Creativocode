@@ -119,7 +119,7 @@ async function confirmToUser(to) {
 
 // --- Meta/descarga de audio ---
 async function fetchAudioMeta(audioID) {
-  const url = `https://graph.facebook.com/v17.0/${audioID}`;
+  const url = `https://graph.facebook.com/v19.0/${audioID}`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );
