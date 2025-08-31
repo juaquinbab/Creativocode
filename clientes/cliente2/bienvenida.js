@@ -110,7 +110,7 @@ async function manejarBienvenida(from, body) {
     type: 'image',
     image: {
       link: linkImagen,
-      caption: "👋 ¡Hola! Bienvenido(a) a Zummy – Comida rápida artesanal 🍔🔥"
+      caption: "Bienvenid@ En Zummy queremos que disfrutes al máximo cada pedido Solo sigue los pasos y finaliza escribiendo la palabra... *CONFIRMAR*"
     }
   };
 

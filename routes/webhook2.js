@@ -1,3 +1,4 @@
+// routes (cliente3)/webhook.js
 const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
@@ -7,25 +8,23 @@ require('dotenv').config();
 
 const manejarBienvenida = require('../clientes/cliente2/bienvenida');
 
-
 const usuariosPath = path.join(__dirname, '../data/usuarios.json');
+const ETAPAS_PATH   = path.join(__dirname, '../data/EtapasMSG2.json');
 
-let IDNUMERO = ''; // Valor por defecto si no se encuentra
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente2 && usuariosData.cliente2.iduser) {
-    IDNUMERO = usuariosData.cliente2.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
-  }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
+// === cargar JSON SIN CACHÉ ===
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
 }
-
-
-const ETAPAS_PATH = path.join(__dirname, '../data/EtapasMSG2.json');
-const PHONE_FILTER = IDNUMERO; // el que estás filtrando
+function getCliente3PhoneId() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    return usuariosData?.cliente2?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
+  }
+}
 
 function loadEtapas() {
   try {
@@ -40,55 +39,79 @@ function saveEtapas(arr) {
   fs.writeFileSync(ETAPAS_PATH, JSON.stringify(arr, null, 2), 'utf8');
 }
 
+// === helper: extraer body y medias desde el mensaje ===
+function extractBodyAndMedia(msg) {
+  const type = msg?.type;
+
+  // posibles fuentes de texto
+  const textBody        = msg?.text?.body;
+  const imageCaption    = msg?.image?.caption;
+  const videoCaption    = msg?.video?.caption;
+  const documentCaption = msg?.document?.caption;
+  const buttonTitle     = msg?.interactive?.button_reply?.title;
+  const listTitle       = msg?.interactive?.list_reply?.title;
+  const reactionEmoji   = type === 'reaction' ? msg?.reaction?.emoji : '';
+
+  // prioridad
+  let body = textBody || imageCaption || videoCaption || documentCaption || buttonTitle || listTitle || reactionEmoji || '';
+  if (typeof body === 'string') body = body.trim();
+
+  // ids de media
+  const imgID     = msg?.image?.id || '';
+  const audioID   = type === 'audio' ? msg?.audio?.id || '' : '';
+  const videoID   = type === 'video' ? msg?.video?.id || '' : '';
+  const documentId = msg?.document?.id || '';
+
+  return { body, imgID, audioID, videoID, documentId };
+}
+
 router.post('/', (req, res, next) => {
   const entry = req.body.entry?.[0] || {};
   const messageChange = entry.changes?.[0]?.value || {};
   const messages = messageChange.messages;
   const phoneId = messageChange.metadata?.phone_number_id || '';
 
-  // Solo el número que te interesa
-  if (phoneId !== PHONE_FILTER) return next();
+  // 🔄 IDNUMERO siempre fresco desde usuarios.json
+  const EXPECTED_PHONE_ID = getCliente3PhoneId();
 
-  const from = messages?.[0]?.from || 0;
-  let body = messages?.[0]?.text?.body || '';
+  // Filtrar solo el número que te interesa (si está configurado)
+  if (EXPECTED_PHONE_ID && phoneId !== EXPECTED_PHONE_ID) return next();
+
+  const msg0 = messages?.[0];
+  const from = msg0?.from || 0;
   const name = messageChange.contacts?.[0]?.profile?.name || '';
 
-  const imgID   = messages?.[0]?.image?.id  || '';
-  const audioID = messages?.[0]?.type === 'audio' ? messages[0].audio.id : '';
-  const videoID = messages?.[0]?.type === 'video' ? messages[0].video.id : '';
-  const reactedMessageId = messages?.[0]?.type === 'reaction' ? messages[0].reaction?.message_id : '';
-  const emoji = messages?.[0]?.type === 'reaction' ? messages[0].reaction?.emoji : '';
+  // 🔹 usar helper para capturar caption/títulos/etc.
+  let { body, imgID, audioID, videoID, documentId } = extractBodyAndMedia(msg0);
 
-  // NUEVO: detectar ubicación
-  const isLocation = Array.isArray(messages) && messages[0] && messages[0].type === 'location' && messages[0].location;
-  const latitude   = isLocation ? messages[0].location.latitude : null;
-  const longitude  = isLocation ? messages[0].location.longitude : null;
-  const locName    = isLocation ? (messages[0].location.name || '') : '';
-  const locAddress = isLocation ? (messages[0].location.address || '') : '';
+  // 📍 Ubicación
+  const isLocation = msg0 && msg0.type === 'location' && msg0.location;
+  const latitude   = isLocation ? msg0.location.latitude : null;
+  const longitude  = isLocation ? msg0.location.longitude : null;
+  const locName    = isLocation ? (msg0.location.name || '') : '';
+  const locAddress = isLocation ? (msg0.location.address || '') : '';
 
   function buildMapsUrl(lat, lng) { 
     return `https://maps.google.com/?q=${lat},${lng}`; 
   }
 
-  // NUEVO: si hay ubicación, adjuntar texto y url a body (respetando tu lógica)
   if (isLocation) {
     const mapsUrl = buildMapsUrl(latitude, longitude);
-    const ubicacionTexto = [
-      '📍 ubicación compartida',
-      mapsUrl
-    ].filter(Boolean).join('\n');
-
+    const ubicacionTexto = ['📍 ubicación compartida', mapsUrl].filter(Boolean).join('\n');
     body = body ? `${body}\n\n${ubicacionTexto}` : ubicacionTexto;
   }
 
+  // reacción
+  const reactedMessageId = msg0?.type === 'reaction' ? msg0?.reaction?.message_id : '';
+  const emoji            = msg0?.type === 'reaction' ? msg0?.reaction?.emoji : '';
   if (!body && emoji) body = emoji;
+
   if (typeof body === 'string') body = body.toLowerCase();
 
-  const documentId     = messages?.[0]?.document?.id || '';
-  const interactiveId  = messages?.[0]?.interactive?.button_reply?.id || '';
-  const interactivelisid = messages?.[0]?.interactive?.list_reply?.id || '';
+  const interactiveId    = msg0?.interactive?.button_reply?.id || '';
+  const interactivelisid = msg0?.interactive?.list_reply?.id || '';
 
-  // Cargar Etapas desde disco (no usar require cache)
+  // Cargar Etapas desde disco
   const EtapasMSG = loadEtapas();
   const timestamp = Date.now();
 
@@ -99,7 +122,7 @@ router.post('/', (req, res, next) => {
     // Actualizar SOLO campos volátiles, sin tocar etapa
     const previo = EtapasMSG[index];
     EtapasMSG[index] = {
-      ...previo, // preserva etapa existente y otros campos
+      ...previo,
       from,
       body,
       name,
@@ -112,10 +135,9 @@ router.post('/', (req, res, next) => {
       interactivelisid,
       documentId,
       timestamp,
-      Idp: 1,            // pendiente para tus procesadores
+      Idp: 1,
       Cambio: 1,
       enProceso: false,
-      // NUEVO: solo pisa location si llegó una nueva ubicación
       ...(isLocation && {
         location: {
           latitude,
@@ -124,11 +146,10 @@ router.post('/', (req, res, next) => {
           address: locAddress,
           mapsUrl: buildMapsUrl(latitude, longitude)
         }
-      }),
-      // NO escribir 'etapa' aquí
+      })
     };
   } else {
-    // Crear nuevo: etapa = 0 solo al crear
+    // Crear nuevo: etapa inicial 0
     const maxIDNAN = Math.max(0, ...EtapasMSG.map(e => e?.IDNAN || 0));
     EtapasMSG.push({
       id: uuidv4(),
@@ -143,14 +164,13 @@ router.post('/', (req, res, next) => {
       interactiveId,
       interactivelisid,
       documentId,
-      etapa: 0,        // inicial
+      etapa: 0,
       Idp: 1,
       Cambio: 1,
       enProceso: false,
       timestamp,
       IDNAN: maxIDNAN + 1,
       confirmado: false,
-      // NUEVO: incluir location solo si aplica
       ...(isLocation && {
         location: {
           latitude,
@@ -166,12 +186,10 @@ router.post('/', (req, res, next) => {
   // Guardar
   saveEtapas(EtapasMSG);
 
-  // Lógica de bienvenida (firma correcta: from, body, idnumero)
-  manejarBienvenida(from, body, phoneId);
+  // Lógica de bienvenida
+  manejarBienvenida(from, body, EXPECTED_PHONE_ID || phoneId);
 
   return res.sendStatus(200);
 });
-
-
 
 module.exports = router;

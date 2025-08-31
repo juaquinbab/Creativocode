@@ -29,32 +29,41 @@ function encontrarResumenEnMensajes(arr) {
 
   const frases = [
     'resumen final pedido:',
-   'resumen del pedido:',
+    'resumen del pedido:',
     'detalle del pedido:',
     'detalle del pedido',
     'resumen de tu pedido:'
   ];
 
-  const candidato = arr.find(d => {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const d = arr[i];
     const body = (d?.body || '').toString();
-    const low = body.toLowerCase();
-    return frases.some(f => low.includes(f));
-  });
+    const low  = body.toLowerCase();
 
-  if (!candidato) return null;
+    if (frases.some(f => low.includes(f))) {
+      let texto = body.replace(/^Asesor:\s*/i, '');
 
-  let texto = (candidato.body || '').replace(/^Asesor:\s*/i, '');
+      const lower = texto.toLowerCase();
+      const idxs = [
+        lower.indexOf('resumen final pedido:'),
+        lower.indexOf('resumen del pedido:'),
+        lower.indexOf('detalle del pedido'),
+        lower.indexOf('resumen de tu pedido:')
+      ].filter(idx => idx !== -1);
 
-  const idxResumen = texto.toLowerCase().indexOf('resumen del pedido:');
-  const idxDetalle = idxResumen === -1 ? texto.toLowerCase().indexOf('detalle del pedido') : -1;
+      if (idxs.length) {
+        const start = Math.min(...idxs); // arranca donde empieza la primera etiqueta encontrada
+        texto = texto.slice(start);
+      }
 
-  if (idxResumen !== -1) texto = texto.slice(idxResumen);
-  else if (idxDetalle !== -1) texto = texto.slice(idxDetalle);
+      texto = texto.replace(/[ \t]+\n/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
+      return texto || null;
+    }
+  }
 
-  texto = texto.replace(/[ \t]+\n/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
-
-  return texto || null;
+  return null;
 }
+
 
 // GET /pedidos  -> lista pedidos confirmados + conteos
 router.get('/pedidos', (req, res) => {
