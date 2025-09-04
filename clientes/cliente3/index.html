@@ -595,10 +595,9 @@
   <button class="custom-btn" id="btnToggle">Cambiar estado IA</button>
 
 
-<button class="custom-btn" id="btnEntrenarIA" onclick="abrirEntrenadorIA()">
-  Entrenar IA
-</button>
 
+
+    </div>
 
 
   </div>
@@ -1746,18 +1745,6 @@ async function toggleIA() {
 
 document.getElementById('btnToggle').addEventListener('click', toggleIA);
 loadStatus();
-
-
-
-
-
-
-  function abrirEntrenadorIA() {
-    // Apunta al editor que está en la misma carpeta de ese cliente
-    window.open(`${basePath}/admin-instrucciones.html`, '_blank');
-  }
-
-
 
 
 </script>
