@@ -6,6 +6,7 @@ const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
 const https = require("https");
+require("dotenv").config();
 
 // --- Rutas ---
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
@@ -18,11 +19,11 @@ const BASE_URL = RAW_BASE_URL.replace(/\/+$/, ""); // sin slash final
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
 const MAX_VIDEO_CONCURRENCY = Number(process.env.MAX_VIDEO_CONCURRENCY || 2);
 
-// Keep-Alive para reducir overhead de TLS/handshakes
+// HTTPS keep-alive para reducir overhead TLS
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
 const http = axios.create({ timeout: 15000, httpsAgent });
 
-// --- Cargar usuarios.json SIEMPRE FRESCO ---
+// --- Utilidades para JSON fresco ---
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
   return require(p);
@@ -30,7 +31,7 @@ function requireFresh(p) {
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
-    // ajusta aquí si corresponde a cliente1/cliente4
+    // ajusta aquí si corresponde a cliente1/cliente2/cliente3
     return usuariosData?.cliente4?.iduser || "";
   } catch (e) {
     console.error("❌ Error leyendo usuarios.json:", e.message);
@@ -38,11 +39,19 @@ function getWabaPhoneId() {
   }
 }
 
-// Directorios
+// --- Directorios ---
 const PUBLIC_VIDEO_DIR = path.join(process.cwd(), "public/video");
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 
-async function ensureDir(p) { try { await fsp.mkdir(p, { recursive: true }); } catch {} }
+async function ensureDir(p) {
+  try {
+    await fsp.mkdir(p, { recursive: true });
+    await fsp.access(p, fs.constants.W_OK);
+  } catch (e) {
+    console.error(`❌ No se pudo crear/escribir en ${p}: ${e.message}`);
+    throw e;
+  }
+}
 (async () => {
   await ensureDir(PUBLIC_VIDEO_DIR);
   await ensureDir(SALA_CHAT_DIR);
@@ -57,25 +66,32 @@ async function readJsonSafe(file, fallback) {
   try {
     const raw = await fsp.readFile(file, "utf8");
     return JSON.parse(raw);
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
-
 async function writeJsonAtomic(file, obj) {
   const tmp = `${file}.tmp`;
   await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
   await fsp.rename(tmp, file);
 }
-
 async function fileExists(p) {
-  try { await fsp.access(p, fs.constants.FOK); return true; }
-  catch { return false; }
+  try {
+    await fsp.access(p, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
+// === Procesados ===
 async function saveProcessedImmediate() {
-  try { await writeJsonAtomic(PROCESSED_PATH, [...processed]); }
-  catch (e) { console.error("❌ Error guardando processed_videos:", e.message); }
+  try {
+    await writeJsonAtomic(PROCESSED_PATH, [...processed]);
+  } catch (e) {
+    console.error("❌ Error guardando processed_videos:", e.message);
+  }
 }
-
 let processedDirty = false;
 let processedTimer = null;
 function scheduleSaveProcessed(delay = 1500) {
@@ -88,25 +104,29 @@ function scheduleSaveProcessed(delay = 1500) {
     await saveProcessedImmediate();
   }, delay);
 }
-
 async function initProcessed() {
   const list = await readJsonSafe(PROCESSED_PATH, []);
   processed = new Set(list);
 }
 
+// === Retry helper ===
 function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
   let lastErr;
   for (let i = 0; i < retries; i++) {
-    try { return await fn(); }
-    catch (e) { lastErr = e; await sleep(baseDelay * Math.pow(2, i)); }
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      await sleep(baseDelay * Math.pow(2, i));
+    }
   }
   throw lastErr;
 }
 
 // === Confirmación al usuario (ID SIEMPRE FRESCO) ===
 async function confirmToUser(to) {
-  const WABA_PHONE_ID = getWabaPhoneId(); // <- aquí se lee fresco
+  const WABA_PHONE_ID = getWabaPhoneId();
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -127,49 +147,61 @@ async function confirmToUser(to) {
   );
 }
 
-// === Lógica principal (video) ===
+// === Meta y descarga de video ===
 async function fetchVideoMeta(videoID) {
-  const url = `https://graph.facebook.com/v19.0/${videoID}`;
+  const url = `https://graph.facebook.com/v20.0/${videoID}?fields=url`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );
-  return data; // { url, ... }
+  return data; // { url }
 }
 
 async function downloadToFile(fileUrl, destPath) {
   const tmpPath = `${destPath}.download`;
+  console.log(`⬇️ Descargando video: ${fileUrl} → ${destPath}`);
+
   const resp = await withRetry(() =>
-    http.get(fileUrl, { headers: { Authorization: `Bearer ${WABA_TOKEN}` }, responseType: "stream" })
+    axios.get(fileUrl, {
+      httpsAgent,
+      responseType: "stream",
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+      timeout: 0,                   // no cortar descargas largas
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    })
   );
+
   await new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(tmpPath);
     resp.data.pipe(writer);
     writer.on("finish", resolve);
     writer.on("error", reject);
   });
+
   await fsp.rename(tmpPath, destPath);
+  console.log(`✅ Video guardado: ${destPath}`);
 }
 
-// === Batching: historial por usuario ===
-const historyQueues = new Map(); // from => [{...}, ...]
-const historyTimers = new Map(); // from => timeoutId
-
+// === Batching historial por usuario ===
+const historyQueues = new Map();
+const historyTimers = new Map();
 function queueHistory(from, record) {
   if (!historyQueues.has(from)) historyQueues.set(from, []);
   historyQueues.get(from).push(record);
   scheduleHistoryFlush(from);
 }
-
 function scheduleHistoryFlush(from, delay = 600) {
   if (historyTimers.has(from)) return;
   const t = setTimeout(async () => {
     historyTimers.delete(from);
-    try { await flushUserHistory(from); }
-    catch (e) { console.error(`❌ Error guardando historial de ${from}:`, e.message); }
+    try {
+      await flushUserHistory(from);
+    } catch (e) {
+      console.error(`❌ Error guardando historial de ${from}:`, e.message);
+    }
   }, delay);
   historyTimers.set(from, t);
 }
-
 async function flushUserHistory(from) {
   const items = historyQueues.get(from);
   if (!items || items.length === 0) return;
@@ -214,7 +246,7 @@ async function processOneVideo(entry) {
   // 2) Descargar
   await downloadToFile(videoUrl, filePath);
 
-  // 3) Encolar historial (batch)
+  // 3) Encolar historial
   const nuevo = {
     from,
     body: `${BASE_URL}/video/${filename}`,
@@ -231,19 +263,19 @@ async function processOneVideo(entry) {
   };
   queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp (ID fresco)
+  // 4) Confirmar por WhatsApp
   confirmToUser(from).catch(e =>
     console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
   );
 
-  // 5) Marcar procesado (batch persist)
+  // 5) Marcar procesado
   processed.add(videoID);
   scheduleSaveProcessed();
 
-  // console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
+  console.log(`✅ Video procesado y confirmado: ${from} :: ${videoID}`);
 }
 
-// === Pool de concurrencia controlada ===
+// === Pool de concurrencia ===
 async function runPool(items, worker, concurrency = 2) {
   let idx = 0;
   const workers = Array(Math.min(concurrency, items.length)).fill(0).map(async () => {
@@ -274,7 +306,7 @@ async function processPendingVideos() {
   }
 }
 
-// === Monitor de cambios (watch + debounce, fallback a polling) ===
+// === Monitor de cambios ===
 let debounceTimer = null;
 function triggerProcessDebounced(delay = 250) {
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -282,7 +314,6 @@ function triggerProcessDebounced(delay = 250) {
     processPendingVideos().catch(e => console.error("❌ processPendingVideos error:", e.message));
   }, delay);
 }
-
 function startWatch() {
   try {
     const watcher = fs.watch(ETA_PATH, { persistent: true }, (eventType) => {
@@ -296,9 +327,12 @@ function startWatch() {
     console.warn("⚠️ fs.watch no soportado, usando polling cada 2s:", e.message);
     setInterval(triggerProcessDebounced, 2000);
   }
+
+  // activamos también polling siempre (Railway)
+  setInterval(triggerProcessDebounced, 2000);
 }
 
-// === Flush en apagado para no perder colas ===
+// === Flush en apagado ===
 async function gracefulShutdown() {
   try {
     const froms = [...historyQueues.keys()];
@@ -316,11 +350,12 @@ process.on("SIGTERM", gracefulShutdown);
 // === API pública ===
 async function iniciarMonitoreoVideo() {
   if (!WABA_TOKEN) {
-    console.warn("⚠️ Falta WHATSAPP_API_TOKEN. Meta suele requerir token para descargar media.");
+    console.error("❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media de WhatsApp Cloud API.");
+    return;
   }
   await initProcessed();
   await processPendingVideos(); // corrida inicial
-  startWatch();                 // luego, reactivo por cambios
+  startWatch();
 }
 
 module.exports = iniciarMonitoreoVideo;

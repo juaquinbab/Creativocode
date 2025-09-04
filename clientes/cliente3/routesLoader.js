@@ -22,6 +22,7 @@ const { startWatcherAsesor } = require('./watcherAsesor');
 const pedidosRouter = require('./pedidosRouter');
 const resetnu = require('./resetnu');
 const iaRoutes = require('./iaRoutes');
+const instruccionesRoutes = require('./instruccionesRoutes');
 
 
 
@@ -34,6 +35,7 @@ router.use('/', express.static(path.join(__dirname)));
 
 // Rutas
 // router.use('/webhook', webhookRoute);
+router.use('/', instruccionesRoutes);
 router.use('/', rutasSala1);
 router.use('/', resetnu);
 router.use('/', mensajeIndex.router);
@@ -45,6 +47,7 @@ router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
 router.use('/api/ia', iaRoutes);
+
 
 
 // Procesos periódicos y watchers

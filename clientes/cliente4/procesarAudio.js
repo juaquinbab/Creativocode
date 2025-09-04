@@ -1,10 +1,11 @@
-// clientes/cliente1/procesarAudio.js
 "use strict";
 
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
+const https = require("https");
+require("dotenv").config();
 
 // --- Rutas ---
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
@@ -16,52 +17,70 @@ const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/"
 const BASE_URL = RAW_BASE_URL.replace(/\/+$/, ""); // sin slash final
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
 
-// --- util: cargar JSON sin caché (siempre fresco) ---
-function requireFresh(p) {
-  delete require.cache[require.resolve(p)];
-  return require(p);
-}
-function getWabaPhoneId() {
-  try {
-    const usuariosData = requireFresh(usuariosPath);
-    // ajusta aquí si corresponde a cliente1/cliente4
-    return usuariosData?.cliente4?.iduser || "";
-  } catch (e) {
-    console.error("❌ Error leyendo usuarios.json:", e.message);
-    return "";
-  }
-}
-
 // --- Directorios públicos/salida ---
 const PUBLIC_AUDIO_DIR = path.join(process.cwd(), "public/Audio");
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 
 // Crear dirs si no existen
-async function ensureDir(p) { try { await fsp.mkdir(p, { recursive: true }); } catch {} }
+async function ensureDir(p) {
+  try {
+    await fsp.mkdir(p, { recursive: true });
+    await fsp.access(p, fs.constants.W_OK);
+  } catch (e) {
+    console.error(`❌ No se pudo crear/escribir en ${p}: ${e.message}`);
+    throw e;
+  }
+}
+
 (async () => {
   await ensureDir(PUBLIC_AUDIO_DIR);
   await ensureDir(SALA_CHAT_DIR);
 })();
 
-// Axios con timeout
-const http = axios.create({ timeout: 15000 });
+// HTTPS keep-alive para bajar overhead de TLS
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
+
+// Cliente HTTP “corto” (meta, confirmaciones). NO usar para stream de descarga.
+const http = axios.create({ timeout: 15000, httpsAgent });
 
 // Estado en memoria
 let processing = false;
 let processed = new Set();
 
-// --- Utilidades ---
+// --- Utilidades: lectura/escritura JSON ---
 async function readJsonSafe(file, fallback) {
   try {
     const data = await fsp.readFile(file, "utf8");
     return JSON.parse(data);
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
 
 async function writeJsonAtomic(file, obj) {
   const tmp = `${file}.tmp`;
   await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
   await fsp.rename(tmp, file);
+}
+
+// Siempre fresco (no usa require cache)
+async function readJsonFresh(file, fallback) {
+  try {
+    const raw = await fsp.readFile(file, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+// Obtiene SIEMPRE FRESCO el iduser desde usuarios.json (ajusta cliente si aplica)
+async function getWabaPhoneIdFresh() {
+  const usuariosData = await readJsonFresh(usuariosPath, null);
+  if (!usuariosData) return "";
+  const candidate =
+    usuariosData?.cliente4?.iduser || // ajusta aquí si usas cliente1/cliente3
+    "";
+  return candidate || "";
 }
 
 async function saveProcessedImmediate() {
@@ -99,9 +118,9 @@ async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
   throw lastErr;
 }
 
-// --- Confirmación al usuario (ID siempre fresco) ---
+// --- Confirmación al usuario (opcional) ---
 async function confirmToUser(to) {
-  const WABA_PHONE_ID = getWabaPhoneId(); // <- siempre fresco
+  const WABA_PHONE_ID = await getWabaPhoneIdFresh();
   if (!WABA_PHONE_ID || !WABA_TOKEN) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
@@ -124,25 +143,39 @@ async function confirmToUser(to) {
 
 // --- Meta/descarga de audio ---
 async function fetchAudioMeta(audioID) {
-  const url = `https://graph.facebook.com/v19.0/${audioID}`;
+  // Si quieres mime_type, añade ?fields=url,mime_type
+  const url = `https://graph.facebook.com/v20.0/${audioID}?fields=url`;
   const { data } = await withRetry(() =>
     http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
   );
-  return data;
+  return data; // { url }
 }
 
 async function downloadToFile(fileUrl, destPath) {
   const tmpPath = `${destPath}.download`;
+  console.log(`⬇️ Descargando audio: ${fileUrl} → ${destPath}`);
+
+  // Para descarga en stream: sin timeout y sin límites de tamaño
   const resp = await withRetry(() =>
-    http.get(fileUrl, { headers: { Authorization: `Bearer ${WABA_TOKEN}` }, responseType: "stream" })
+    axios.get(fileUrl, {
+      httpsAgent,
+      responseType: "stream",
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+      timeout: 0,                   // clave: no cortar descargas largas
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    })
   );
+
   await new Promise((resolve, reject) => {
     const writer = fs.createWriteStream(tmpPath);
     resp.data.pipe(writer);
     writer.on("finish", resolve);
     writer.on("error", reject);
   });
+
   await fsp.rename(tmpPath, destPath);
+  console.log(`✅ Audio guardado: ${destPath}`);
 }
 
 // --- Batching para historial por usuario ---
@@ -190,15 +223,17 @@ async function processOneAudio(entry) {
   const { from, id, audioID, timestamp } = entry;
   if (processed.has(audioID)) return;
 
+  // Siempre .ogg (según tu pedido)
   const filename = `${from}-${id}-${audioID}.ogg`;
   const filePath = path.join(PUBLIC_AUDIO_DIR, filename);
 
   // Si ya existe el archivo, sólo marca procesado
-  if (fs.existsSync(filePath)) {
+  try {
+    await fsp.access(filePath, fs.constants.F_OK);
     processed.add(audioID);
     scheduleSaveProcessed();
     return;
-  }
+  } catch {}
 
   // 1) Obtener meta + URL
   const meta = await fetchAudioMeta(audioID);
@@ -208,7 +243,7 @@ async function processOneAudio(entry) {
     return;
   }
 
-  // 2) Descargar a disco
+  // 2) Descargar a disco (stream sin timeout)
   await downloadToFile(audioUrl, filePath);
 
   // 3) Encolar historial (batch)
@@ -228,7 +263,7 @@ async function processOneAudio(entry) {
   };
   queueHistory(from, nuevo);
 
-  // 4) Confirmar por WhatsApp (ID fresco)
+  // 4) Confirmar por WhatsApp (no bloquea flujo crítico si falla)
   confirmToUser(from).catch(e =>
     console.error("❌ Error al confirmar al usuario:", e.response?.data || e.message)
   );
@@ -264,7 +299,7 @@ async function processPendingAudios() {
   }
 }
 
-// --- Monitor de cambios (watch + debounce, fallback a polling) ---
+// --- Monitor de cambios (watch + debounce, con polling de respaldo) ---
 let debounceTimer = null;
 function triggerProcessDebounced(delay = 250) {
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -273,29 +308,50 @@ function triggerProcessDebounced(delay = 250) {
   }, delay);
 }
 
-function startWatch() {
+function startWatchEtapas() {
   try {
     const watcher = fs.watch(ETA_PATH, { persistent: true }, (eventType) => {
       if (eventType === "change" || eventType === "rename") triggerProcessDebounced();
     });
     watcher.on("error", (e) => {
-      console.warn("⚠️ fs.watch no disponible, usando polling cada 2s:", e.message);
+      console.warn("⚠️ fs.watch no disponible para EtapasMSG2.json, usando polling cada 2s:", e.message);
       setInterval(triggerProcessDebounced, 2000);
     });
   } catch (e) {
-    console.warn("⚠️ fs.watch no soportado, usando polling cada 2s:", e.message);
+    console.warn("⚠️ fs.watch no soportado para EtapasMSG2.json, usando polling cada 2s:", e.message);
     setInterval(triggerProcessDebounced, 2000);
+  }
+
+  // Activar SIEMPRE un polling suave en producción (contenerizado)
+  setInterval(triggerProcessDebounced, 2000);
+}
+
+// --- (Opcional) Watch de usuarios.json para log de cambios ---
+function startWatchUsuarios() {
+  try {
+    const watcher = fs.watch(usuariosPath, { persistent: true }, (eventType) => {
+      if (eventType === "change" || eventType === "rename") {
+        console.log("🔄 usuarios.json cambiado; próximos envíos usarán el nuevo iduser (lectura fresca).");
+      }
+    });
+    watcher.on("error", (e) => {
+      console.warn("⚠️ fs.watch usuarios.json falló (no impacta lectura fresca):", e.message);
+    });
+  } catch (e) {
+    console.warn("⚠️ fs.watch no soportado para usuarios.json (no impacta lectura fresca):", e.message);
   }
 }
 
 // --- API pública ---
 async function iniciarMonitoreoAudio() {
   if (!WABA_TOKEN) {
-    console.warn("⚠️ Falta WHATSAPP_API_TOKEN. Meta suele requerir token para descargar media.");
+    console.error("❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media de WhatsApp Cloud API.");
+    return;
   }
   await initProcessed();
   await processPendingAudios(); // corrida inicial
-  startWatch();                 // luego, reactivo por cambios
+  startWatchEtapas();           // watch + polling de EtapasMSG2.json
+  startWatchUsuarios();         // (opcional) sólo log para depurar cambios de iduser
 }
 
 module.exports = iniciarMonitoreoAudio;
