@@ -30,7 +30,7 @@ const MAX_IMAGE_CONCURRENCY = Math.max(
 );
 
 const GRAPH_MEDIA_VERSION = "v20.0";
-const GRAPH_MESSAGES_VERSION = "v16.0";
+const GRAPH_MESSAGES_VERSION = "v20.0";
 
 const PUBLIC_IMAGE_DIR_CANDIDATE = path.join(process.cwd(), "public/Imagenes");
 const FALLBACK_IMAGE_DIR = "/tmp/imagenes";

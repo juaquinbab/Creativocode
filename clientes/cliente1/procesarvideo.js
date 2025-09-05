@@ -105,7 +105,7 @@ async function confirmToUser(to) {
     console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
     return;
   }
-  const url = `https://graph.facebook.com/v16.0/${WABA_PHONE_ID}/messages`;
+  const url = `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`;
   await withRetry(() =>
     http.post(
       url,

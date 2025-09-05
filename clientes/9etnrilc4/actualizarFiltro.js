@@ -68,7 +68,7 @@ async function enviarMensaje(mensaje) {
 
   try {
     await axios.post(
-      `https://graph.facebook.com/v16.0/${IDNUMERO}/messages`,
+      `https://graph.facebook.com/v20.0/${IDNUMERO}/messages`,
       payload,
       {
         headers: {

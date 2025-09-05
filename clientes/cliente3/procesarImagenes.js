@@ -30,7 +30,7 @@ const MAX_IMAGE_CONCURRENCY = Math.max(
 );
 
 const GRAPH_MEDIA_VERSION = "v20.0";
-const GRAPH_MESSAGES_VERSION = "v16.0";
+const GRAPH_MESSAGES_VERSION = "v20.0";
 
 const PUBLIC_IMAGE_DIR_CANDIDATE = path.join(process.cwd(), "public/Imagenes");
 const FALLBACK_IMAGE_DIR = "/tmp/imagenes";
@@ -43,7 +43,7 @@ const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 50 });
 const http = axios.create({ timeout: 20_000, httpsAgent });
 
 // =========================
-// Helpers
+/** Helpers */
 // =========================
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
@@ -115,7 +115,6 @@ async function resolveImageDir() {
   await fsp.mkdir(SALA_CHAT_DIR, { recursive: true }).catch(() => {});
 }
 function BASE_IMAGE_URL() {
-  // Ideal: montar también FALLBACK_IMAGE_DIR como estático en /Imagenes
   return `${BASE_URL}/Imagenes`;
 }
 
@@ -130,7 +129,6 @@ let processedTimer = null;
 const historyQueues = new Map();
 const historyTimers = new Map();
 
-// NUEVO: candados por imgID para evitar carreras
 const inFlight = new Set();
 
 // =========================
@@ -185,16 +183,12 @@ async function flushUserHistory(from) {
 }
 
 // =========================
-// WABA phone ID (fresco)
+// WABA phone ID
 // =========================
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    return (
-      usuariosData?.cliente3?.iduser ||
-
-      ""
-    );
+    return usuariosData?.cliente3?.iduser || "";
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
     return "";
@@ -304,28 +298,49 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR./n/n🛠️ Si necesitas soporte, por favor indícanos cuál es el problema para poder ayudarte." },
+        text: { preview_url: false, body: "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR.\n\n🛠️ Si necesitas soporte, por favor indícanos cuál es el problema para poder ayudarte." },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
     ),
-    {
-      retries: 2,
-      baseDelay: 1_000,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
+    { retries: 2, baseDelay: 1_000 }
   );
 }
 
 // =========================
-// Procesamiento individual (con candado)
+// Reintentos controlados por imgID (NUEVO)
+// =========================
+const failCounts = new Map();       // imgID -> nº fallos
+const MAX_FAILS = 5;                // máximo de intentos
+const FAIL_RESET_ON_SUCCESS = true; // limpiar contador al éxito
+
+function shouldSkip(imgID) {
+  const fails = failCounts.get(imgID) || 0;
+  return fails >= MAX_FAILS;
+}
+function noteFail(imgID) {
+  const current = failCounts.get(imgID) || 0;
+  const next = current + 1;
+  failCounts.set(imgID, next);
+  if (next >= MAX_FAILS) {
+    console.warn(`[${now()}] ⏭️ imgID=${imgID} omitido: alcanzó ${next}/${MAX_FAILS} fallos`);
+  } else {
+    console.warn(`[${now()}] 🔁 Falla #${next}/${MAX_FAILS} para imgID=${imgID}`);
+  }
+}
+function noteSuccess(imgID) {
+  if (FAIL_RESET_ON_SUCCESS) failCounts.delete(imgID);
+}
+
+// =========================
+// Procesamiento individual (con candado + límite intentos)
 // =========================
 async function processOneImage(entry) {
   const { from, id, imgID, timestamp } = entry;
 
+  if (shouldSkip(imgID)) {
+    console.warn(`[${now()}] ⏭️ imgID=${imgID} ya está marcado para omitir (superó ${MAX_FAILS} fallos)`);
+    return;
+  }
   if (inFlight.has(imgID)) return;
   inFlight.add(imgID);
   try {
@@ -334,32 +349,35 @@ async function processOneImage(entry) {
     const safeFrom = String(from || "").replace(/[^\dA-Za-z._-]/g, "_");
     const baseName = `${safeFrom}-${id}-${imgID}`;
 
-    // Si ya existe en disco con alguna extensión conocida, marcar y salir
+    // Salida rápida: ya existe en disco
     const maybeExts = [".jpg", ".jpeg", ".png", ".webp"];
     for (const ext of maybeExts) {
       const p = path.join(PUBLIC_IMAGE_DIR, `${baseName}${ext}`);
       if (await fileExists(p)) {
         processed.add(imgID);
         scheduleSaveProcessed();
+        noteSuccess(imgID);
         return;
       }
     }
 
     console.log(`[${now()}] ▶️ Procesando imgID=${imgID} from=${from}`);
 
-    // 1) Obtener URL y MIME
+    // 1) Meta (puede lanzar)
     const meta = await fetchImageMeta(imgID);
     const imageUrl = meta?.url;
     const mimeFromMeta = meta?.mime_type || "";
+
     if (!imageUrl) {
-      console.warn(`[${now()}] ⚠️ imgID ${imgID} sin URL. Se omite.`);
+      console.warn(`[${now()}] ⚠️ imgID ${imgID} sin URL. Se cuenta como fallo.`);
+      noteFail(imgID);
       return;
     }
 
-    // 2) Descargar imagen (elige extensión según MIME)
+    // 2) Descargar (puede lanzar)
     const { filename } = await downloadImageToFile(imageUrl, baseName, mimeFromMeta);
 
-    // 3) Encolar historial
+    // 3) Historial
     const nuevo = {
       from,
       body: `${BASE_IMAGE_URL()}/${filename}`,
@@ -376,14 +394,21 @@ async function processOneImage(entry) {
     };
     queueHistory(from, nuevo);
 
-    // 4) Confirmar por WhatsApp (no bloqueante)
+    // 4) Confirmación (no bloqueante)
     confirmToUser(from).catch((e) =>
       console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
     );
 
-    // 5) Marcar como procesada
+    // 5) Marcar procesada
     processed.add(imgID);
     scheduleSaveProcessed();
+    noteSuccess(imgID);
+  } catch (e) {
+    console.error(
+      `[${now()}] ❌ Error procesando imgID=${imgID}:`,
+      e?.response?.status ? `${e.response.status} ${e.message}` : e.message
+    );
+    noteFail(imgID);
   } finally {
     inFlight.delete(imgID);
   }
@@ -406,7 +431,7 @@ async function runPool(items, worker, concurrency = 2) {
 }
 
 // =========================
-// Motor de pendientes (con dedupe por imgID)
+// Motor de pendientes (con dedupe + límite intentos)
 // =========================
 async function processPendingImages() {
   if (processing) return;
@@ -415,10 +440,14 @@ async function processPendingImages() {
     const etapas = await readJsonSafe(ETA_PATH, []);
     if (!Array.isArray(etapas) || etapas.length === 0) return;
 
-    const raw = etapas.filter(isImageCandidate).filter(e => !processed.has(e.imgID));
+    const raw = etapas
+      .filter(isImageCandidate)
+      .filter(e => !processed.has(e.imgID))
+      .filter(e => !shouldSkip(e.imgID));
+
     if (raw.length === 0) return;
 
-    // Dedupe por imgID (quedarse con el más antiguo por timestamp)
+    // Dedupe por imgID (elige el más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.imgID);

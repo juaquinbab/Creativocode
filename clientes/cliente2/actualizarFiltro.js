@@ -59,7 +59,7 @@ function enviarMensaje(mensaje) {
     }
   };
 
-  axios.post(`https://graph.facebook.com/v16.0/${IDNUMERO}/messages`, payload, {
+  axios.post(`https://graph.facebook.com/v20.0/${IDNUMERO}/messages`, payload, {
     headers: {
       Authorization: `Bearer ${WHATSAPP_API_TOKEN}`,
       'Content-Type': 'application/json'

@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-const manejarBienvenida = require('../clientes/cliente4/bienvenida');
+const manejarBienvenida = require('../clientes/9etnrilc4/bienvenida');
 
 const usuariosPath = path.join(__dirname, '../data/usuarios.json');
 const ETAPAS_PATH   = path.join(__dirname, '../data/EtapasMSG4.json');

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // 👇 Importa la FUNCIÓN, y luego llámala: MensajeIndexRef()
-const { MensajeIndexRef } = require('../cliente4/mensajeIndex');
+const { MensajeIndexRef } = require('../9etnrilc4/mensajeIndex');
 
 // Ajusta el nombre si tu archivo se llama distinto
 const etapasPath = path.join(__dirname, '../../data/EtapasMSG4.json');

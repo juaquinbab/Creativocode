@@ -9,7 +9,7 @@ const https = require("https");
 require("dotenv").config();
 
 // --- Rutas ---
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG3.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_videos.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
@@ -41,7 +41,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
     // ajusta aquí si corresponde a cliente1/cliente2/cliente3
-    return usuariosData?.cliente3?.iduser || "";
+    return usuariosData?.cliente4?.iduser || "";
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
     return "";
