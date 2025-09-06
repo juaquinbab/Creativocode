@@ -8,7 +8,7 @@ const path = require("path");
 const router = express.Router();
 
 // Ajusta esta ruta si tu /data vive en otro nivel
-const JSON_PATH = path.resolve(__dirname, "../../data/instruciones4.json");
+const JSON_PATH = path.resolve(__dirname, "../../data/instruciones5.json");
 
 // --- Auth simple opcional por token (x-admin-token) ---
 function authToken(req, res, next) {

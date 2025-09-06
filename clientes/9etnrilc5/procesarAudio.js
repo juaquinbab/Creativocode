@@ -11,7 +11,7 @@ require("dotenv").config();
 // =========================
 // Rutas
 // =========================
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG3.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG5.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_audios.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
@@ -35,7 +35,7 @@ const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 // =========================
 // HTTPS / HTTP clients
 // =========================
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 2 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
 // Cliente corto para meta/confirmaciones (no streaming de descarga)
 const http = axios.create({ timeout: 15_000, httpsAgent });
 
@@ -77,7 +77,7 @@ async function readJsonFresh(file, fallback) {
 async function getWabaPhoneIdFresh() {
   const usuariosData = await readJsonFresh(USUARIOS_PATH, null);
   if (!usuariosData) return "";
-  const candidate = usuariosData?.cliente3?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
+  const candidate = usuariosData?.cliente5?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
   return candidate || "";
 }
 

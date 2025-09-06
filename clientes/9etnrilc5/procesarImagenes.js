@@ -16,7 +16,7 @@ require("dotenv").config();
 /* =========================
  * Config / Entorno
  * =======================*/
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG5.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_images.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
@@ -192,7 +192,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
     // Ajusta aquí si corresponde a cliente1/cliente2/cliente3
-    return usuariosData?.cliente4?.iduser || "";
+    return usuariosData?.cliente5?.iduser || "";
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
     return "";

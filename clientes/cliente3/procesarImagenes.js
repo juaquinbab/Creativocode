@@ -11,10 +11,11 @@ const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
 const https = require("https");
+require("dotenv").config();
 
-// =========================
-// Config / Entorno
-// =========================
+/* =========================
+ * Config / Entorno
+ * =======================*/
 const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG3.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_images.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
@@ -32,19 +33,21 @@ const MAX_IMAGE_CONCURRENCY = Math.max(
 const GRAPH_MEDIA_VERSION = "v20.0";
 const GRAPH_MESSAGES_VERSION = "v20.0";
 
+// Directorios de salida (intenta primero el del proyecto; si no, /tmp)
 const PUBLIC_IMAGE_DIR_CANDIDATE = path.join(process.cwd(), "public/Imagenes");
 const FALLBACK_IMAGE_DIR = "/tmp/imagenes";
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 
-// =========================
-// HTTP client
-// =========================
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 50 });
+/* =========================
+ * HTTP client
+ * =======================*/
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
+// Cliente para llamadas cortas (meta, confirmaciones)
 const http = axios.create({ timeout: 20_000, httpsAgent });
 
-// =========================
-/** Helpers */
-// =========================
+/* =========================
+ * Helpers
+ * =======================*/
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
   return require(p);
@@ -100,9 +103,9 @@ function boundSetSize(set, max = 50_000) {
   for (const v of set) { set.delete(v); if (++i >= removeCount) break; }
 }
 
-// =========================
-// Resolución de rutas de imagen
-// =========================
+/* =========================
+ * Resolución de rutas de imagen
+ * =======================*/
 let PUBLIC_IMAGE_DIR = PUBLIC_IMAGE_DIR_CANDIDATE;
 async function resolveImageDir() {
   if (await dirIsWritable(PUBLIC_IMAGE_DIR_CANDIDATE)) {
@@ -118,9 +121,9 @@ function BASE_IMAGE_URL() {
   return `${BASE_URL}/Imagenes`;
 }
 
-// =========================
-// Estado
-// =========================
+/* =========================
+ * Estado
+ * =======================*/
 let processing = false;
 let processed = new Set();
 let processedDirty = false;
@@ -131,9 +134,9 @@ const historyTimers = new Map();
 
 const inFlight = new Set();
 
-// =========================
-// Persistencia processed (batch)
-// =========================
+/* =========================
+ * Persistencia processed (batch)
+ * =======================*/
 async function saveProcessedImmediate() {
   try { await writeJsonAtomic(PROCESSED_PATH, [...processed]); }
   catch (e) { console.error(`[${now()}] ❌ Error guardando processed_images:`, e.message); }
@@ -154,9 +157,9 @@ async function initProcessed() {
   processed = new Set(Array.isArray(list) ? list : []);
 }
 
-// =========================
-// Historial por usuario (batch)
-// =========================
+/* =========================
+ * Historial por usuario (batch)
+ * =======================*/
 function queueHistory(from, record) {
   if (!from) return;
   if (!historyQueues.has(from)) historyQueues.set(from, []);
@@ -182,12 +185,13 @@ async function flushUserHistory(from) {
   await writeJsonAtomic(historialPath, historial);
 }
 
-// =========================
-// WABA phone ID
-// =========================
+/* =========================
+ * WABA phone ID (lectura fresca)
+ * =======================*/
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
+    // Ajusta aquí si corresponde a cliente1/cliente2/cliente3
     return usuariosData?.cliente3?.iduser || "";
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
@@ -195,11 +199,11 @@ function getWabaPhoneId() {
   }
 }
 
-// =========================
-// Meta / descarga
-// =========================
+/* =========================
+ * Meta / descarga
+ * =======================*/
 async function fetchImageMeta(imgID) {
-  const url = `https://graph.facebook.com/${GRAPH_MEDIA_VERSION}/${imgID}`;
+  const url = `https://graph.facebook.com/${GRAPH_MEDIA_VERSION}/${imgID}?fields=url,mime_type`;
   const { data } = await withRetry(
     () => http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }),
     {
@@ -212,7 +216,7 @@ async function fetchImageMeta(imgID) {
       },
     }
   );
-  return data; // { url, mime_type?, ... }
+  return data; // { url, mime_type }
 }
 
 function pickExt(mime) {
@@ -224,11 +228,15 @@ function pickExt(mime) {
 }
 
 async function downloadImageToFile(fileUrl, baseFilenameNoExt, mimeFromMeta = "") {
+  // Para stream de descarga: sin límite de tamaño; timeout alto o 0.
   const resp = await withRetry(
-    () => http.get(fileUrl, {
+    () => axios.get(fileUrl, {
+      httpsAgent,
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
       responseType: "stream",
-      timeout: 30_000,
+      timeout: 0,                 // evita cortar en descargas lentas
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
     }),
     {
       retries: 3,
@@ -256,6 +264,7 @@ async function downloadImageToFile(fileUrl, baseFilenameNoExt, mimeFromMeta = ""
     resp.data.pipe(writer);
   });
 
+  // Sincroniza y renombra
   const fh = await fsp.open(tmpPath, "r+");
   await fh.sync();
   await fh.close();
@@ -265,9 +274,9 @@ async function downloadImageToFile(fileUrl, baseFilenameNoExt, mimeFromMeta = ""
   return { filename: finalFilename, filePath: finalPath };
 }
 
-// =========================
-// Reglas de filtrado
-// =========================
+/* =========================
+ * Reglas de filtrado
+ * =======================*/
 function isImageCandidate(e) {
   return (
     e &&
@@ -280,9 +289,9 @@ function isImageCandidate(e) {
   );
 }
 
-// =========================
-// Confirmación al usuario
-// =========================
+/* =========================
+ * Confirmación al usuario
+ * =======================*/
 async function confirmToUser(to) {
   const WABA_PHONE_ID = getWabaPhoneId();
   if (!to || !WABA_PHONE_ID || !WABA_TOKEN) {
@@ -298,7 +307,12 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR.\n\n🛠️ Si necesitas soporte, por favor indícanos cuál es el problema para poder ayudarte." },
+        text: {
+          preview_url: false,
+          body:
+            "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR.\n\n" +
+            "🛠️ Si necesitas soporte, por favor indícanos cuál es el problema para poder ayudarte.",
+        },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
     ),
@@ -306,9 +320,9 @@ async function confirmToUser(to) {
   );
 }
 
-// =========================
-// Reintentos controlados por imgID (NUEVO)
-// =========================
+/* =========================
+ * Reintentos controlados por imgID (evita loops)
+ * =======================*/
 const failCounts = new Map();       // imgID -> nº fallos
 const MAX_FAILS = 5;                // máximo de intentos
 const FAIL_RESET_ON_SUCCESS = true; // limpiar contador al éxito
@@ -331,9 +345,9 @@ function noteSuccess(imgID) {
   if (FAIL_RESET_ON_SUCCESS) failCounts.delete(imgID);
 }
 
-// =========================
-// Procesamiento individual (con candado + límite intentos)
-// =========================
+/* =========================
+ * Procesamiento individual (con candado y dedupe)
+ * =======================*/
 async function processOneImage(entry) {
   const { from, id, imgID, timestamp } = entry;
 
@@ -349,7 +363,7 @@ async function processOneImage(entry) {
     const safeFrom = String(from || "").replace(/[^\dA-Za-z._-]/g, "_");
     const baseName = `${safeFrom}-${id}-${imgID}`;
 
-    // Salida rápida: ya existe en disco
+    // Salida rápida: ya existe en disco con alguna extensión típica
     const maybeExts = [".jpg", ".jpeg", ".png", ".webp"];
     for (const ext of maybeExts) {
       const p = path.join(PUBLIC_IMAGE_DIR, `${baseName}${ext}`);
@@ -363,7 +377,7 @@ async function processOneImage(entry) {
 
     console.log(`[${now()}] ▶️ Procesando imgID=${imgID} from=${from}`);
 
-    // 1) Meta (puede lanzar)
+    // 1) Meta
     const meta = await fetchImageMeta(imgID);
     const imageUrl = meta?.url;
     const mimeFromMeta = meta?.mime_type || "";
@@ -374,7 +388,7 @@ async function processOneImage(entry) {
       return;
     }
 
-    // 2) Descargar (puede lanzar)
+    // 2) Descargar
     const { filename } = await downloadImageToFile(imageUrl, baseName, mimeFromMeta);
 
     // 3) Historial
@@ -414,9 +428,9 @@ async function processOneImage(entry) {
   }
 }
 
-// =========================
-// Pool de concurrencia
-// =========================
+/* =========================
+ * Pool de concurrencia
+ * =======================*/
 async function runPool(items, worker, concurrency = 2) {
   let next = 0;
   const runners = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
@@ -430,9 +444,9 @@ async function runPool(items, worker, concurrency = 2) {
   await Promise.all(runners);
 }
 
-// =========================
-// Motor de pendientes (con dedupe + límite intentos)
-// =========================
+/* =========================
+ * Motor de pendientes (con dedupe por imgID)
+ * =======================*/
 async function processPendingImages() {
   if (processing) return;
   processing = true;
@@ -447,7 +461,7 @@ async function processPendingImages() {
 
     if (raw.length === 0) return;
 
-    // Dedupe por imgID (elige el más antiguo por timestamp)
+    // Dedupe por imgID (toma el más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.imgID);
@@ -463,9 +477,9 @@ async function processPendingImages() {
   }
 }
 
-// =========================
-// Watcher con debounce + fallback polling
-// =========================
+/* =========================
+ * Watcher con debounce + fallback polling
+ * =======================*/
 let debounceTimer = null;
 function triggerProcessDebounced(delay = 600) {
   if (debounceTimer) clearTimeout(debounceTimer);
@@ -488,11 +502,14 @@ function startWatch() {
     console.warn(`[${now()}] ⚠️ fs.watch no soportado (${e.message}). Fallback a polling 2s`);
     setInterval(triggerProcessDebounced, 2_000);
   }
+
+  // Activar polling siempre en producción (Railway/contenerizado)
+  setInterval(triggerProcessDebounced, 2_000);
 }
 
-// =========================
-// Flush en apagado
-// =========================
+/* =========================
+ * Flush en apagado
+ * =======================*/
 async function gracefulShutdown() {
   try {
     const froms = [...historyQueues.keys()];
@@ -507,9 +524,9 @@ async function gracefulShutdown() {
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
-// =========================
-// API pública
-// =========================
+/* =========================
+ * API pública
+ * =======================*/
 async function iniciarMonitoreoImagen() {
   if (!WABA_TOKEN) {
     console.warn(`[${now()}] ⚠️ Falta WHATSAPP_API_TOKEN. Meta requiere token para media/confirmaciones.`);

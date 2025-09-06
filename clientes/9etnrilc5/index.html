@@ -1,0 +1,1771 @@
+<html>
+
+<head>
+  <style>
+    .sidebar {
+      width: 200px;
+      /* Ancho de la columna de usuarios */
+      height: 100%;
+      position: fixed;
+      /* Fijar la posición */
+      top: 78px;
+      /* Asegurar que la barra lateral comience debajo de la cabecera */
+      left: 0;
+      background-color: #f4f4f4;
+      /* Color de fondo */
+      overflow-y: auto;
+      /* Permitir desplazamiento vertical si la lista es muy larga */
+      padding: 20px;
+      z-index: 98;
+      /* Asegurarse de que la barra lateral esté detrás de la cabecera */
+    }
+
+    /* Estilos para los elementos de la lista de usuarios */
+    .sidebar h2 {
+      margin-bottom: 10px;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      /* Quitar viñetas de la lista */
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar li {
+      padding: 5px;
+      cursor: pointer;
+      /* Cambiar cursor al pasar sobre los usuarios */
+    }
+
+    .sidebar li:hover {
+      background-color: #ddd;
+      /* Cambiar color de fondo al pasar sobre los usuarios */
+    }
+
+    /* Estilos para el área principal */
+    #main {
+      margin-left: 200px;
+      /* Dejar espacio a la izquierda para la columna de usuarios */
+      padding: 20px;
+    }
+
+    body {
+      zoom: 90%;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #ffffff;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+
+    }
+
+
+
+
+    h1,
+    h2 {
+      color: #2979ff;
+    }
+
+    #response {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+
+    #resetButton {
+      background-color: rgb(255, 255, 255);
+      /* Cambiar el color a rojo */
+      color: #2cda00;
+      align-self: flex-end;
+      /* Cambiar a flex-end para alinear a la derecha */
+      margin-top: 20px;
+    }
+
+
+    #selectFileButton {
+      background-color: rgb(255, 255, 255);
+      /* Cambiar el color a rojo */
+      color: #2cda00;
+      align-self: flex-end;
+      /* Cambiar a flex-end para alinear a la derecha */
+      margin-top: 20px;
+    }
+
+
+    #moverArchivoBtn {
+      background-color: rgb(255, 255, 255);
+      /* Cambiar el color a rojo */
+      color: #2cda00;
+      align-self: flex-end;
+      /* Cambiar a flex-end para alinear a la derecha */
+      margin-top: 20px;
+    }
+
+
+    #saveButtonpdf {
+      background-color: rgb(255, 255, 255);
+      /* Cambiar el color a rojo */
+      color: #2cda00;
+      align-self: flex-end;
+      /* Cambiar a flex-end para alinear a la derecha */
+      margin-top: 20px;
+    }
+
+
+    #uploadButtonpdf {
+      background-color: rgb(255, 255, 255);
+      /* Cambiar el color a rojo */
+      color: #2cda00;
+      align-self: flex-end;
+      /* Cambiar a flex-end para alinear a la derecha */
+      margin-top: 20px;
+    }
+
+
+
+
+
+    .floating-window {
+      position: absolute;
+      width: 300px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .window-header {
+      background-color: #00c94d;
+      color: #fff;
+      padding: 10px;
+      cursor: move;
+    }
+
+
+
+    #contestarButton {
+      background-color: #4caf50;
+      color: #fff;
+    }
+
+
+
+
+
+    body {
+      margin: 0;
+      padding: 0;
+      /* Agrega otros estilos para el contenido del body si es necesario */
+    }
+
+    #header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      /* Ajustar el padding horizontal para evitar solapamientos */
+      background-color: #00c94d;
+      /* Color con opacidad del 50% */
+      width: 100%;
+      /* Hacer que la cabecera ocupe todo el ancho */
+      position: fixed;
+      /* Fijar la cabecera en la parte superior */
+      top: 0;
+      /* Colocarla en la parte superior */
+      z-index: 99;
+      /* Asegurarse de que esté sobre otros elementos */
+    }
+
+
+    #header img {
+      height: 60px;
+      /* Tamaño del logo */
+    }
+
+    /* Ajustar el espacio debajo de la cabecera */
+    body {
+     
+      margin-top: 60px;
+      /* Asegurar que el contenido comience debajo de la cabecera */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+
+    .whatsapp-box.cambio-1 {
+      font-weight: bold;
+    }
+
+    #chat-box {
+      width: 100%;
+      min-height: 300px;
+      /* Altura mínima inicial */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      overflow-y: auto;
+      position: fixed;
+      bottom: 80px;
+      left: 230px;
+      right: 0;
+      margin: auto;
+    }
+
+    /* Estilos para los mensajes */
+    #messages1 {
+      width: 80%;
+      min-height: 700px;
+      /* Altura mínima inicial para los mensajes */
+      max-height: 700px;
+      overflow-y: auto;
+      direction: ltr;
+      padding: 10px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      margin: auto;
+      margin-left: 20px;
+    }
+
+    #messages1 div {
+      text-align: left;
+      margin-bottom: 20px;
+      font-size: 16px;
+      word-wrap: break-word;
+    }
+
+
+
+
+
+    /* Estilos para el área de respuesta */
+    #response-area {
+      display: flex;
+      align-items: center;
+      width: 76%;
+      position: fixed;
+      /* Fijar el área de respuesta */
+      bottom: 0;
+      /* Posicionar en la parte inferior */
+      left: 120;
+      /* Alinear a la izquierda */
+      right: 0;
+      /* Alinear a la derecha */
+      margin: auto;
+      /* Centrar horizontalmente */
+      z-index: 1;
+      /* Colocar el área de respuesta encima del chat-box */
+    }
+
+    /* Estilos para el textarea de respuesta */
+    #response {
+      width: calc(100% - 90px);
+      margin-right: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      resize: none;
+    }
+
+    /* Estilos para los botones de respuesta */
+    #response-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Estilos específicos para los botones */
+    #enviarRespuesta1 {
+      background-color: #02d630;
+      color: #fff;
+    }
+
+    #contestarButton {
+      background-color: #4caf50;
+      color: #fff;
+    }
+
+
+
+    .cabecera-elementos {
+
+      color: #2cda00;
+      border-radius: 20px;
+      /* Bordes redondeados */
+      padding: 5px 12px;
+      /* Menos padding para reducir el grosor */
+      font-weight: bold;
+      display: inline-block;
+      text-align: center;
+      line-height: 1.2;
+      /* Reduce el espacio vertical dentro del botón */
+      margin: 0 5px;
+
+
+    }
+
+
+    #colaespera1,
+    #resultado,
+    #BuscarOrden {
+      background-color: white;
+      color: #2cda00;
+      border: 2px solid #2cda00;
+      border-radius: 20px;
+      /* Bordes redondeados */
+      padding: 5px 12px;
+      /* Menos padding para reducir el grosor */
+      font-weight: bold;
+      font-size: 19px;
+      /* Ajusta el tamaño de la letra */
+      display: inline-block;
+      text-align: center;
+      line-height: 1.2;
+      /* Reduce el espacio vertical dentro del botón */
+      margin: 0 5px;
+    }
+
+    .whatsapp-box.cambio-1 {
+      background-color: #24baff;
+      /* Verde claro al estilo de WhatsApp */
+      padding: 5px 10px;
+      /* Espaciado interno */
+      margin-bottom: 1px;
+      /* Espaciado inferior */
+      cursor: pointer;
+      /* Cambiar cursor al pasar por encima */
+      border-radius: 5px;
+
+    }
+
+    /* Estilo para archivos con Cambio = 0 (mismo estilo que antes) */
+    .whatsapp-box.cambio-0 {
+      background-color: #df0909;
+      /* Verde claro al estilo de WhatsApp */
+      padding: 5px 10px;
+      margin-bottom: 1px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    .whatsapp-box {
+      background-color: #1ff714;
+      /* Verde claro al estilo de WhatsApp */
+      padding: 5px 10px;
+      /* Espaciado interno */
+      margin-bottom: 1px;
+      /* Espaciado inferior */
+      cursor: pointer;
+      /* Cambiar cursor al pasar por encima */
+      border-radius: 5px;
+      /* Bordes redondeados */
+    }
+
+    body::before {
+      
+      content: "";
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: url('../../public/mig.jpg') center/cover no-repeat;
+      opacity: 0.15;
+      z-index: -1;
+    }
+
+
+    #screenshotImage {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 5px solid #01be3a;
+      /* Agregar un borde de 2px sólido de color verde */
+      padding: 8px;
+      /* Añadir un relleno alrededor de la imagen */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      /* Agregar una sombra alrededor de la imagen */
+      width: 300px;
+      /* Especifica el ancho deseado */
+      height: 200px;
+      /* Especifica el alto deseado */
+      object-fit: cover;
+      /* Ajusta la imagen para que cubra el área, recortando si es necesario */
+    }
+
+
+    #saveButton {
+      display: none;
+      position: fixed;
+      top: 85%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      /* Cambiar el color del texto a blanco */
+      background-color: #01be3a;
+      /* Cambiar el color de fondo a rojo */
+      font-size: 24px;
+      /* Ajustar el tamaño de la fuente a 24px */
+      padding: 10px 20px;
+      /* Añadir relleno al botón */
+      border: none;
+      /* Eliminar el borde */
+      border-radius: 13px;
+      /* Agregar esquinas redondeadas */
+    }
+
+    .selected {
+      background-color: lightblue;
+      /* Cambia esto al estilo que prefieras */
+      border: 2px solid blue;
+      /* Ejemplo de un borde */
+    }
+
+    #historial {
+      overflow-y: auto;
+      max-height: 80vh;
+      /* Ajusta la altura máxima según sea necesario */
+    }
+
+    .icon-container {
+      position: fixed;
+      top: 110px;
+      right: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      z-index: 700;
+    }
+
+
+
+    /* Estilo del botón hamburguesa */
+    .hamburger {
+      font-size: 24px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    /* Estilo del contenedor de botones */
+    .icon-container {
+      display: none;
+      /* Oculto por defecto */
+      flex-direction: column;
+      gap: 10px;
+      margin: 10px;
+    }
+
+    /* Estilo para mostrar el menú */
+    .icon-container.show {
+      display: flex;
+    }
+
+    /* Estilo para los botones */
+    .custom-btn {
+      min-width: 150px;
+      /* Fija un ancho mínimo */
+      height: 45px;
+      /* Altura uniforme */
+      background-color: #f0f0f0;
+      border: 1px solid #00a621;
+      border-radius: 12px;
+      text-align: center;
+      padding: 10px;
+      font-size: 14px;
+      white-space: nowrap;
+      /* Evita salto de línea */
+      overflow: hidden;
+      /* Oculta texto desbordado */
+      text-overflow: ellipsis;
+      /* Agrega "..." si se desborda */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+    }
+
+
+    .record-btn {
+      font-size: 1rem;
+      background-color: green;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 54px;
+      height: 54px;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+    }
+
+    .recording {
+      background-color: red !important;
+    }
+  </style>
+
+
+
+</head>
+
+
+
+<div id="header">
+<div>
+  <img src="/logo.png" alt="Logo">
+</div>
+
+
+  <div class="cabecera-elementos">
+
+
+    <div id="resultado">Resultado</div>
+    <div id="BuscarOrden">Buscar Orden</div>
+
+    <!-- Botón Hamburguesa -->
+
+
+
+    <button id="resetButton">Tomar Control</button>
+
+
+
+    <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+    <button id="uploadButtonpdf">Enviar PDF</button>
+    <button id="saveButtonpdf" style="display: none;">Enviar</button>
+
+    <button id="selectFileButton">Inviar Imagen</button>
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+
+    <img id="screenshotImage" style="display: none; max-width: 100%; height: auto;">
+    <button id="saveButton" style="display: none;">Enviar Imagen</button>
+
+
+   
+
+
+    <img id="screenshotImage" style="display: none; max-width: 100%; height: auto;">
+    <button id="saveButton" style="display: none;">Enviar Imagen</button>
+
+
+    <button id="recordBtn" class="record-btn">🎤</button>
+
+
+    <button id="hamburger" class="hamburger">&#9776;</button>
+
+
+
+    <div class="icon-container" id="menu">
+
+      <button class="custom-btn" id="btnEnviarVideo" onclick="window.open('https://wa.link/dnxs5n', '_blank')">Contactar
+        Soporte</button>
+
+<button class="custom-btn" id="btnEnviarVideo" onclick="irAPedidos()">
+  Ir a Pedidos
+</button>
+
+
+  <button class="custom-btn" id="btnToggle">Cambiar estado IA</button>
+
+
+  <!-- Otro HTML cualquiera -->
+<button class="custom-btn" id="btnEntrenarIA" onclick="abrirEntrenadorIA()">
+  Entrenar IA
+</button>
+
+
+
+    </div>
+
+
+  </div>
+
+</div>
+
+
+
+
+<div class="sidebar">
+
+  <h2>Usuarios</h2>
+  <input type="text" id="campoBusqueda" placeholder="Buscar..." oninput="aplicarBusqueda(this.value)">
+  <div id="historial"></div>
+</div>
+
+
+<!-- Contenedor principal -->
+<div id="chat-box">
+
+  <div id="messages1">
+    <!-- Aquí se mostrarán los mensajes recibidos -->
+    Mensajes anteriores...
+  </div>
+</div>
+
+
+
+<!-- Área de respuesta -->
+<div id="response-area">
+
+
+  <img id="screenshotImage" src="" alt="Captura de pantalla" style="display: none;">
+  <button id="saveButton" style="display: none;">Enviar Captura</button>
+
+
+  <textarea id="response" rows="4" placeholder="Escribe tu mensaje..." spellcheck="true"></textarea>
+  <div id="response-buttons">
+    <button id="enviarRespuesta1">Enviar</button>
+    <!-- <button id="contestarButton">Enviar</button> -->
+  </div>
+</div>
+
+<script>
+  const basePath = `/${window.location.pathname.split('/')[1]}`;
+
+</script>
+
+<script>
+ 
+  function irAPedidos() {
+    const url = `${window.location.origin}${basePath}/pedido.html`;
+    window.open(url, '_blank'); // Abre en nueva pestaña
+  }
+</script>
+
+<script>
+
+
+  document.getElementById('btnActualizar').addEventListener('click', () => {
+    fetch(`${basePath}/actualizararray1`, {
+      method: 'POST'
+    })
+      .then(response => response.text())
+      .then(data => {
+       // console.log(data); // Muestra la respuesta del servidor en la consola
+        // Puedes hacer algo más con la respuesta del servidor aquí
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+</script>
+
+
+<script>
+
+
+  // /////////////////////////////////////////////////////////////////////
+  //////////////// MUESTRA EL HISTORIAL
+  ////////////////////////////////////////////
+
+  const historialDiv = document.getElementById('historial');
+  const filterButton = document.createElement('button');
+  filterButton.textContent = 'Filtrar Leidos';
+
+
+  historialDiv.appendChild(filterButton);
+
+  let selectedDiv = null;
+  let MensajeIndex = [];
+  let loadedFiles = {};  // Objeto para realizar un seguimiento de los archivos cargados y sus últimas dos palabras
+  let currentFileName = null;  // Nombre del archivo actualmente seleccionado
+  let checkInterval = null;  // Intervalo para verificar cambios en el archivo seleccionado
+  let filterActive = false;  // Estado del filtro
+
+  // Función para actualizar los archivos JSON existentes
+  async function actualizarHistorial() {
+    const response = await fetch(`${basePath}/sala1`);
+    const files = await response.json();
+
+
+
+    const filePromises = files.map(async (fileName) => {
+      const fileContentResponse = await fetch(`${basePath}/sala1/${fileName}`);
+      const fileContent = await fileContentResponse.json();
+      return { fileName, fileContent };
+    });
+
+
+    const fileContents = await Promise.all(filePromises);
+
+    // Crear un array para almacenar los nuevos divs y añadirlos al DOM después de aplicar el filtro
+    const newDivs = [];
+
+    fileContents.forEach(({ fileName, fileContent }) => {
+      const lastBody = fileContent[fileContent.length - 1].body;
+      let lastTwoWords;
+      const bodyWords = lastBody.split(' ');
+
+      if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/.test(bodyWords[bodyWords.length - 1])) {
+        lastTwoWords = 'Multimedia';
+      } else {
+        lastTwoWords = bodyWords.slice(-2).join(' ');
+      }
+
+      const fileNameWithoutExtension = fileName.replace('.json', '');
+      if (!loadedFiles[fileName]) {
+        // Añade un nuevo div
+        const link = document.createElement('div');
+        link.classList.add('whatsapp-box');
+
+        const circleSpan = document.createElement('span');
+        circleSpan.textContent = '●';
+        circleSpan.style.color = fileContent[fileContent.length - 1].Cambio === 1 ? 'red' : 'black';
+        link.appendChild(circleSpan);
+        link.innerHTML += `${fileNameWithoutExtension}: <br>${lastTwoWords}`;
+        link.addEventListener('click', createClickHandler(fileNameWithoutExtension, link));
+
+
+        newDivs.push(link);
+
+        loadedFiles[fileName] = {
+          element: link,
+          lastTwoWords: lastTwoWords,
+          circleSpan: circleSpan,
+          cambioValue: fileContent[fileContent.length - 1].Cambio
+        };
+      } else {
+        // Actualiza el contenido del div existente
+        const fileData = loadedFiles[fileName];
+        if (fileData.lastTwoWords !== lastTwoWords || fileData.cambioValue !== fileContent[fileContent.length - 1].Cambio) {
+          fileData.element.innerHTML = '';
+          fileData.circleSpan.style.color = fileContent[fileContent.length - 1].Cambio === 1 ? 'red' : 'black';
+          fileData.element.appendChild(fileData.circleSpan);
+          fileData.element.innerHTML += `${fileNameWithoutExtension}: <br>${lastTwoWords}`;
+          fileData.lastTwoWords = lastTwoWords;
+          fileData.cambioValue = fileContent[fileContent.length - 1].Cambio;
+
+          if (fileContent[fileContent.length - 1].Cambio === 1) {
+            // Mueve el div al final solo si ya está visible
+            historialDiv.removeChild(fileData.element);
+            historialDiv.appendChild(fileData.element);
+          }
+        }
+      }
+    });
+
+    // Añadir nuevos divs al DOM y aplicar el filtro
+    newDivs.forEach(div => historialDiv.appendChild(div));
+    //historialDiv.appendChild(document.createElement('br'));  // Añadir un <br> después de los nuevos divs
+
+    // Añadir un div vacío al final para asegurar que haya espacio suficiente
+    const spacer = document.createElement('div');
+    spacer.style.height = '50px';  // Ajusta la altura según sea necesario
+    // historialDiv.appendChild(spacer);
+
+    // Aplicar el filtro después de actualizar
+    aplicarFiltro();
+  }
+
+  // Función para aplicar el filtro
+  function aplicarFiltro() {
+    const divs = historialDiv.querySelectorAll('.whatsapp-box');
+    divs.forEach(div => {
+      // Extrae el texto limpio del `div`, sin etiquetas HTML ni caracteres especiales
+      const rawFileName = div.textContent.split(':')[0].trim();
+
+      // Limpia el nombre del archivo de caracteres no deseados (como el punto)
+      const fileName = rawFileName.replace(/[^a-zA-Z0-9]/g, ''); // Elimina caracteres no alfanuméricos
+      const fileKey = `${fileName}.json`;
+
+      // Accede al contenido del archivo JSON en loadedFiles
+      const fileContent = loadedFiles[fileKey];
+
+    //  console.log(`FileName extracted: ${rawFileName}`);
+      // console.log(`Cleaned FileName: ${fileName}`);
+      // console.log(`FileKey: ${fileKey}`);
+      // console.log(`FileContent:`, fileContent); // Imprime el objeto completo
+
+      if (filterActive) {
+        if (fileContent && fileContent.circleSpan.style.color === 'red') {
+          div.style.display = 'block';  // Mostrar el div
+        } else {
+          div.style.display = 'none';  // Ocultar el div
+        }
+      } else {
+        div.style.display = 'block';  // Mostrar todos los divs
+      }
+    });
+  }
+
+  // Función asincrónica para cargar el historial de mensajes
+  async function cargarHistorial() {
+    await actualizarHistorial();
+  }
+
+
+
+
+
+
+
+  function aplicarBusqueda(terminoBusqueda) {
+    const divs = historialDiv.querySelectorAll('.whatsapp-box');
+    const terminoNormalizado = terminoBusqueda.trim().toLowerCase();
+
+    if (!terminoNormalizado) {
+      // Si el término de búsqueda está vacío, restaura el filtro original
+      aplicarFiltro();
+      return;
+    }
+
+    divs.forEach(div => {
+      const textoDiv = div.textContent.toLowerCase();
+
+      if (textoDiv.includes(terminoNormalizado)) {
+        div.style.display = 'block'; // Mostrar si coincide
+      } else {
+        div.style.display = 'none'; // Ocultar si no coincide
+      }
+    });
+  }
+
+
+
+
+
+
+  let cargaCompleta = true;
+  // Función que crea un manejador de eventos para el click de cada enlace
+  let bloqueadoPorCarga = false; // Nueva variable global
+
+  function createClickHandler(fileName, link) {
+    return async () => {
+      if (bloqueadoPorCarga) {
+        console.warn('Carga en progreso, espere...');
+        return;
+      }
+
+      try {
+        bloqueadoPorCarga = true;
+        cargaCompleta = false;
+
+       // console.log(`Clic en: ${fileName}`);
+
+        // Desmarcar visual anterior y marcar actual
+        if (selectedDiv) selectedDiv.classList.remove('selected');
+        link.classList.add('selected');
+        selectedDiv = link;
+
+        // Cancelar intervalo anterior
+        if (checkInterval) clearInterval(checkInterval);
+
+        // Limpiar UI y estado completamente
+        const messagesContainer = document.getElementById('messages1');
+        if (messagesContainer) messagesContainer.innerHTML = '';
+        idsMensajesCargados.clear();
+        ultimoTimestamp = 0;
+        MensajeIndex.length = 0;
+
+        // Obtener nuevo archivo
+        const response = await fetch(`${basePath}/sala1/${fileName}.json`);
+        if (!response.ok) throw new Error(`Error al cargar ${fileName}.json`);
+
+        const fileContent = await response.json();
+        if (!Array.isArray(fileContent)) throw new Error('Contenido no es un array');
+
+        // Actualizar MensajeIndex
+        MensajeIndex.push(...fileContent);
+
+        // Enviar al servidor
+        const updateResponse = await fetch(`${basePath}/MensajeIndex`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(MensajeIndex)
+        });
+
+        if (!updateResponse.ok) throw new Error('Error al enviar MensajeIndex al servidor');
+
+        // Cargar mensajes recién actualizados
+        messagesContainer.innerHTML = '';
+        await cargarMensajes();
+        cargaCompleta = true;
+
+        // Guardar archivo actual y reiniciar intervalo
+        currentFileName = fileName;
+        checkInterval = setInterval(() => verificarCambiosArchivo(fileName), 5000);
+
+      } catch (error) {
+        console.error('Error al manejar el clic:', error);
+        alert('Ocurrió un error al cargar los mensajes. Intenta nuevamente.');
+      } finally {
+        bloqueadoPorCarga = false; // Liberamos el clic
+      }
+    };
+  }
+
+
+
+
+
+  // Función para verificar cambios en el archivo seleccionado
+  async function verificarCambiosArchivo(fileName) {
+    const fileContentResponse = await fetch(`${basePath}/sala1/${fileName}.json`);
+    const fileContent = await fileContentResponse.json();
+
+    // Si el contenido del archivo ha cambiado, actualizar MensajeIndex
+    if (MensajeIndex.length !== fileContent.length) {
+     // console.log(`Detectados nuevos datos en ${fileName}, actualizando MensajeIndexS2`);
+      MensajeIndex.length = 0;
+      MensajeIndex.push(...fileContent);
+    //  console.log('MensajeIndex actualizado:', MensajeIndex);
+
+      const updateServerResponse = await fetch(`${basePath}/mensajeIndex`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(MensajeIndex)
+      });
+
+      if (updateServerResponse.ok) {
+      //  console.log('MensajeIndex enviado al servidor');
+      } else {
+        console.error('Error al enviar MensajeIndex al servidor');
+      }
+    }
+  }
+
+  // Agregar evento de click al botón para activar o desactivar el filtro
+  filterButton.addEventListener('click', () => {
+    filterActive = !filterActive;
+    filterButton.textContent = filterActive ? 'Mostrar Todos' : 'Filtrar Leidos';
+    // Actualizar el historial y aplicar el filtro
+    actualizarHistorial();
+  });
+
+  // Cargar el historial al inicio
+  cargarHistorial();
+  // Configurar un intervalo para recargar el historial cada 10 segundos
+  setInterval(cargarHistorial, 10000);
+
+
+
+
+
+
+
+</script>
+
+
+
+
+
+
+
+<script>
+
+  document.getElementById('resetButton').addEventListener('click', function () {
+    // Realizar una solicitud al servidor para reiniciar el array
+    fetch(`${basePath}/reset-array`, { method: 'POST' })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);  // Mostrar el mensaje del servidor si todo fue exitoso
+        } else {
+          alert('Error: ' + data.message);  // Mostrar un mensaje de error si algo falló
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Hubo un error en la solicitud.');
+      });
+  });
+
+
+
+  // ESTE FRAGMENTO COLCOA EL NOMBRE EL USUARIO EN PANTALLA /////////
+
+  function obtenerUsuario1() {
+    // Realiza una solicitud GET al servidor
+    fetch(`${basePath}/Usuarioget1`)
+      .then(response => response.text())
+      .then(data => {
+        // Verifica si data no está vacío antes de mostrarlo
+        if (data.trim() !== '') {
+          const mensaje = `Usuario: ${data}`;
+          document.getElementById('resultado').innerHTML = mensaje;
+        } else {
+          // Si data está vacío, no muestra nada en el cliente
+          document.getElementById('resultado').innerHTML = '';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+
+  // Llama a la función obtenerUsuario1() cada 2 segundos
+  setInterval(obtenerUsuario1, 1000);
+
+
+
+
+  // ESTE NUMERO USUARIO EN PANTALLA /////////
+
+  function Buscarord() {
+    // Realiza una solicitud GET al servidor
+    fetch(`${basePath}/BuscaOrden`)
+      .then(response => response.text())
+      .then(data => {
+        // Verifica si data no está vacío antes de mostrarlo
+        if (data.trim() !== '') {
+          const mensaje = `Número: ${data}`;
+          document.getElementById('BuscarOrden').innerHTML = mensaje;
+        } else {
+          // Si data está vacío, no muestra nada en el cliente
+          document.getElementById('BuscarOrden').innerHTML = '';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+
+  // Llama a la función obtenerUsuario1() cada 2 segundos
+  setInterval(Buscarord, 2000);
+
+
+
+
+
+
+
+
+  // //////////////////////////
+
+
+
+  // esto reinicia el array 
+  document.getElementById('resetButton').addEventListener('click', function () {
+    // Realizar una solicitud al servidor para reiniciar el array
+    fetch(`${basePath}/reset-array`, { method: 'POST' })
+      .then(response => response.json())
+      .then(data => {
+        // alert(data.message); // Mostrar mensaje del servidor
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  });
+
+
+
+
+  // funcion para recibir los mensajes 
+  let ultimoTimestamp = 0;
+  let idsMensajesCargados = new Set();
+
+  async function cargarMensajes() {
+    if (!cargaCompleta) return;
+    try {
+      const response = await fetch(`${basePath}/obtenerMensajes1`);
+      const data = await response.json();
+      const messagesDiv = document.getElementById('messages1');
+
+      data
+        .filter(message => message.body.trim() !== '')
+        .forEach(message => {
+          const { body, timestamp } = message;
+          const uniqueId = timestamp + '|' + body;
+
+          if (idsMensajesCargados.has(uniqueId)) return;
+          idsMensajesCargados.add(uniqueId);
+
+          if (timestamp > ultimoTimestamp) ultimoTimestamp = timestamp;
+
+          let isAsesor = false;
+          let cleanBody = body.trim();
+
+          // Detectar si comienza con "Asesor:" y extraer solo la URL
+          if (cleanBody.startsWith('Asesor:')) {
+            isAsesor = true;
+            cleanBody = cleanBody.replace('Asesor:', '').trim();
+          }
+
+          if (isURL(cleanBody)) {
+            if (cleanBody.endsWith('.ogg')) {
+              const audioContainer = document.createElement('div');
+              audioContainer.style.display = 'inline-block';
+              audioContainer.style.maxWidth = '70%';
+              audioContainer.style.padding = '10px';
+              audioContainer.style.borderRadius = '12px';
+              audioContainer.style.marginBottom = '10px';
+              audioContainer.style.boxSizing = 'border-box';
+
+              if (isAsesor) {
+                audioContainer.style.backgroundColor = '#f0f0f0';
+                audioContainer.style.textAlign = 'left';
+                audioContainer.style.marginLeft = '10px';
+              } else {
+                audioContainer.style.backgroundColor = '#e2f7cb';
+                audioContainer.style.textAlign = 'right';
+                audioContainer.style.marginRight = '10px';
+              }
+
+              const audioElement = document.createElement('audio');
+              audioElement.src = cleanBody;
+              audioElement.controls = true;
+              audioElement.style.display = 'block';
+              audioElement.style.margin = '0 auto';
+
+              audioContainer.appendChild(audioElement);
+              messagesDiv.appendChild(audioContainer);
+
+            } else if (body.endsWith('.mp4')) {
+              const videoElement = document.createElement('video');
+              videoElement.src = body;
+              videoElement.controls = true;
+              videoElement.style.marginBottom = '20px';
+              videoElement.style.width = '320px';
+              videoElement.style.height = '180px';
+              videoElement.style.borderRadius = '8px';
+              messagesDiv.appendChild(videoElement);
+            } else if (body.endsWith('.pdf')) {
+              const pdfThumbnail = document.createElement('img');
+              pdfThumbnail.src = 'https://i.ibb.co/k9xpHX2/337946.png';
+              pdfThumbnail.alt = 'PDF Thumbnail';
+              pdfThumbnail.style.width = '200px';
+              pdfThumbnail.style.height = '200px';
+              pdfThumbnail.style.cursor = 'pointer';
+              pdfThumbnail.style.marginBottom = '20px';
+              pdfThumbnail.addEventListener('click', () => {
+                const newWindow = window.open(body, '_blank');
+                if (newWindow) newWindow.focus();
+                else alert('Permite ventanas emergentes para ver el PDF.');
+              });
+              messagesDiv.appendChild(pdfThumbnail);
+            } else {
+
+
+              let isAsesor = false;
+              let imageUrl = body.trim();
+
+              // Detectar si comienza con "Asesor:" y extraer solo la URL
+              if (imageUrl.startsWith('Asesor:')) {
+                isAsesor = true;
+                imageUrl = imageUrl.replace('Asesor:', '').trim();
+              }
+
+              // Crear contenedor tipo burbuja
+              const imageContainer = document.createElement('div');
+              imageContainer.style.display = 'inline-block';
+              imageContainer.style.maxWidth = '70%';
+              imageContainer.style.padding = '10px';
+              imageContainer.style.borderRadius = '12px';
+              imageContainer.style.marginBottom = '10px';
+              imageContainer.style.boxSizing = 'border-box';
+
+              if (isAsesor) {
+                imageContainer.style.backgroundColor = '#f0f0f0';
+                imageContainer.style.textAlign = 'left';
+                imageContainer.style.marginLeft = '10px';
+              } else {
+                imageContainer.style.backgroundColor = '#e2f7cb';
+                imageContainer.style.textAlign = 'right';
+                imageContainer.style.marginRight = '10px';
+              }
+
+              // Crear imagen
+              const imageElement = document.createElement('img');
+              imageElement.src = imageUrl;
+              imageElement.alt = 'Imagen';
+              imageElement.style.width = '200px';
+              imageElement.style.height = '200px';
+              imageElement.style.objectFit = 'cover';
+              imageElement.style.cursor = 'pointer';
+              imageElement.style.borderRadius = '8px';
+              imageElement.style.display = 'block';
+              imageElement.style.margin = '0 auto';
+
+              imageElement.addEventListener('click', () => {
+                const newWindow = window.open(imageUrl, '_blank');
+                if (newWindow) newWindow.focus();
+                else alert('Permite ventanas emergentes para ver la imagen.');
+              });
+
+              imageContainer.appendChild(imageElement);
+              messagesDiv.appendChild(imageContainer);
+
+            }
+
+
+          } else {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = body;
+            messageElement.style.padding = '10px';
+            messageElement.style.borderRadius = '8px';
+            messageElement.style.marginBottom = '20px';
+            messageElement.style.fontSize = '16px';
+            messageElement.style.wordWrap = 'break-word';
+            messageElement.style.position = 'relative';
+
+            const timeElement = document.createElement('div');
+            const messageTime = new Date(timestamp);
+            const formattedTime = messageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            timeElement.textContent = isNaN(messageTime) ? 'Invalid Date' : formattedTime;
+            timeElement.style.fontSize = '12px';
+            timeElement.style.color = '#888';
+            timeElement.style.marginTop = '5px';
+            timeElement.style.position = 'absolute';
+
+            if (body.startsWith('Asesor:')) {
+              messageElement.style.textAlign = 'left';
+              messageElement.style.backgroundColor = '#f0f0f0';
+              messageElement.style.marginLeft = '10px';
+              timeElement.style.left = '10px';
+            } else {
+              messageElement.style.textAlign = 'right';
+              messageElement.style.backgroundColor = '#e2f7cb';
+              messageElement.style.marginRight = '10px';
+              timeElement.style.right = '10px';
+            }
+
+            messageElement.appendChild(timeElement);
+            messagesDiv.appendChild(messageElement);
+          }
+
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+    } catch (error) {
+      console.error('Error al cargar mensajes:', error);
+    }
+  }
+
+  function isURL(str) {
+    const pattern = /^(http|https):\/\/[^ "]+$/;
+    return pattern.test(str);
+  }
+
+  // Opcional: Evitar cargar si hay video/audio en reproducción
+  function hayMultimediaReproduciendose() {
+    const media = [...document.querySelectorAll('video, audio')];
+    return media.some(el => !el.paused);
+  }
+
+  // Intervalo más largo, con validación
+  setInterval(() => {
+    if (document.hidden || hayMultimediaReproduciendose() || !cargaCompleta) return;
+    cargarMensajes();
+  }, 5000);
+
+  // Llamada inicial
+  cargarMensajes();
+
+
+
+
+
+
+
+
+
+
+  // funcion paar enviar mensajes
+  // Cargar solo mensajes nuevos después de enviar
+  async function enviarRespuesta() {
+    const responseText = document.getElementById('response').value.trim();
+    if (!responseText) return;
+
+    await fetch(`${basePath}/responderMensaje1`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ response: responseText })
+    });
+
+    document.getElementById('response').value = '';
+
+    // Esperar un poco para que el mensaje aparezca en el servidor
+    setTimeout(() => {
+      cargarMensajes();
+    }, 500);
+  }
+
+  function enviarAutomaticamenteDespuesDeUnSegundo() {
+    setTimeout(() => {
+      fetch(`${basePath}/actualizar1`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+       //   console.log('Solicitud automática completada:', data);
+        })
+        .catch(error => {
+          console.error('Error al realizar la solicitud automática:', error);
+        });
+    }, 750);
+  }
+
+  function cambiarColorBoton(color) {
+    document.getElementById('enviarRespuesta1').style.backgroundColor = color;
+  }
+
+  // Llamada inicial (NO afecta audio/video porque ya está optimizada)
+  cargarMensajes();
+
+  document.getElementById('enviarRespuesta1').addEventListener('click', () => {
+    cambiarColorBoton('red');
+    enviarRespuesta();
+    enviarAutomaticamenteDespuesDeUnSegundo();
+    setTimeout(() => cambiarColorBoton('green'), 3000);
+  });
+
+  document.getElementById('response').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      cambiarColorBoton('red');
+      enviarRespuesta();
+      enviarAutomaticamenteDespuesDeUnSegundo();
+      setTimeout(() => cambiarColorBoton('green'), 3000);
+    }
+  });
+
+
+
+
+
+
+  const pasteImage = async (event) => {
+    try {
+      const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          displayImage(blob);
+        }
+      }
+    } catch (error) {
+      console.error('Error al pegar la imagen:', error);
+    }
+  };
+
+  // Función para manejar la selección de una imagen desde el PC
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      displayImage(file);
+    }
+  };
+
+  // Mostrar la imagen en la interfaz
+  const displayImage = (blob) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('screenshotImage').src = e.target.result;
+      document.getElementById('screenshotImage').style.display = 'inline';
+      document.getElementById('saveButton').style.display = 'inline';
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  // Guardar la imagen en el servidor
+  document.getElementById('saveButton').addEventListener('click', async () => {
+    try {
+      const screenshotImage = document.getElementById('screenshotImage');
+      const imageDataUrl = screenshotImage.src;
+
+      const blob = await (await fetch(imageDataUrl)).blob();
+      const randomNum = Math.floor(Math.random() * 1000000) + 1;
+      const filename = `screenshots-${randomNum}.jpg`;
+
+      const formData = new FormData();
+      formData.append('screenshot', blob, filename);
+
+      const response = await fetch(`${basePath}/save-screenshotsmagisterio`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.text();
+      alert(result);
+
+      screenshotImage.style.display = 'none';
+      document.getElementById('saveButton').style.display = 'none';
+
+      setTimeout(async () => {
+        const response2 = await fetch(`${basePath}/actualizarimg`, {
+          method: 'POST',
+        });
+      //  console.log(await response2.text());
+      }, 1000);
+    } catch (error) {
+      console.error('Error al guardar la imagen:', error);
+    }
+  });
+
+  // Eventos
+  document.body.addEventListener('paste', pasteImage);
+  document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+  document.getElementById('selectFileButton').addEventListener('click', () => {
+    document.getElementById('fileInput').click();
+  });
+
+  setInterval(cargarMensajes, 3000);
+
+
+
+
+
+
+
+
+
+
+  // Función para pegar enviar PDF 
+
+  document.getElementById('uploadButtonpdf').addEventListener('click', () => {
+    document.getElementById('pdfInput').click();
+  });
+
+  document.getElementById('pdfInput').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      document.getElementById('saveButtonpdf').style.display = 'inline';
+    }
+  });
+
+  document.getElementById('saveButtonpdf').addEventListener('click', async () => {
+    try {
+      const pdfInput = document.getElementById('pdfInput');
+      const file = pdfInput.files[0];
+
+      if (!file) {
+        alert('Por favor selecciona un archivo PDF primero.');
+        return;
+      }
+
+
+
+      const randomNum = Math.floor(Math.random() * 100000) + 1;
+      const fileExtension = file.name.split('.').pop();
+      const filename = `${file.name.replace(`.${fileExtension}`, '')}-${randomNum}.${fileExtension}`;
+
+      // Crear un nuevo archivo con el nombre modificado
+      const newFile = new File([file], filename, { type: file.type });
+
+      const formData = new FormData();
+      formData.append('pdf', newFile);
+
+
+      const response = await fetch(`${basePath}/save-PDF1`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.text();
+      alert(result);
+
+      // Ocultar el botón después de aceptar el alert
+      document.getElementById('saveButtonpdf').style.display = 'none';
+
+      // Esperar un segundo antes de enviar la solicitud POST adicional
+      // setTimeout(async () => {
+      //   const response2 = await fetch('/actualizarimg', {
+      //     method: 'POST',
+      //   });
+      //   const result2 = await response2.text();
+      //   console.log(result2);
+      // }, 1000); // 1000 milisegundos = 1 segundo
+
+    } catch (error) {
+      console.error('Error al intentar guardar el PDF:', error);
+    }
+  });
+
+
+
+
+
+  const hamburger = document.getElementById('hamburger');
+  const menu = document.getElementById('menu');
+  const buttons = menu.querySelectorAll('button');
+
+  // Mostrar u ocultar menú al hacer clic en el ícono
+  hamburger.addEventListener('click', () => {
+    menu.classList.toggle('show');
+  });
+
+  // Ocultar el menú al hacer clic en cualquier botón del menú
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      menu.classList.remove('show');
+    });
+  });
+
+
+
+
+  /*
+  
+  
+    const btn = document.getElementById('btnEnviarVideo');
+  
+    btn.addEventListener('click', () => {
+      btn.disabled = true;
+      fetch('/enviar-video', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Respuesta del servidor:', data);
+          alert("🎥 Video enviado con éxito.");
+        })
+        .catch(error => {
+          console.error('Error al enviar el video:', error);
+          alert("❌ Error al enviar el video.");
+        })
+        .finally(() => {
+          btn.disabled = false;
+        });
+    });
+  
+  
+  
+  
+    const btntinte = document.getElementById('btnEnviarVideotinte');
+  
+    btntinte.addEventListener('click', () => {
+      btntinte.disabled = true;
+      fetch('/enviar-tinte', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Respuesta del servidor:', data);
+          alert("🎥 Video Tinte enviado con éxito.");
+        })
+        .catch(error => {
+          console.error('Error al enviar el video:', error);
+          alert("❌ Error al enviar el video.");
+        })
+        .finally(() => {
+          btntinte.disabled = false;
+        });
+    });
+  
+  
+  
+    const btndomi = document.getElementById('btnEnviarIMGdomi');
+  
+    btndomi.addEventListener('click', () => {
+      btndomi.disabled = true;
+      fetch('/envioIMGdomi', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Respuesta del servidor:', data);
+          alert("IMG DOMI enviado con éxito.");
+        })
+        .catch(error => {
+          console.error('Error al enviar el video:', error);
+          alert("❌ Error al enviar el video.");
+        })
+        .finally(() => {
+          btndomi.disabled = false;
+        });
+    });
+  
+  
+  
+  
+  
+  
+  
+    const btnformu = document.getElementById('btnEnviarVideoformu');
+  
+    btnformu.addEventListener('click', () => {
+      btnformu.disabled = true;
+      fetch('/enviar-videoformu', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Respuesta del servidor:', data);
+          alert("Formulario enviado con éxito.");
+        })
+        .catch(error => {
+          console.error('Error al enviar el video:', error);
+          alert("❌ Error al enviar el video.");
+        })
+        .finally(() => {
+          btnpromo.disabled = false;
+        });
+    });
+  
+  
+  
+  
+    const btnpromo = document.getElementById('btnEnviarVideopromo');
+  
+    btnpromo.addEventListener('click', () => {
+      btnpromo.disabled = true;
+      fetch('/enviar-videopromo', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Respuesta del servidor:', data);
+          alert("promo enviado con éxito.");
+        })
+        .catch(error => {
+          console.error('Error al enviar el video:', error);
+          alert("❌ Error al enviar el video.");
+        })
+        .finally(() => {
+          btnpromo.disabled = false;
+        });
+    });
+  
+  
+  
+  */
+
+
+
+
+
+  let mediaRecorder;
+  let audioChunks = [];
+
+  const recordBtn = document.getElementById('recordBtn');
+
+  function activarGrabacionVisual() {
+    recordBtn.classList.add('recording');
+  }
+
+  function desactivarGrabacionVisual() {
+    recordBtn.classList.remove('recording');
+  }
+
+  async function iniciarGrabacion() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      const options = {};
+      if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+        options.mimeType = 'audio/webm;codecs=opus';
+      }
+
+      mediaRecorder = new MediaRecorder(stream, options);
+      audioChunks = [];
+
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        const fileName = `${Math.floor(Math.random() * 100000)}_${Date.now()}.webm`;
+
+        const formData = new FormData();
+        formData.append('audio', audioBlob, fileName);
+
+        try {
+          const res = await fetch(`${basePath}/media/send-audio`, {
+            method: 'POST',
+            body: formData
+          });
+
+          const text = await res.text();
+          alert(text);
+        } catch (error) {
+          console.error('Error al enviar el audio:', error);
+        }
+      };
+
+      mediaRecorder.start();
+      activarGrabacionVisual();
+
+    } catch (err) {
+      console.error('No se pudo acceder al micrófono:', err);
+    }
+  }
+
+  function detenerGrabacion() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      desactivarGrabacionVisual();
+    }
+  }
+
+  // Eventos para escritorio y móvil
+  recordBtn.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    iniciarGrabacion();
+  });
+
+  recordBtn.addEventListener('pointerup', e => {
+    e.preventDefault();
+    detenerGrabacion();
+  });
+
+
+
+
+
+
+const apiBase = `${basePath}/api/ia`; // "/cliente2/api/ia"
+
+const $btn = document.getElementById('btnToggle');
+
+async function safeJson(res) {
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { throw new Error(`Respuesta no-JSON (${res.status}): ${text.slice(0,120)}...`); }
+}
+
+async function loadStatus() {
+  const res = await fetch(`${apiBase}/status`, { credentials: 'same-origin' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await safeJson(res);
+  $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+}
+
+async function toggleIA() {
+  const res = await fetch(`${apiBase}/toggle`, {
+    method: 'POST',
+    credentials: 'same-origin'
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await safeJson(res);
+  $btn.textContent = data.ia ? 'Desactivar IA' : 'Activar IA';
+}
+
+document.getElementById('btnToggle').addEventListener('click', toggleIA);
+loadStatus();
+
+
+
+
+
+
+  function abrirEntrenadorIA() {
+    // Apunta al editor que está en la misma carpeta de ese cliente
+    window.open(`${basePath}/admin-instrucciones.html`, '_blank');
+  }
+
+
+
+
+
+</script>
+</body>
+
+</html>

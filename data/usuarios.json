@@ -25,5 +25,12 @@
     "ruta": "/9etnrilc4/index.html",
     "iduser": "789862370866920",
     "IA": true
+  },
+   "cliente5": {
+    "usuario": "David",
+    "password": "picerros123",
+    "ruta": "/9etnrilc5/index.html",
+    "iduser": "789862370866920",
+    "IA": true
   }
 }
