@@ -1,6 +1,3 @@
-// clientes/cliente1/procesarAudio.js
-"use strict";
-
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");

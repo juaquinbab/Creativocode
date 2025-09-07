@@ -16,10 +16,10 @@ const PROCESSED_PATH = path.join(__dirname, "../../data/processed_audios.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
 // =========================
-// Entorno / Config
+/** Entorno / Config */
 // =========================
 const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/";
-const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, ""); // sin slash final
+const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, "");
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN || "";
 const MAX_AUDIO_CONCURRENCY = Math.max(
   1,
@@ -35,15 +35,13 @@ const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 // =========================
 // HTTPS / HTTP clients
 // =========================
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
-// Cliente corto para meta/confirmaciones (no streaming de descarga)
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 2 });
 const http = axios.create({ timeout: 15_000, httpsAgent });
 
 // =========================
 // Utils
 // =========================
 function now() { return new Date().toISOString(); }
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function ensureDir(p) {
   try {
@@ -66,8 +64,6 @@ async function writeJsonAtomic(file, obj) {
   await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
   await fsp.rename(tmp, file);
 }
-
-// “Fresh” (sin caché de require)
 async function readJsonFresh(file, fallback) {
   try { return JSON.parse(await fsp.readFile(file, "utf8")); }
   catch { return fallback; }
@@ -77,26 +73,8 @@ async function readJsonFresh(file, fallback) {
 async function getWabaPhoneIdFresh() {
   const usuariosData = await readJsonFresh(USUARIOS_PATH, null);
   if (!usuariosData) return "";
-  const candidate = usuariosData?.cliente4?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
+  const candidate = usuariosData?.cliente4?.iduser || ""; // ajusta cliente según tu setup
   return candidate || "";
-}
-
-// Retry con backoff exponencial y clasificación de errores
-async function withRetry(fn, { retries = 3, baseDelay = 600, classify = () => "retryable" } = {}) {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try { return await fn(); }
-    catch (e) {
-      lastErr = e;
-      const type = classify(e);
-      if (type === "fatal" || i === retries) break;
-      const jitter = Math.random() * 0.4 + 0.8;
-      const d = Math.round(baseDelay * Math.pow(2, i) * jitter);
-      console.warn(`[${now()}] ⚠️ Retry #${i + 1} en ${d}ms ::`, e?.response?.status || e?.code || e?.message);
-      await sleep(d);
-    }
-  }
-  throw lastErr;
 }
 
 // =========================
@@ -107,45 +85,25 @@ let processed = new Set();
 let processedDirty = false;
 let processedTimer = null;
 
-// Concurrencia y dedupe
 const inFlight = new Set();
 
 // Historial por usuario (batch)
 const historyQueues = new Map(); // from => []
 const historyTimers = new Map(); // from => timeoutId
 
-// Límite de intentos & Tombstones
-const failCounts = new Map();        // audioID -> nº fallos acumulados
-const MAX_FAILS = 5;                 // máx intentos por audioID
-const FAIL_RESET_ON_SUCCESS = true;  // limpiar contador al éxito
-
-const fatalTombstones = new Map();   // audioID -> timestamp del último 4xx fatal
-const FAIL_TTL_MS = 6 * 60 * 60 * 1000; // 6 horas
+// Límite de intentos (descartar inmediato)
+const failCounts = new Map(); // audioID -> nº fallos
+const MAX_FAILS = 1;          // solo 1 intento: si falla, se descarta
 
 function shouldSkip(audioID) {
   const fails = failCounts.get(audioID) || 0;
-  if (fails >= MAX_FAILS) return true;
-  const t = fatalTombstones.get(audioID);
-  if (t && (Date.now() - t) < FAIL_TTL_MS) return true;
-  return false;
+  return fails >= MAX_FAILS;
 }
 function noteFail(audioID) {
-  const current = failCounts.get(audioID) || 0;
-  const next = current + 1;
-  failCounts.set(audioID, next);
-  if (next >= MAX_FAILS) {
-    console.warn(`[${now()}] ⏭️ audioID=${audioID} omitido: alcanzó ${next}/${MAX_FAILS} fallos`);
-  } else {
-    console.warn(`[${now()}] 🔁 Falla #${next}/${MAX_FAILS} para audioID=${audioID}`);
-  }
-}
-function noteFatal(audioID) {
-  fatalTombstones.set(audioID, Date.now());
-  console.warn(`[${now()}] 🚫 Tombstone 4xx para audioID=${audioID} (TTL ${Math.round(FAIL_TTL_MS/3600000)}h)`);
+  failCounts.set(audioID, (failCounts.get(audioID) || 0) + 1);
 }
 function noteSuccess(audioID) {
-  if (FAIL_RESET_ON_SUCCESS) failCounts.delete(audioID);
-  fatalTombstones.delete(audioID);
+  failCounts.delete(audioID);
 }
 
 // =========================
@@ -199,7 +157,7 @@ async function flushUserHistory(from) {
 }
 
 // =========================
-// Confirmación al usuario (opcional)
+// Confirmación al usuario (sin reintentos)
 // =========================
 async function confirmToUser(to) {
   const WABA_PHONE_ID = await getWabaPhoneIdFresh();
@@ -208,8 +166,8 @@ async function confirmToUser(to) {
     return;
   }
   const url = `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`;
-  await withRetry(
-    () => http.post(
+  try {
+    await http.post(
       url,
       {
         messaging_product: "whatsapp",
@@ -219,30 +177,28 @@ async function confirmToUser(to) {
         text: { preview_url: false, body: "🎧 Audio recibido. ¡Gracias!" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
-    ),
-    { retries: 2, baseDelay: 800 }
-  );
+    );
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message);
+  }
 }
 
 // =========================
-// Meta / descarga
+// Meta / descarga (sin reintentos)
 // =========================
 async function fetchAudioMeta(audioID) {
-  const url = `https://graph.facebook.com/v20.0/${audioID}?fields=url,mime_type`;
-  const { data } = await withRetry(
-    () => http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }),
-    {
-      retries: 3,
-      baseDelay: 600,
-      classify: (e) => {
-        const s = e?.response?.status;
-        // 4xx (≠429) => fatal (ej. 404/403/400), activará tombstone
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
-  );
-  return data; // { url, mime_type? }
+  try {
+    const url = `https://graph.facebook.com/v20.0/${audioID}?fields=url,mime_type`;
+    const { data } = await http.get(url, {
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` }
+    });
+    return data; // { url, mime_type? }
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error al obtener meta de audioID=${audioID}:`, e?.response?.status || e.message);
+    // marcar como fallo definitivo
+    failCounts.set(audioID, MAX_FAILS);
+    return null;
+  }
 }
 
 function pickExt(mime) {
@@ -254,45 +210,42 @@ function pickExt(mime) {
   return ".ogg"; // default
 }
 
-async function downloadToFile(fileUrl, destPath) {
+async function downloadToFile(fileUrl, destPath, audioID) {
   const tmpPath = `${destPath}.download`;
   console.log(`[${now()}] ⬇️ Descargando audio: ${fileUrl}`);
-
-  const resp = await withRetry(
-    () => axios.get(fileUrl, {
+  try {
+    const resp = await axios.get(fileUrl, {
       httpsAgent,
       responseType: "stream",
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-      timeout: 0, // descargas largas
+      timeout: 20_000,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    }),
-    {
-      retries: 3,
-      baseDelay: 800,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
-  );
+    });
 
-  await new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(tmpPath);
-    resp.data.on("error", reject);
-    writer.on("error", reject);
-    writer.on("finish", resolve);
-    resp.data.pipe(writer);
-  });
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmpPath);
+      resp.data.on("error", reject);
+      writer.on("error", reject);
+      writer.on("finish", resolve);
+      resp.data.pipe(writer);
+    });
 
-  // Fsync para evitar corrupción
-  const fh = await fsp.open(tmpPath, "r+");
-  await fh.sync();
-  await fh.close();
+    // Fsync para evitar corrupción
+    const fh = await fsp.open(tmpPath, "r+");
+    await fh.sync();
+    await fh.close();
 
-  await fsp.rename(tmpPath, destPath);
-  console.log(`[${now()}] ✅ Audio guardado: ${destPath}`);
+    await fsp.rename(tmpPath, destPath);
+    console.log(`[${now()}] ✅ Audio guardado: ${destPath}`);
+    return true;
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error descargando audioID=${audioID}:`, e?.response?.status || e.message);
+    // fallo definitivo
+    failCounts.set(audioID, MAX_FAILS);
+    try { await fsp.rm(tmpPath, { force: true }); } catch {}
+    return false;
+  }
 }
 
 // =========================
@@ -310,13 +263,13 @@ function isAudioCandidate(e) {
 }
 
 // =========================
-// Procesamiento individual (candado + límites)
+// Procesamiento individual (candado + un solo intento)
 // =========================
 async function processOneAudio(entry) {
   const { from, id, audioID, timestamp } = entry;
 
   if (shouldSkip(audioID)) {
-    console.warn(`[${now()}] ⏭️ audioID=${audioID} omitido (excedió límites o en tombstone)`);
+    console.warn(`[${now()}] ⏭️ audioID=${audioID} omitido (fallo previo)`);
     return;
   }
   if (inFlight.has(audioID)) return;
@@ -325,21 +278,21 @@ async function processOneAudio(entry) {
   try {
     if (processed.has(audioID)) return;
 
-    // Nombre base y extensión (preferir por mime)
-    const meta = await fetchAudioMeta(audioID).catch((e) => {
-      const s = e?.response?.status;
-      if (s && s >= 400 && s < 500 && s !== 429) noteFatal(audioID);
-      throw e;
-    });
+    // 1) META
+    const meta = await fetchAudioMeta(audioID);
+    if (!meta || !meta.url) {
+      console.warn(`[${now()}] ⚠️ audioID=${audioID} sin URL/meta. Descartado.`);
+      return;
+    }
 
+    // 2) filename
     const mime = meta?.mime_type || "";
     const ext = pickExt(mime);
-
     const safeFrom = String(from || "").replace(/[^\dA-Za-z._-]/g, "_");
     const filename = `${safeFrom}-${id}-${audioID}${ext}`;
     const filePath = path.join(PUBLIC_AUDIO_DIR, filename);
 
-    // Fast path: si ya existe el archivo, marca procesado
+    // Fast path: ya existe
     try {
       await fsp.access(filePath, fs.constants.F_OK);
       processed.add(audioID);
@@ -348,20 +301,14 @@ async function processOneAudio(entry) {
       return;
     } catch {}
 
-    const audioUrl = meta?.url;
-    if (!audioUrl) {
-      console.warn(`[${now()}] ⚠️ audioID ${audioID} sin URL`);
-      noteFail(audioID);
+    // 3) DESCARGA
+    const ok = await downloadToFile(meta.url, filePath, audioID);
+    if (!ok) {
+      console.warn(`[${now()}] ⚠️ Falla definitiva al descargar audioID=${audioID}, descartado.`);
       return;
     }
 
-    await downloadToFile(audioUrl, filePath).catch((e) => {
-      const s = e?.response?.status;
-      if (s && s >= 400 && s < 500 && s !== 429) noteFatal(audioID);
-      throw e;
-    });
-
-    // Encolar historial (batch)
+    // 4) HISTORIAL
     const nuevo = {
       from,
       body: `${BASE_URL}/Audio/${filename}`,
@@ -378,23 +325,19 @@ async function processOneAudio(entry) {
     };
     queueHistory(from, nuevo);
 
-    // Confirmación (no bloqueante)
-    confirmToUser(from).catch((e) =>
-      console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
-    );
+    // 5) CONFIRMACIÓN (no bloqueante)
+    confirmToUser(from).catch(() => {});
 
-    // Marcar procesado
+    // 6) MARCAR PROCESADO
     processed.add(audioID);
     scheduleSaveProcessed();
     noteSuccess(audioID);
 
     console.log(`[${now()}] 🎉 Audio procesado: ${audioID}`);
   } catch (e) {
-    console.error(
-      `[${now()}] ❌ Error procesando audioID=${audioID}:`,
-      e?.response?.status ? `${e.response.status} ${e.message}` : e.message
-    );
-    noteFail(audioID);
+    console.error(`[${now()}] ❌ Error procesando audioID=${audioID}:`, e?.response?.status ? `${e.response.status} ${e.message}` : e.message);
+    // fallo definitivo
+    failCounts.set(audioID, MAX_FAILS);
   } finally {
     inFlight.delete(audioID);
   }
@@ -417,7 +360,7 @@ async function runPool(items, worker, concurrency = 2) {
 }
 
 // =========================
-// Motor de pendientes (dedupe + límites)
+// Motor de pendientes (dedupe)
 // =========================
 async function processPendingAudios() {
   if (processing) return;
@@ -426,7 +369,6 @@ async function processPendingAudios() {
     const etapas = await readJsonSafe(ETA_PATH, []);
     if (!Array.isArray(etapas) || etapas.length === 0) return;
 
-    // Filtro + skip por límites
     const raw = etapas
       .filter(isAudioCandidate)
       .filter((e) => !processed.has(e.audioID))
@@ -434,7 +376,7 @@ async function processPendingAudios() {
 
     if (raw.length === 0) return;
 
-    // Dedupe por audioID (dejar el más antiguo por timestamp)
+    // Dedupe por audioID (toma el más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.audioID);
@@ -475,11 +417,10 @@ function startWatchEtapas() {
     setInterval(triggerProcessDebounced, 2_000);
   }
 
-  // Polling suave adicional (opcional, útil en contenedores)
+  // Polling suave adicional (útil en contenedores)
   setInterval(triggerProcessDebounced, 2_000);
 }
 
-// (Opcional) Watch de usuarios.json (solo logea cambios)
 function startWatchUsuarios() {
   try {
     const watcher = fs.watch(USUARIOS_PATH, { persistent: true }, (eventType) => {
@@ -503,15 +444,9 @@ async function iniciarMonitoreoAudio() {
     console.error(`[${now()}] ❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media de WhatsApp Cloud API.`);
     return;
   }
-
-  // Preparar directorios
   await ensureDir(PUBLIC_AUDIO_DIR);
   await ensureDir(SALA_CHAT_DIR);
-
-  // Estado
   await initProcessed();
-
-  // Corrida inicial + watchers
   await processPendingAudios();
   startWatchEtapas();
   startWatchUsuarios();
