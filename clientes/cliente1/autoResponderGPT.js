@@ -74,7 +74,7 @@ const responderConGPT = async (mensaje) => {
 
     // Prompt a OpenAI
     const data = {
-      model: "gpt-4.1",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
