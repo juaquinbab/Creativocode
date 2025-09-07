@@ -33,7 +33,7 @@ const MAX_IMAGE_CONCURRENCY = Math.max(
 const GRAPH_MEDIA_VERSION = "v20.0";
 const GRAPH_MESSAGES_VERSION = "v20.0";
 
-// Directorios de salida (intenta primero el del proyecto; si no, /tmp)
+// Directorios de salida
 const PUBLIC_IMAGE_DIR_CANDIDATE = path.join(process.cwd(), "public/Imagenes");
 const FALLBACK_IMAGE_DIR = "/tmp/imagenes";
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
@@ -42,7 +42,6 @@ const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
  * HTTP client
  * =======================*/
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
-// Cliente para llamadas cortas (meta, confirmaciones)
 const http = axios.create({ timeout: 20_000, httpsAgent });
 
 /* =========================
@@ -53,25 +52,6 @@ function requireFresh(p) {
   return require(p);
 }
 function now() { return new Date().toISOString(); }
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-async function withRetry(fn, { retries = 3, baseDelay = 500, classify = () => "retryable" } = {}) {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try { return await fn(); }
-    catch (e) {
-      lastErr = e;
-      const type = classify(e);
-      if (type === "fatal" || i === retries) break;
-      const jitter = Math.random() * 0.4 + 0.8;
-      const delay = Math.round(baseDelay * Math.pow(2, i) * jitter);
-      console.warn(`[${now()}] ⚠️ Retry #${i + 1} en ${delay}ms ::`, e?.code || e?.message);
-      await sleep(delay);
-    }
-  }
-  throw lastErr;
-}
-
 async function readJsonSafe(file, fallback) {
   try { return JSON.parse(await fsp.readFile(file, "utf8")); }
   catch { return fallback; }
@@ -191,7 +171,6 @@ async function flushUserHistory(from) {
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    // Ajusta aquí si corresponde a cliente1/cliente2/cliente3
     return usuariosData?.cliente3?.iduser || "";
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
@@ -200,23 +179,20 @@ function getWabaPhoneId() {
 }
 
 /* =========================
- * Meta / descarga
+ * Meta / descarga (sin reintentos)
  * =======================*/
 async function fetchImageMeta(imgID) {
-  const url = `https://graph.facebook.com/${GRAPH_MEDIA_VERSION}/${imgID}?fields=url,mime_type`;
-  const { data } = await withRetry(
-    () => http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }),
-    {
-      retries: 3,
-      baseDelay: 600,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
-  );
-  return data; // { url, mime_type }
+  try {
+    const url = `https://graph.facebook.com/${GRAPH_MEDIA_VERSION}/${imgID}?fields=url,mime_type`;
+    const { data } = await http.get(url, {
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` }
+    });
+    return data;
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error al obtener meta de imgID=${imgID}:`, e?.response?.status || e.message);
+    failCounts.set(imgID, MAX_FAILS);
+    return null;
+  }
 }
 
 function pickExt(mime) {
@@ -228,50 +204,43 @@ function pickExt(mime) {
 }
 
 async function downloadImageToFile(fileUrl, baseFilenameNoExt, mimeFromMeta = "") {
-  // Para stream de descarga: sin límite de tamaño; timeout alto o 0.
-  const resp = await withRetry(
-    () => axios.get(fileUrl, {
+  try {
+    const resp = await axios.get(fileUrl, {
       httpsAgent,
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
       responseType: "stream",
-      timeout: 0,                 // evita cortar en descargas lentas
+      timeout: 20_000,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    }),
-    {
-      retries: 3,
-      baseDelay: 800,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
-  );
+    });
 
-  const headerMime = resp.headers?.["content-type"] || "";
-  const ext = pickExt(mimeFromMeta || headerMime);
+    const headerMime = resp.headers?.["content-type"] || "";
+    const ext = pickExt(mimeFromMeta || headerMime);
 
-  const finalFilename = `${baseFilenameNoExt}${ext}`;
-  const finalPath = path.join(PUBLIC_IMAGE_DIR, finalFilename);
-  const tmpPath = `${finalPath}.download`;
+    const finalFilename = `${baseFilenameNoExt}${ext}`;
+    const finalPath = path.join(PUBLIC_IMAGE_DIR, finalFilename);
+    const tmpPath = `${finalPath}.download`;
 
-  await new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(tmpPath);
-    resp.data.on("error", reject);
-    writer.on("error", reject);
-    writer.on("finish", resolve);
-    resp.data.pipe(writer);
-  });
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmpPath);
+      resp.data.on("error", reject);
+      writer.on("error", reject);
+      writer.on("finish", resolve);
+      resp.data.pipe(writer);
+    });
 
-  // Sincroniza y renombra
-  const fh = await fsp.open(tmpPath, "r+");
-  await fh.sync();
-  await fh.close();
+    const fh = await fsp.open(tmpPath, "r+");
+    await fh.sync();
+    await fh.close();
 
-  await fsp.rename(tmpPath, finalPath);
-  console.log(`[${now()}] ✅ Guardada ${finalFilename} en ${PUBLIC_IMAGE_DIR}`);
-  return { filename: finalFilename, filePath: finalPath };
+    await fsp.rename(tmpPath, finalPath);
+    console.log(`[${now()}] ✅ Guardada ${finalFilename} en ${PUBLIC_IMAGE_DIR}`);
+    return { filename: finalFilename, filePath: finalPath };
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error descargando imagen ${baseFilenameNoExt}:`, e?.response?.status || e.message);
+    failCounts.set(baseFilenameNoExt, MAX_FAILS);
+    return null;
+  }
 }
 
 /* =========================
@@ -299,8 +268,8 @@ async function confirmToUser(to) {
     return;
   }
   const url = `https://graph.facebook.com/${GRAPH_MESSAGES_VERSION}/${WABA_PHONE_ID}/messages`;
-  await withRetry(
-    () => http.post(
+  try {
+    await http.post(
       url,
       {
         messaging_product: "whatsapp",
@@ -315,87 +284,63 @@ async function confirmToUser(to) {
         },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
-    ),
-    { retries: 2, baseDelay: 1_000 }
-  );
+    );
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message);
+  }
 }
 
 /* =========================
- * Reintentos controlados por imgID (evita loops)
+ * Reintentos controlados por imgID
  * =======================*/
-const failCounts = new Map();       // imgID -> nº fallos
-const MAX_FAILS = 5;                // máximo de intentos
-const FAIL_RESET_ON_SUCCESS = true; // limpiar contador al éxito
-
+const failCounts = new Map();
+const MAX_FAILS = 1; // solo un intento
 function shouldSkip(imgID) {
   const fails = failCounts.get(imgID) || 0;
   return fails >= MAX_FAILS;
 }
-function noteFail(imgID) {
-  const current = failCounts.get(imgID) || 0;
-  const next = current + 1;
-  failCounts.set(imgID, next);
-  if (next >= MAX_FAILS) {
-    console.warn(`[${now()}] ⏭️ imgID=${imgID} omitido: alcanzó ${next}/${MAX_FAILS} fallos`);
-  } else {
-    console.warn(`[${now()}] 🔁 Falla #${next}/${MAX_FAILS} para imgID=${imgID}`);
-  }
-}
-function noteSuccess(imgID) {
-  if (FAIL_RESET_ON_SUCCESS) failCounts.delete(imgID);
-}
 
 /* =========================
- * Procesamiento individual (con candado y dedupe)
+ * Procesamiento individual
  * =======================*/
 async function processOneImage(entry) {
   const { from, id, imgID, timestamp } = entry;
 
   if (shouldSkip(imgID)) {
-    console.warn(`[${now()}] ⏭️ imgID=${imgID} ya está marcado para omitir (superó ${MAX_FAILS} fallos)`);
+    console.warn(`[${now()}] ⏭️ imgID=${imgID} omitido (fallo previo)`);
     return;
   }
   if (inFlight.has(imgID)) return;
   inFlight.add(imgID);
+
   try {
     if (processed.has(imgID)) return;
 
     const safeFrom = String(from || "").replace(/[^\dA-Za-z._-]/g, "_");
     const baseName = `${safeFrom}-${id}-${imgID}`;
 
-    // Salida rápida: ya existe en disco con alguna extensión típica
     const maybeExts = [".jpg", ".jpeg", ".png", ".webp"];
     for (const ext of maybeExts) {
       const p = path.join(PUBLIC_IMAGE_DIR, `${baseName}${ext}`);
       if (await fileExists(p)) {
         processed.add(imgID);
         scheduleSaveProcessed();
-        noteSuccess(imgID);
         return;
       }
     }
 
     console.log(`[${now()}] ▶️ Procesando imgID=${imgID} from=${from}`);
 
-    // 1) Meta
     const meta = await fetchImageMeta(imgID);
-    const imageUrl = meta?.url;
-    const mimeFromMeta = meta?.mime_type || "";
+    if (!meta || !meta.url) return;
 
-    if (!imageUrl) {
-      console.warn(`[${now()}] ⚠️ imgID ${imgID} sin URL. Se cuenta como fallo.`);
-      noteFail(imgID);
-      return;
-    }
+    const result = await downloadImageToFile(meta.url, baseName, meta.mime_type || "");
+    if (!result) return;
 
-    // 2) Descargar
-    const { filename } = await downloadImageToFile(imageUrl, baseName, mimeFromMeta);
-
-    // 3) Historial
     const nuevo = {
       from,
-      body: `${BASE_IMAGE_URL()}/${filename}`,
-      filename,
+      body: `${BASE_IMAGE_URL()}/${result.filename}`,
+      filename: result.filename,
       etapa: 32,
       timestamp: Date.now(),
       IDNAN: 4,
@@ -408,21 +353,12 @@ async function processOneImage(entry) {
     };
     queueHistory(from, nuevo);
 
-    // 4) Confirmación (no bloqueante)
-    confirmToUser(from).catch((e) =>
-      console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
-    );
-
-    // 5) Marcar procesada
+    confirmToUser(from).catch(() => {});
     processed.add(imgID);
     scheduleSaveProcessed();
-    noteSuccess(imgID);
   } catch (e) {
-    console.error(
-      `[${now()}] ❌ Error procesando imgID=${imgID}:`,
-      e?.response?.status ? `${e.response.status} ${e.message}` : e.message
-    );
-    noteFail(imgID);
+    console.error(`[${now()}] ❌ Error procesando imgID=${imgID}:`, e.message);
+    failCounts.set(imgID, MAX_FAILS);
   } finally {
     inFlight.delete(imgID);
   }
@@ -445,7 +381,7 @@ async function runPool(items, worker, concurrency = 2) {
 }
 
 /* =========================
- * Motor de pendientes (con dedupe por imgID)
+ * Motor de pendientes
  * =======================*/
 async function processPendingImages() {
   if (processing) return;
@@ -461,7 +397,6 @@ async function processPendingImages() {
 
     if (raw.length === 0) return;
 
-    // Dedupe por imgID (toma el más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.imgID);
@@ -478,7 +413,7 @@ async function processPendingImages() {
 }
 
 /* =========================
- * Watcher con debounce + fallback polling
+ * Watcher + polling
  * =======================*/
 let debounceTimer = null;
 function triggerProcessDebounced(delay = 600) {
@@ -503,7 +438,6 @@ function startWatch() {
     setInterval(triggerProcessDebounced, 2_000);
   }
 
-  // Activar polling siempre en producción (Railway/contenerizado)
   setInterval(triggerProcessDebounced, 2_000);
 }
 
@@ -533,8 +467,8 @@ async function iniciarMonitoreoImagen() {
   }
   await resolveImageDir();
   await initProcessed();
-  await processPendingImages(); // corrida inicial
-  startWatch();                 // reactivo por cambios
+  await processPendingImages();
+  startWatch();
 }
 
 module.exports = iniciarMonitoreoImagen;
