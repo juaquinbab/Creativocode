@@ -14,31 +14,55 @@ const PUBLIC_PDF_DIR = path.join(process.cwd(), "public/pdf");
 
 // === ENV ===
 // URL pública donde sirves /public (sin barra final)
-const BASE_URL = (process.env.PUBLIC_BASE_URL || "https://creativoscode.com//").replace(/\/+$/, "");
-const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN;
-let WABA_PHONE_ID = process.env.WABA_PHONE_ID; // fallback a usuarios.json si existe
+const BASE_URL = String(process.env.PUBLIC_BASE_URL || "https://creativoscode.com/")
+  .replace(/\/+$/, "");
+const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN || "";
 
 // Asegurar directorios
 if (!fs.existsSync(SALA_CHAT_DIR)) fs.mkdirSync(SALA_CHAT_DIR, { recursive: true });
 if (!fs.existsSync(PUBLIC_PDF_DIR)) fs.mkdirSync(PUBLIC_PDF_DIR, { recursive: true });
 
-// Cargar IDNUMERO desde usuarios.json si no viene por ENV
-try {
-  const usuarios = JSON.parse(fs.readFileSync(USUARIOS_PATH, "utf8"));
-  if (!WABA_PHONE_ID) WABA_PHONE_ID = usuarios?.cliente2?.iduser || "";
-} catch (e) {
-  console.warn("⚠️ No se pudo leer usuarios.json para WABA_PHONE_ID (opcional).");
+// --- cargar JSON sin caché (siempre fresco) ---
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getWabaPhoneId() {
+  const fromEnv = process.env.WABA_PHONE_ID;
+  if (fromEnv) return fromEnv;
+  try {
+    const usuarios = requireFresh(USUARIOS_PATH);
+    // ajusta la clave si necesitas otro cliente
+    return usuarios?.cliente2?.iduser || "";
+  } catch {
+    return "";
+  }
 }
 
 // Axios con timeout
 const http = axios.create({ timeout: 15000 });
 
-// Estado
+// === Estado / límites ===
 let processing = false;
 let processed = new Set();
 let lastMtime = 0;
 
+const failCounts = new Map(); // documentId -> nº fallos
+const MAX_FAILS = 1;          // un solo intento
+
+function shouldSkip(documentId) {
+  return (failCounts.get(documentId) || 0) >= MAX_FAILS;
+}
+function noteFail(documentId) {
+  failCounts.set(documentId, (failCounts.get(documentId) || 0) + 1);
+}
+function noteSuccess(documentId) {
+  failCounts.delete(documentId);
+}
+
 // ==== Utils ====
+function now() { return new Date().toISOString(); }
+
 async function loadJSONSafe(file, fallback) {
   try {
     const raw = await fsp.readFile(file, "utf8");
@@ -52,7 +76,7 @@ async function saveProcessed() {
   try {
     await fsp.writeFile(PROCESSED_PATH, JSON.stringify([...processed], null, 2));
   } catch (e) {
-    console.error("❌ Error guardando processed_pdfs:", e.message);
+    console.error(`[${now()}] ❌ Error guardando processed_pdfs:`, e.message);
   }
 }
 
@@ -61,69 +85,81 @@ async function initProcessed() {
   processed = new Set(list);
 }
 
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+function safeName(s) {
+  return String(s || "").replace(/[^\dA-Za-z._-]/g, "_");
 }
 
-async function withRetry(fn, { retries = 3, baseDelay = 600 } = {}) {
-  let err;
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (e) {
-      err = e;
-      await sleep(baseDelay * Math.pow(2, i));
-    }
-  }
-  throw err;
-}
-
-// ==== WhatsApp / Meta ====
+// ==== WhatsApp / Meta (SIN reintentos) ====
 async function fetchDocMeta(documentId) {
-  const url = `https://graph.facebook.com/v19.0/${documentId}`;
-  const { data } = await withRetry(() =>
-    http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } })
-  );
-  return data; // { url, ... }
+  try {
+    const url = `https://graph.facebook.com/v19.0/${documentId}`;
+    const { data } = await http.get(url, {
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` },
+      params: { fields: "url,mime_type" },
+    });
+    return data; // { url, ... }
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error meta PDF documentId=${documentId}:`, e?.response?.status || e.message);
+    noteFail(documentId); // fallo definitivo
+    return null;
+  }
 }
 
 async function confirmToUser(to) {
-  if (!WABA_PHONE_ID || !WABA_TOKEN) {
-    console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
+  const WABA_PHONE_ID = getWabaPhoneId(); // SIEMPRE FRESCO
+  if (!to || !WABA_PHONE_ID || !WABA_TOKEN) {
+    console.warn(`[${now()}] ⚠️ No se envía confirmación: falta to/WABA_PHONE_ID/WHATSAPP_API_TOKEN`);
     return;
   }
   const url = `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`;
-  await withRetry(() =>
-    http.post(
+  try {
+    await http.post(
       url,
       {
         messaging_product: "whatsapp",
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "PDF recibido." },
+        text: { preview_url: false, body: "📄 PDF recibido. ¡Gracias!" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
-    )
-  );
+    );
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error al confirmar PDF al usuario:`, e?.response?.data || e.message);
+  }
 }
 
-// ==== IO ====
-async function downloadToFile(fileUrl, destPath) {
-  const tmp = destPath + ".download";
-  const resp = await withRetry(() =>
-    http.get(fileUrl, {
+// ==== IO (SIN reintentos) ====
+async function downloadToFile(fileUrl, destPath, documentId) {
+  const tmp = `${destPath}.download`;
+  try {
+    const resp = await http.get(fileUrl, {
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
       responseType: "stream",
-    })
-  );
-  await new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(tmp);
-    resp.data.pipe(writer);
-    writer.on("finish", resolve);
-    writer.on("error", reject);
-  });
-  await fsp.rename(tmp, destPath);
+      timeout: 20000,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmp);
+      resp.data.on("error", reject);
+      writer.on("error", reject);
+      writer.on("finish", resolve);
+      resp.data.pipe(writer);
+    });
+    // fsync para evitar corrupción
+    const fh = await fsp.open(tmp, "r+");
+    await fh.sync();
+    await fh.close();
+
+    await fsp.rename(tmp, destPath);
+    return true;
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error descargando PDF documentId=${documentId}:`, e?.response?.status || e.message);
+    noteFail(documentId); // fallo definitivo
+    try { await fsp.rm(tmp, { force: true }); } catch {}
+    return false;
+  }
 }
 
 async function appendHistorial(from, record) {
@@ -135,13 +171,13 @@ async function appendHistorial(from, record) {
 
 // ==== Filtros/candidatos ====
 function isPdfCandidate(e) {
-  // Evita depender de Idp para no bloquear nuevos; ajusta si tu flujo lo requiere
   return (
     e &&
-    e.documentId &&
     typeof e.documentId === "string" &&
-    e.etapa >= 0 &&
-    e.etapa <= 300 && // ampliado frente a 0..9
+    e.documentId.trim() !== "" &&
+    Number.isFinite(Number(e.etapa)) &&
+    e.etapa >= 0 && e.etapa <= 300 &&
+    e.Idp !== -999 &&
     !e.pdfProcesado
   );
 }
@@ -150,30 +186,31 @@ function isPdfCandidate(e) {
 async function processOnePDF(entry, etapas) {
   const { from, id, documentId, timestamp } = entry;
 
-  if (processed.has(documentId)) return;
+  if (processed.has(documentId) || shouldSkip(documentId)) return;
 
-  // Nombre único: usa id + documentId para robustez
-  const filename = `${from}-${id}-${documentId}.pdf`;
+  const safeFrom = safeName(from);
+  const filename = `${safeFrom}-${id}-${documentId}.pdf`;
   const pdfPath = path.join(PUBLIC_PDF_DIR, filename);
 
   if (fs.existsSync(pdfPath)) {
     processed.add(documentId);
     await saveProcessed();
+    noteSuccess(documentId);
     return;
   }
 
-  // Meta -> URL
   const meta = await fetchDocMeta(documentId);
-  const pdfUrl = meta?.url;
-  if (!pdfUrl) {
-    console.warn(`⚠️ documentId ${documentId} sin URL. Saltando.`);
+  if (!meta || !meta.url) {
+    console.warn(`[${now()}] ⚠️ documentId=${documentId} sin URL/meta. Descartado.`);
     return;
   }
 
-  // Descargar
-  await downloadToFile(pdfUrl, pdfPath);
+  const ok = await downloadToFile(meta.url, pdfPath, documentId);
+  if (!ok) {
+    console.warn(`[${now()}] ⚠️ Descarga fallida documentId=${documentId}. Descartado.`);
+    return;
+  }
 
-  // Guardar en historial
   const nuevo = {
     from,
     body: `${BASE_URL}/pdf/${filename}`,
@@ -184,33 +221,24 @@ async function processOnePDF(entry, etapas) {
     Cambio: 1,
     Idp: 1,
     idp: 0,
-    source_ts: timestamp,
-    message_id: id,
+    source_ts: timestamp || null,
+    message_id: id || null,
     documentId,
   };
   await appendHistorial(from, nuevo);
 
-  // Marcar en EtapasMSG (pdfProcesado)
   const idx = etapas.findIndex((e) => e.id === id);
   if (idx !== -1) {
     etapas[idx].pdfProcesado = true;
-    // Opcional: también marcar Idp / idp si tu flujo lo necesita
-    // etapas[idx].Idp = 1;
-    // etapas[idx].idp = 0;
   }
 
-  // Confirmación al usuario
-  try {
-    await confirmToUser(from);
-  } catch (e) {
-    console.error("❌ Error al confirmar PDF al usuario:", e.response?.data || e.message);
-  }
+  confirmToUser(from).catch(() => {});
 
-  // Persistir “procesados”
   processed.add(documentId);
   await saveProcessed();
+  noteSuccess(documentId);
 
- // console.log(`✅ PDF procesado: ${from} :: ${documentId}`);
+  // console.log(`[${now()}] ✅ PDF procesado: ${documentId}`);
 }
 
 async function processPendingPDFs() {
@@ -219,22 +247,25 @@ async function processPendingPDFs() {
   try {
     const etapas = await loadJSONSafe(ETA_PATH, []);
 
-    // Candidatos pendientes
-    const candidates = etapas.filter(isPdfCandidate).filter((e) => !processed.has(e.documentId));
+    const candidates = etapas
+      .filter(isPdfCandidate)
+      .filter((e) => !processed.has(e.documentId))
+      .filter((e) => !shouldSkip(e.documentId));
+
     if (!candidates.length) return;
 
-    // Ordenar por tiempo ascendente
+    // procesa del más antiguo al más nuevo
     candidates.sort((a, b) => Number(a.timestamp || 0) - Number(b.timestamp || 0));
 
     for (const entry of candidates) {
       try {
         await processOnePDF(entry, etapas);
       } catch (e) {
-        console.error(`❌ Error procesando PDF ${entry.documentId}:`, e.response?.data || e.message);
+        console.error(`[${now()}] ❌ Error procesando PDF ${entry.documentId}:`, e?.response?.data || e.message);
+        noteFail(entry.documentId); // asegurar descarte
       }
     }
 
-    // Guardar EtapasMSG si hubo cambios (marcas pdfProcesado)
     await fsp.writeFile(ETA_PATH, JSON.stringify(etapas, null, 2));
   } finally {
     processing = false;
@@ -251,21 +282,18 @@ async function checkForChanges() {
       await processPendingPDFs();
     }
   } catch (e) {
-    console.error("❌ Error al stat EtapasMSG:", e.message);
+    console.error(`[${now()}] ❌ Error al stat EtapasMSG:`, e.message);
   }
 }
 
 async function iniciarMonitoreoPDF() {
   if (!WABA_TOKEN) {
-    console.warn("⚠️ Falta WHATSAPP_API_TOKEN; Meta podría rechazar descargas.");
+    console.warn(`[${now()}] ⚠️ Falta WHATSAPP_API_TOKEN; Meta podría rechazar descargas.`);
   }
   await initProcessed();
 
-  // Primer barrido
-  await processPendingPDFs();
-
-  // Polling (ajusta el intervalo según tu carga)
-  setInterval(checkForChanges, 700);
+  await processPendingPDFs();      // primer barrido
+  setInterval(checkForChanges, 700); // polling
 }
 
 module.exports = {

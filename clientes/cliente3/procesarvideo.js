@@ -15,7 +15,7 @@ const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
 // --- Entorno / Config ---
 const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/";
-const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, ""); // sin slash final
+const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, "");
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN || "";
 const MAX_VIDEO_CONCURRENCY = Math.max(
   1,
@@ -24,24 +24,18 @@ const MAX_VIDEO_CONCURRENCY = Math.max(
     : 2
 );
 
-// HTTPS keep-alive para reducir overhead TLS
+// HTTPS keep-alive
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 2 });
-// Cliente "corto" (meta/confirmaciones). Para descargas grandes usaremos axios directo.
+// Cliente corto (meta/confirmaciones)
 const http = axios.create({ timeout: 15_000, httpsAgent });
 
 // --- Utils básicos ---
 function now() { return new Date().toISOString(); }
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-function requireFresh(p) {
-  delete require.cache[require.resolve(p)];
-  return require(p);
-}
+function requireFresh(p) { delete require.cache[require.resolve(p)]; return require(p); }
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    // ajusta aquí si corresponde a cliente1/cliente2/cliente3
-    return usuariosData?.cliente3?.iduser || "";
+    return usuariosData?.cliente3?.iduser || ""; // ajusta cliente si aplica
   } catch (e) {
     console.error(`[${now()}] ❌ Error leyendo usuarios.json:`, e.message);
     return "";
@@ -61,10 +55,6 @@ async function ensureDir(p) {
     throw e;
   }
 }
-(async () => {
-  await ensureDir(PUBLIC_VIDEO_DIR);
-  await ensureDir(SALA_CHAT_DIR);
-})();
 
 // === JSON helpers ===
 async function readJsonSafe(file, fallback) {
@@ -95,39 +85,16 @@ const inFlight = new Set(); // dedupe concurrente por videoID
 const historyQueues = new Map();
 const historyTimers = new Map();
 
-// Límite de intentos & Tombstones
-const failCounts = new Map();          // videoID -> nº fallos
-const MAX_FAILS = 5;                   // máx intentos por videoID
-const FAIL_RESET_ON_SUCCESS = true;    // limpiar contador al éxito
-
-const fatalTombstones = new Map();     // videoID -> timestamp del último 4xx fatal
-const FAIL_TTL_MS = 6 * 60 * 60 * 1000; // 6 horas
+// Límite de intentos: descartar inmediato
+const failCounts = new Map();       // videoID -> nº fallos
+const MAX_FAILS = 1;                // solo un intento
 
 function shouldSkip(videoID) {
   const fails = failCounts.get(videoID) || 0;
-  if (fails >= MAX_FAILS) return true;
-  const t = fatalTombstones.get(videoID);
-  if (t && (Date.now() - t) < FAIL_TTL_MS) return true;
-  return false;
+  return fails >= MAX_FAILS;
 }
-function noteFail(videoID) {
-  const current = failCounts.get(videoID) || 0;
-  const next = current + 1;
-  failCounts.set(videoID, next);
-  if (next >= MAX_FAILS) {
-    console.warn(`[${now()}] ⏭️ videoID=${videoID} omitido: alcanzó ${next}/${MAX_FAILS} fallos`);
-  } else {
-    console.warn(`[${now()}] 🔁 Falla #${next}/${MAX_FAILS} para videoID=${videoID}`);
-  }
-}
-function noteFatal(videoID) {
-  fatalTombstones.set(videoID, Date.now());
-  console.warn(`[${now()}] 🚫 Tombstone 4xx para videoID=${videoID} (TTL ${Math.round(FAIL_TTL_MS/3600000)}h)`);
-}
-function noteSuccess(videoID) {
-  if (FAIL_RESET_ON_SUCCESS) failCounts.delete(videoID);
-  fatalTombstones.delete(videoID);
-}
+function noteFail(videoID) { failCounts.set(videoID, (failCounts.get(videoID) || 0) + 1); }
+function noteSuccess(videoID) { failCounts.delete(videoID); }
 
 // === Persistencia processed (batch) ===
 async function saveProcessedImmediate() {
@@ -149,25 +116,7 @@ async function initProcessed() {
   processed = new Set(Array.isArray(list) ? list : []);
 }
 
-// === Retry helper con clasificación ===
-async function withRetry(fn, { retries = 3, baseDelay = 600, classify = () => "retryable" } = {}) {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try { return await fn(); }
-    catch (e) {
-      lastErr = e;
-      const type = classify(e);
-      if (type === "fatal" || i === retries) break;
-      const jitter = Math.random() * 0.4 + 0.8;
-      const d = Math.round(baseDelay * Math.pow(2, i) * jitter);
-      console.warn(`[${now()}] ⚠️ Retry #${i + 1} en ${d}ms ::`, e?.response?.status || e?.code || e?.message);
-      await sleep(d);
-    }
-  }
-  throw lastErr;
-}
-
-// === Confirmación al usuario (ID SIEMPRE FRESCO) ===
+// === Confirmación al usuario (sin reintentos) ===
 async function confirmToUser(to) {
   const WABA_PHONE_ID = getWabaPhoneId();
   if (!to || !WABA_PHONE_ID || !WABA_TOKEN) {
@@ -175,8 +124,8 @@ async function confirmToUser(to) {
     return;
   }
   const url = `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`;
-  await withRetry(
-    () => http.post(
+  try {
+    await http.post(
       url,
       {
         messaging_product: "whatsapp",
@@ -186,27 +135,26 @@ async function confirmToUser(to) {
         text: { preview_url: false, body: "🎬 Video recibido. ¡Gracias!" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
-    ),
-    { retries: 2, baseDelay: 800 }
-  );
+    );
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error al confirmar al usuario:`, e?.response?.data || e.message);
+  }
 }
 
-// === Meta y descarga de video ===
+// === Meta y descarga (sin reintentos) ===
 async function fetchVideoMeta(videoID) {
-  const url = `https://graph.facebook.com/v20.0/${videoID}?fields=url,mime_type`;
-  const { data } = await withRetry(
-    () => http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }),
-    {
-      retries: 3,
-      baseDelay: 600,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal"; // 4xx permanentes
-        return "retryable";
-      },
-    }
-  );
-  return data; // { url, mime_type? }
+  try {
+    const url = `https://graph.facebook.com/v20.0/${videoID}?fields=url,mime_type`;
+    const { data } = await http.get(url, {
+      headers: { Authorization: `Bearer ${WABA_TOKEN}` }
+    });
+    return data; // { url, mime_type? }
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error meta videoID=${videoID}:`, e?.response?.status || e.message);
+    // fallo definitivo
+    failCounts.set(videoID, MAX_FAILS);
+    return null;
+  }
 }
 
 function pickExt(mime) {
@@ -217,45 +165,42 @@ function pickExt(mime) {
   return ".mp4"; // default
 }
 
-async function downloadToFile(fileUrl, destPath) {
+async function downloadToFile(fileUrl, destPath, videoID) {
   const tmpPath = `${destPath}.download`;
   console.log(`[${now()}] ⬇️ Descargando video: ${fileUrl}`);
-
-  const resp = await withRetry(
-    () => axios.get(fileUrl, {
+  try {
+    const resp = await axios.get(fileUrl, {
       httpsAgent,
       responseType: "stream",
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-      timeout: 0, // no cortar descargas largas
+      timeout: 0, // permitir descargas largas
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    }),
-    {
-      retries: 3,
-      baseDelay: 800,
-      classify: (e) => {
-        const s = e?.response?.status;
-        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
-        return "retryable";
-      },
-    }
-  );
+    });
 
-  await new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(tmpPath);
-    resp.data.on("error", reject);
-    writer.on("error", reject);
-    writer.on("finish", resolve);
-    resp.data.pipe(writer);
-  });
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmpPath);
+      resp.data.on("error", reject);
+      writer.on("error", reject);
+      writer.on("finish", resolve);
+      resp.data.pipe(writer);
+    });
 
-  // Fsync para evitar corrupción
-  const fh = await fsp.open(tmpPath, "r+");
-  await fh.sync();
-  await fh.close();
+    // Fsync
+    const fh = await fsp.open(tmpPath, "r+");
+    await fh.sync();
+    await fh.close();
 
-  await fsp.rename(tmpPath, destPath);
-  console.log(`[${now()}] ✅ Video guardado: ${destPath}`);
+    await fsp.rename(tmpPath, destPath);
+    console.log(`[${now()}] ✅ Video guardado: ${destPath}`);
+    return true;
+  } catch (e) {
+    console.error(`[${now()}] ❌ Error descargando videoID=${videoID}:`, e?.response?.status || e.message);
+    // fallo definitivo
+    failCounts.set(videoID, MAX_FAILS);
+    try { await fsp.rm(tmpPath, { force: true }); } catch {}
+    return false;
+  }
 }
 
 // === Batching historial por usuario ===
@@ -295,12 +240,12 @@ function isVideoCandidate(e) {
   );
 }
 
-// === Procesamiento individual ===
+// === Procesamiento individual (un solo intento) ===
 async function processOneVideo(entry) {
   const { from, id, videoID, timestamp, etapa } = entry;
 
   if (shouldSkip(videoID)) {
-    console.warn(`[${now()}] ⏭️ videoID=${videoID} omitido (excedió límites o en tombstone)`);
+    console.warn(`[${now()}] ⏭️ videoID=${videoID} omitido (fallo previo)`);
     return;
   }
   if (inFlight.has(videoID)) return;
@@ -309,12 +254,12 @@ async function processOneVideo(entry) {
   try {
     if (processed.has(videoID)) return;
 
-    // 1) Obtener meta (puede lanzar). Marca tombstone si es 4xx fatal.
-    const meta = await fetchVideoMeta(videoID).catch((e) => {
-      const s = e?.response?.status;
-      if (s && s >= 400 && s < 500 && s !== 429) noteFatal(videoID);
-      throw e;
-    });
+    // 1) META
+    const meta = await fetchVideoMeta(videoID);
+    if (!meta || !meta.url) {
+      console.warn(`[${now()}] ⚠️ videoID=${videoID} sin URL/meta. Descartado.`);
+      return;
+    }
 
     const mime = meta?.mime_type || "";
     const ext = pickExt(mime);
@@ -324,7 +269,7 @@ async function processOneVideo(entry) {
     const filename = `${baseName}${ext}`;
     const filePath = path.join(PUBLIC_VIDEO_DIR, filename);
 
-    // Fast path: si ya existe el archivo, marca procesado
+    // Fast path: si ya existe el archivo
     if (await fileExists(filePath)) {
       processed.add(videoID);
       scheduleSaveProcessed();
@@ -332,21 +277,14 @@ async function processOneVideo(entry) {
       return;
     }
 
-    const videoUrl = meta?.url;
-    if (!videoUrl) {
-      console.warn(`[${now()}] ⚠️ videoID ${videoID} sin URL`);
-      noteFail(videoID);
+    // 2) DESCARGA
+    const ok = await downloadToFile(meta.url, filePath, videoID);
+    if (!ok) {
+      console.warn(`[${now()}] ⚠️ Falla definitiva al descargar videoID=${videoID}, descartado.`);
       return;
     }
 
-    // 2) Descargar (puede lanzar). Marca tombstone si 4xx fatal.
-    await downloadToFile(videoUrl, filePath).catch((e) => {
-      const s = e?.response?.status;
-      if (s && s >= 400 && s < 500 && s !== 429) noteFatal(videoID);
-      throw e;
-    });
-
-    // 3) Encolar historial
+    // 3) HISTORIAL
     const nuevo = {
       from,
       body: `${BASE_URL}/video/${filename}`,
@@ -363,10 +301,8 @@ async function processOneVideo(entry) {
     };
     queueHistory(from, nuevo);
 
-    // 4) Confirmar por WhatsApp (no bloqueante)
-    confirmToUser(from).catch((e) =>
-      console.error(`[${now()}] ❌ Error al confirmar al usuario:`, e?.response?.data || e.message)
-    );
+    // 4) Confirmación (no bloqueante)
+    confirmToUser(from).catch(() => {});
 
     // 5) Marcar procesado
     processed.add(videoID);
@@ -379,7 +315,8 @@ async function processOneVideo(entry) {
       `[${now()}] ❌ Error procesando videoID=${videoID}:`,
       e?.response?.status ? `${e.response.status} ${e.message}` : e.message
     );
-    noteFail(videoID);
+    // fallo definitivo
+    failCounts.set(videoID, MAX_FAILS);
   } finally {
     inFlight.delete(videoID);
   }
@@ -407,7 +344,6 @@ async function processPendingVideos() {
     const etapas = await readJsonSafe(ETA_PATH, []);
     if (!Array.isArray(etapas) || etapas.length === 0) return;
 
-    // Filtra y salta por límites
     const raw = etapas
       .filter(isVideoCandidate)
       .filter((e) => !processed.has(e.videoID))
@@ -415,7 +351,7 @@ async function processPendingVideos() {
 
     if (raw.length === 0) return;
 
-    // Dedupe por videoID (quedarse con el más antiguo por timestamp)
+    // Dedupe por videoID (más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.videoID);
@@ -453,7 +389,7 @@ function startWatch() {
     setInterval(triggerProcessDebounced, 2_000);
   }
 
-  // (Opcional) polling adicional en contenedores
+  // Polling adicional (útil en contenedores)
   setInterval(triggerProcessDebounced, 2_000);
 }
 
@@ -478,6 +414,8 @@ async function iniciarMonitoreoVideo() {
     console.error(`[${now()}] ❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media de WhatsApp Cloud API.`);
     return;
   }
+  await ensureDir(PUBLIC_VIDEO_DIR);
+  await ensureDir(SALA_CHAT_DIR);
   await initProcessed();
   await processPendingVideos(); // corrida inicial
   startWatch();

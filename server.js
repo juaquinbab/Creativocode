@@ -89,25 +89,46 @@ app.use('/auth', authRouter);
 
 
 
-
 // === Config ===
-const BASE_DIR = path.join(__dirname, "clientes"); // estructura: clientes/<cliente>/salachat
 
-// Validar nombre de cliente para evitar path traversal
-const isValidCliente = (c) => /^[a-zA-Z0-9_-]+$/.test(c);
+const BASE_DIR = path.resolve(process.cwd(), "clientes"); // clientes/<cualquiera>/salachat
 
-// Función que resuelve la carpeta salachat de un cliente
-function resolveFolder(cliente) {
-  if (!isValidCliente(cliente)) throw new Error("Cliente inválido");
+// Util: comprueba que `target` está dentro de `BASE_DIR` (resolviendo symlinks)
+function assertInsideBase(targetAbs) {
+  const realBase = fs.realpathSync.native
+    ? fs.realpathSync.native(BASE_DIR)
+    : fs.realpathSync(BASE_DIR);
+  const realTarget = fs.realpathSync.native
+    ? fs.realpathSync.native(targetAbs)
+    : fs.realpathSync(targetAbs);
 
-  const folder = path.join(BASE_DIR, cliente, "salachat");
-  const normalized = path.normalize(folder);
-
-  // evitar que alguien use ../../ para salir del directorio base
-  if (!normalized.startsWith(path.normalize(BASE_DIR))) {
+  const rel = path.relative(realBase, realTarget);
+  if (rel.startsWith("..") || path.isAbsolute(rel)) {
     throw new Error("Ruta no permitida");
   }
-  return normalized;
+}
+
+// Devuelve la carpeta salachat para un cliente (no asume patrón de nombre)
+function resolveFolder(cliente) {
+  if (!cliente || typeof cliente !== "string") throw new Error("Cliente inválido");
+
+  // carpeta del cliente: clientes/<cliente>
+  const clientDir = path.resolve(BASE_DIR, cliente);
+  // Si el directorio del cliente aún no existe, NO hacemos realpath todavía
+  // (permitimos crearlo cuando suben archivos)
+  const salaDir = path.resolve(clientDir, "salachat");
+
+  // Si existe, validamos que esté dentro de BASE_DIR (anti traversal + symlink)
+  if (fs.existsSync(clientDir)) {
+    assertInsideBase(clientDir);
+  } else {
+    // Aun así prevenimos traversal comparando con BASE_DIR
+    const rel = path.relative(BASE_DIR, clientDir);
+    if (rel.startsWith("..") || path.isAbsolute(rel)) {
+      throw new Error("Ruta no permitida");
+    }
+  }
+  return salaDir;
 }
 
 // === Multer ===
@@ -116,9 +137,7 @@ const storage = multer.diskStorage({
     try {
       const { cliente } = req.params;
       const uploadPath = resolveFolder(cliente);
-      if (!fs.existsSync(uploadPath)) {
-        fs.mkdirSync(uploadPath, { recursive: true });
-      }
+      fs.mkdirSync(uploadPath, { recursive: true });
       cb(null, uploadPath);
     } catch (err) {
       cb(err);
@@ -126,10 +145,21 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => cb(null, file.originalname),
 });
-
 const upload = multer({ storage });
 
-// === Rutas ===
+// === Rutas auxiliares ===
+// Listar nombres de clientes (directorios directos en clientes/)
+app.get("/api/clients", (req, res) => {
+  try {
+    if (!fs.existsSync(BASE_DIR)) return res.json([]);
+    const dirs = fs.readdirSync(BASE_DIR, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
+    res.json(dirs);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // Listar archivos de salachat de un cliente
 app.get("/api/:cliente/files", (req, res) => {
@@ -156,6 +186,8 @@ app.get("/api/:cliente/download", (req, res) => {
     if (!fs.existsSync(folderPath)) {
       return res.status(404).send("Sala no encontrada");
     }
+    // Validación extra por si la carpeta apareció vía symlink
+    assertInsideBase(path.resolve(BASE_DIR, cliente));
 
     res.attachment(`${cliente}-salachat.zip`);
     const archive = archiver("zip", { zlib: { level: 9 } });
@@ -187,31 +219,37 @@ app.post("/api/:cliente/delete", (req, res) => {
       return res.status(404).json({ error: "Sala no encontrada" });
     }
 
-    let deleted = [];
-    let notFound = [];
+    const deleted = [];
+    const notFound = [];
 
-    filesToDelete.forEach((file) => {
-      // evitar rutas maliciosas
+    for (const file of filesToDelete) {
+      // Bloquear rutas maliciosas
       if (file.includes("..") || file.includes("/") || file.includes("\\")) {
         notFound.push(file);
-        return;
+        continue;
       }
-      const filePath = path.join(folderPath, file);
+      const filePath = path.resolve(folderPath, file);
+
+      // Asegurar que el archivo esté dentro de la sala
+      const rel = path.relative(folderPath, filePath);
+      if (rel.startsWith("..") || path.isAbsolute(rel)) {
+        notFound.push(file);
+        continue;
+      }
+
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
         deleted.push(file);
       } else {
         notFound.push(file);
       }
-    });
+    }
 
     res.json({ message: "Operación completada", deleted, notFound });
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
-
-
 
 
 
