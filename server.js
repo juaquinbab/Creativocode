@@ -91,9 +91,9 @@ app.use('/auth', authRouter);
 
 // === Config ===
 
-const BASE_DIR = path.resolve(process.cwd(), "clientes"); // clientes/<cualquiera>/salachat
+const BASE_DIR = path.resolve(process.cwd(), "clientes");
 
-// Util: comprueba que `target` está dentro de `BASE_DIR` (resolviendo symlinks)
+// --- Util: assert que targetAbs está dentro de BASE_DIR (resolviendo symlinks) ---
 function assertInsideBase(targetAbs) {
   const realBase = fs.realpathSync.native
     ? fs.realpathSync.native(BASE_DIR)
@@ -108,36 +108,59 @@ function assertInsideBase(targetAbs) {
   }
 }
 
-// Devuelve la carpeta salachat para un cliente (no asume patrón de nombre)
+// --- Resolver carpeta salachat de un cliente (no asume patrón de nombre) ---
 function resolveFolder(cliente) {
-  if (!cliente || typeof cliente !== "string") throw new Error("Cliente inválido");
-
-  // carpeta del cliente: clientes/<cliente>
+  if (!cliente || typeof cliente !== "string") {
+    throw new Error("Cliente inválido");
+  }
+  // Directorio del cliente: clientes/<cliente>
   const clientDir = path.resolve(BASE_DIR, cliente);
-  // Si el directorio del cliente aún no existe, NO hacemos realpath todavía
-  // (permitimos crearlo cuando suben archivos)
   const salaDir = path.resolve(clientDir, "salachat");
 
-  // Si existe, validamos que esté dentro de BASE_DIR (anti traversal + symlink)
+  // Anti-traversal básico (sin necesidad de que exista)
+  const relClient = path.relative(BASE_DIR, clientDir);
+  if (relClient.startsWith("..") || path.isAbsolute(relClient)) {
+    throw new Error("Ruta no permitida");
+  }
+
+  // Si existe, validamos con realpath (cubre symlinks)
   if (fs.existsSync(clientDir)) {
     assertInsideBase(clientDir);
-  } else {
-    // Aun así prevenimos traversal comparando con BASE_DIR
-    const rel = path.relative(BASE_DIR, clientDir);
-    if (rel.startsWith("..") || path.isAbsolute(rel)) {
-      throw new Error("Ruta no permitida");
-    }
   }
   return salaDir;
 }
 
+// --- Escanear dinámicamente los clientes que YA tienen carpeta salachat ---
+async function listClientsWithSala() {
+  if (!fs.existsSync(BASE_DIR)) return [];
+  const items = await fsp.readdir(BASE_DIR, { withFileTypes: true });
+  const out = [];
+
+  for (const d of items) {
+    if (!d.isDirectory()) continue;
+    const cliente = d.name;
+    const sala = path.resolve(BASE_DIR, cliente, "salachat");
+    try {
+      const st = await fsp.stat(sala).catch(() => null);
+      if (st && st.isDirectory()) {
+        const files = await fsp.readdir(sala).catch(() => []);
+        out.push({ cliente, filesCount: files.length });
+      }
+    } catch {
+      // ignorar errores de permisos/IO
+    }
+  }
+  out.sort((a, b) => a.cliente.localeCompare(b.cliente));
+  return out;
+}
+
 // === Multer ===
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: async (req, file, cb) => {
     try {
       const { cliente } = req.params;
       const uploadPath = resolveFolder(cliente);
-      fs.mkdirSync(uploadPath, { recursive: true });
+      await fsp.mkdir(uploadPath, { recursive: true });
       cb(null, uploadPath);
     } catch (err) {
       cb(err);
@@ -147,46 +170,47 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// === Rutas auxiliares ===
-// Listar nombres de clientes (directorios directos en clientes/)
-app.get("/api/clients", (req, res) => {
+// === Rutas API ===
+
+// Listar dinámicamente los clientes que tienen carpeta salachat
+app.get("/api/clients", async (req, res) => {
   try {
-    if (!fs.existsSync(BASE_DIR)) return res.json([]);
-    const dirs = fs.readdirSync(BASE_DIR, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
-    res.json(dirs);
+    const data = await listClientsWithSala();
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// Listar archivos de salachat de un cliente
-app.get("/api/:cliente/files", (req, res) => {
+// Listar archivos de salachat por cliente
+app.get("/api/:cliente/files", async (req, res) => {
   try {
     const { cliente } = req.params;
     const folderPath = resolveFolder(cliente);
-    if (!fs.existsSync(folderPath)) {
+
+    const st = await fsp.stat(folderPath).catch(() => null);
+    if (!st || !st.isDirectory()) {
       return res.status(404).json({ error: "Sala no encontrada" });
     }
-    fs.readdir(folderPath, (err, files) => {
-      if (err) return res.status(500).json({ error: "Error al leer los archivos" });
-      res.json(files);
-    });
+
+    const entries = await fsp.readdir(folderPath, { withFileTypes: true });
+    const files = entries.filter(e => e.isFile()).map(e => e.name);
+    res.json(files);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
 
-// Descargar todos los archivos como ZIP
-app.get("/api/:cliente/download", (req, res) => {
+// Descargar todo como ZIP
+app.get("/api/:cliente/download", async (req, res) => {
   try {
     const { cliente } = req.params;
     const folderPath = resolveFolder(cliente);
-    if (!fs.existsSync(folderPath)) {
+    const st = await fsp.stat(folderPath).catch(() => null);
+    if (!st || !st.isDirectory()) {
       return res.status(404).send("Sala no encontrada");
     }
-    // Validación extra por si la carpeta apareció vía symlink
+    // Validación extra symlink
     assertInsideBase(path.resolve(BASE_DIR, cliente));
 
     res.attachment(`${cliente}-salachat.zip`);
@@ -194,28 +218,30 @@ app.get("/api/:cliente/download", (req, res) => {
     archive.on("error", (err) => res.status(500).send({ error: err.message }));
     archive.pipe(res);
     archive.directory(folderPath, false);
-    archive.finalize();
+    await archive.finalize();
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 });
 
-// Subir múltiples archivos a salachat
+// Subir múltiples archivos (crea salachat si no existe)
 app.post("/api/:cliente/upload", upload.array("files", 50), (req, res) => {
   res.json({ message: "Archivos subidos correctamente" });
 });
 
 // Borrar archivos seleccionados
-app.post("/api/:cliente/delete", (req, res) => {
+app.post("/api/:cliente/delete", async (req, res) => {
   try {
     const { cliente } = req.params;
     const { files: filesToDelete } = req.body;
+
     if (!Array.isArray(filesToDelete) || filesToDelete.length === 0) {
       return res.status(400).json({ error: "Debes enviar un array 'files' con nombres" });
     }
 
     const folderPath = resolveFolder(cliente);
-    if (!fs.existsSync(folderPath)) {
+    const st = await fsp.stat(folderPath).catch(() => null);
+    if (!st || !st.isDirectory()) {
       return res.status(404).json({ error: "Sala no encontrada" });
     }
 
@@ -229,16 +255,15 @@ app.post("/api/:cliente/delete", (req, res) => {
         continue;
       }
       const filePath = path.resolve(folderPath, file);
-
-      // Asegurar que el archivo esté dentro de la sala
       const rel = path.relative(folderPath, filePath);
       if (rel.startsWith("..") || path.isAbsolute(rel)) {
         notFound.push(file);
         continue;
       }
 
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      const stFile = await fsp.stat(filePath).catch(() => null);
+      if (stFile && stFile.isFile()) {
+        await fsp.unlink(filePath);
         deleted.push(file);
       } else {
         notFound.push(file);

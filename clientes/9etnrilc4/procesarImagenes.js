@@ -35,7 +35,6 @@ const GRAPH_MESSAGES_VERSION = "v20.0";
 
 // Directorios de salida
 const PUBLIC_IMAGE_DIR_CANDIDATE = path.join(process.cwd(), "public/Imagenes");
-const FALLBACK_IMAGE_DIR = "/tmp/imagenes";
 const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 
 /* =========================
@@ -88,14 +87,13 @@ function boundSetSize(set, max = 50_000) {
  * =======================*/
 let PUBLIC_IMAGE_DIR = PUBLIC_IMAGE_DIR_CANDIDATE;
 async function resolveImageDir() {
-  if (await dirIsWritable(PUBLIC_IMAGE_DIR_CANDIDATE)) {
-    PUBLIC_IMAGE_DIR = PUBLIC_IMAGE_DIR_CANDIDATE;
-  } else {
-    console.warn(`[${now()}] ⚠️ PUBLIC_IMAGE_DIR no escribible (${PUBLIC_IMAGE_DIR_CANDIDATE}). Usando fallback ${FALLBACK_IMAGE_DIR}`);
-    PUBLIC_IMAGE_DIR = FALLBACK_IMAGE_DIR;
-  }
+  // Siempre usar public/Imagenes — sin fallback
   await fsp.mkdir(PUBLIC_IMAGE_DIR, { recursive: true }).catch(() => {});
   await fsp.mkdir(SALA_CHAT_DIR, { recursive: true }).catch(() => {});
+  const ok = await dirIsWritable(PUBLIC_IMAGE_DIR);
+  if (!ok) {
+    console.error(`[${now()}] ❌ PUBLIC_IMAGE_DIR no es escribible (${PUBLIC_IMAGE_DIR}). Revisa permisos/volumen/montaje.`);
+  }
 }
 function BASE_IMAGE_URL() {
   return `${BASE_URL}/Imagenes`;
@@ -279,8 +277,9 @@ async function confirmToUser(to) {
         text: {
           preview_url: false,
           body:
+            "✅ Imagen recibida. ¡Gracias!\n\n" +
             "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR.\n\n" +
-            "🛠️ Si necesitas soporte, por favor indícanos cuál es el problema para poder ayudarte.",
+            "",
         },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
@@ -465,7 +464,7 @@ async function iniciarMonitoreoImagen() {
   if (!WABA_TOKEN) {
     console.warn(`[${now()}] ⚠️ Falta WHATSAPP_API_TOKEN. Meta requiere token para media/confirmaciones.`);
   }
-  await resolveImageDir();
+  await resolveImageDir();  // sin fallback; solo public/Imagenes
   await initProcessed();
   await processPendingImages();
   startWatch();
