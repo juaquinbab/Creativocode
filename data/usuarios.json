@@ -32,5 +32,12 @@
     "ruta": "/9etnrilc5/index.html",
     "iduser": "789862370866920",
     "IA": true
+  },
+   "cliente1002MSG": {
+    "usuario": "VitalPlus@",
+    "password": "VitalPlus@",
+    "ruta": "https://vital-plus-energy.up.railway.app/",
+    "iduser": "0000000",
+    "IA": true
   }
 }

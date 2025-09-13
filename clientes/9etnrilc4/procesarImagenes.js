@@ -278,7 +278,7 @@ async function confirmToUser(to) {
           preview_url: false,
           body:
             "✅ Imagen recibida. ¡Gracias!\n\n" +
-            "📷 Si tu mensaje es la foto de un comprobante de pago, no olvides escribir la palabra CONFIRMAR.\n\n" +
+            "" +
             "",
         },
       },
