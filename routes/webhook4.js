@@ -166,6 +166,7 @@ router.post("/", (req, res, next) => {
 
   // Base de actualización (sin tocar "etapa" en updates)
   const baseUpdate = {
+     id: uuidv4(),
     from,
     body: body_lower,           // ← mantén compat: tu router suele usar minúsculas
     body_raw,                   // ← valor tal cual llegó (por si lo necesitas mostrar)
