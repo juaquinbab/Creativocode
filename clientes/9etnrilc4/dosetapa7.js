@@ -76,7 +76,7 @@ async function enviarBotonesWA(to, bodyText) {
     messaging_product: "whatsapp",
     to,
     type: "text",
-    text: { body: "¡Gracias por tu interés en nuestras casas prefabricadas!" }
+    text: { body: "⏳" }
   };
 
   const url = `https://graph.facebook.com/v23.0/${IDNUMERO}/messages`;
@@ -97,7 +97,7 @@ async function pasarEtapaA2PorId(msgId) {
   const nuevo = data.map((m) => {
     if (m?.id === msgId) {
       changed = true;
-      return { ...m, enProceso: false };
+      return { ...m, etapa: 5, enProceso: false };
     }
     return m;
   });
@@ -118,8 +118,8 @@ async function procesarMensajesNuevos() {
     const interactiveId = String(m?.interactiveId ?? "").trim().toLowerCase();
 
     return (
-      etapa === 1 &&
-      interactiveId === "btn_info" &&
+      etapa === 2 &&
+      interactiveId === "cundi" &&
       id && from &&
       !m?.enProceso &&
       !mensajesProcesados.includes(id)
@@ -159,7 +159,7 @@ async function procesarMensajesNuevos() {
 
 // ====== Watcher con debounce ======
 let debounceT = null;
-function iniciarWatcher2() {
+function iniciarWatcher8() {
   if (!fs.existsSync(ETAPAS_PATH)) {
     console.warn("⚠ No existe EtapasMSG3.json, creando [].");
     fs.writeFileSync(ETAPAS_PATH, "[]", "utf8");
@@ -175,5 +175,5 @@ function iniciarWatcher2() {
   });
 }
 
-module.exports = iniciarWatcher2;
+module.exports = iniciarWatcher8;
 

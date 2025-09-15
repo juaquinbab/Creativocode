@@ -9,15 +9,19 @@ require("dotenv").config();
 const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
 // --- Rutas ---
-const USUARIOS_PATH   = path.resolve(__dirname, "../../data/usuarios.json");
-const ETAPAS_PATH     = path.resolve(__dirname, "../../data/EtapasMSG4.json");
-const PROCESADOS_PATH = path.resolve(__dirname, "../../mensajes_procesados.json");
+const USUARIOS_PATH     = path.resolve(__dirname, "../../data/usuarios.json");
+const ETAPAS_PATH       = path.resolve(__dirname, "../../data/EtapasMSG4.json");
+const PROCESADOS_PATH   = path.resolve(__dirname, "../../mensajes_procesados.json");
+// NUEVO: ruta del mapa de bienvenida (llaves = números)
+const BIENVENIDA_PATH   = path.resolve(__dirname, "./bienvenida.json");
 
 // === Utils ===
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
   return require(p);
 }
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+
 function getIDNUMERO() {
   try { return requireFresh(USUARIOS_PATH)?.cliente4?.iduser || ""; }
   catch (e) { console.error("❌ usuarios.json:", e.message); return ""; }
@@ -31,9 +35,6 @@ async function writeJsonAtomic(p, obj) {
   await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
   await fsp.rename(tmp, p);
 }
-
-// pequeña utilidad para esperar
-const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 
 // ====== Registro de procesados (por id) ======
 let mensajesProcesados = [];
@@ -67,7 +68,50 @@ async function marcarEnProcesoPorId(msgId, flag = true) {
   return changed;
 }
 
-// ====== Enviar mensaje con delay ======
+// ====== Utilidad NUEVA: eliminar llave en bienvenida.json por número ======
+async function eliminarEnBienvenidaPorNumero(numero) {
+  // Normalizamos el número (e.g., quitar espacios)
+  const key = String(numero || "").trim();
+  if (!key) return { ok: false, motivo: "numero vacío" };
+
+  // Si no existe el archivo, no hacemos nada (idempotente)
+  if (!fs.existsSync(BIENVENIDA_PATH)) {
+    return { ok: true, motivo: "bienvenida.json no existe" };
+  }
+
+  // Cargamos con fallback {}
+  const data = await readJson(BIENVENIDA_PATH, {});
+  let changed = false;
+
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    // Caso típico: objeto tipo diccionario { "57300...": {...}, ... }
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      delete data[key];
+      changed = true;
+    }
+  } else if (Array.isArray(data)) {
+    // Alternativa: si fuera array, intentamos filtrar
+    const originalLen = data.length;
+    const filtrado = data.filter((item) => {
+      // soporta posibles formas de guardado
+      const k1 = String(item?.numero ?? item?.phone ?? item?.from ?? "").trim();
+      const k2 = String(item?.key ?? "").trim();
+      return k1 !== key && k2 !== key;
+    });
+    if (filtrado.length !== originalLen) {
+      await writeJsonAtomic(BIENVENIDA_PATH, filtrado);
+      return { ok: true, motivo: "eliminado en array", changed: true };
+    }
+  }
+
+  if (changed) {
+    await writeJsonAtomic(BIENVENIDA_PATH, data);
+    return { ok: true, motivo: "eliminado en objeto", changed: true };
+  }
+  return { ok: true, motivo: "no estaba presente", changed: false };
+}
+
+// ====== Enviar mensaje (ejemplo PDF con delay) ======
 async function enviarBotonesWA(to, bodyText) {
   const IDNUMERO = getIDNUMERO();
   if (!IDNUMERO) throw new Error("IDNUMERO no configurado");
@@ -75,20 +119,31 @@ async function enviarBotonesWA(to, bodyText) {
   const payloadBotones = {
     messaging_product: "whatsapp",
     to,
-    type: "text",
-    text: { body: "¡Gracias por tu interés en nuestras casas prefabricadas!" }
+    type: "document",
+    document: {
+      link: "https://server-production-ae4b.up.railway.app/catalogo.pdf",
+      filename: "catalogo.pdf"
+    }
   };
 
   const url = `https://graph.facebook.com/v23.0/${IDNUMERO}/messages`;
   const headers = { Authorization: `Bearer ${whatsappToken}`, "Content-Type": "application/json" };
 
   // 🕒 Espera 2 segundos antes de enviar
-  await sleep(0);
+  await sleep(2500);
 
   await axios.post(url, payloadBotones, { headers, timeout: 15000 });
+
+  // ✅ Tras enviar, eliminamos la llave del número en bienvenida.json
+  try {
+    const res = await eliminarEnBienvenidaPorNumero(to);
+    console.log(`🧹 bienvenida.json → ${to}: ${res.motivo}${res.changed ? " (cambios guardados)" : ""}`);
+  } catch (e) {
+    console.error(`⚠ No se pudo limpiar bienvenida.json para ${to}:`, e.message);
+  }
 }
 
-// ====== Pasar a etapa 2 (y limpiar interactiveId) ======
+// ====== Pasar a etapa 2 ======
 async function pasarEtapaA2PorId(msgId) {
   const data = await readJson(ETAPAS_PATH, []);
   if (!Array.isArray(data)) return false;
@@ -97,7 +152,7 @@ async function pasarEtapaA2PorId(msgId) {
   const nuevo = data.map((m) => {
     if (m?.id === msgId) {
       changed = true;
-      return { ...m, enProceso: false };
+      return { ...m, etapa: 0, enProceso: false };
     }
     return m;
   });
@@ -106,7 +161,7 @@ async function pasarEtapaA2PorId(msgId) {
   return changed;
 }
 
-// ====== Núcleo: procesa solo interactiveId === "btn_info" y etapa === 1 ======
+// ====== Núcleo ======
 async function procesarMensajesNuevos() {
   const lista = await readJson(ETAPAS_PATH, []);
   if (!Array.isArray(lista) || lista.length === 0) return;
@@ -147,7 +202,7 @@ async function procesarMensajesNuevos() {
       }
       await guardarProcesados();
 
-      console.log(`✅ Enviado (delay 2s) y etapa=2 → ${to} (id ${id})`);
+      console.log(`✅ Enviado (delay 2s), limpiado bienvenida.json y etapa=2 → ${to} (id ${id})`);
     } catch (err) {
       console.error(`❌ Falló para ${to} (id ${id}):`, err?.response?.data || err.message);
       await marcarEnProcesoPorId(id, false);
@@ -159,10 +214,15 @@ async function procesarMensajesNuevos() {
 
 // ====== Watcher con debounce ======
 let debounceT = null;
-function iniciarWatcher2() {
+function iniciarWatcher5() {
   if (!fs.existsSync(ETAPAS_PATH)) {
     console.warn("⚠ No existe EtapasMSG3.json, creando [].");
     fs.writeFileSync(ETAPAS_PATH, "[]", "utf8");
+  }
+  // Si bienvenida.json no existe, no es error: lo creamos vacío como objeto
+  if (!fs.existsSync(BIENVENIDA_PATH)) {
+    try { fs.writeFileSync(BIENVENIDA_PATH, "{}", "utf8"); }
+    catch (e) { console.warn("⚠ No se pudo inicializar bienvenida.json:", e.message); }
   }
 
   procesarMensajesNuevos().catch(() => {});
@@ -175,5 +235,14 @@ function iniciarWatcher2() {
   });
 }
 
-module.exports = iniciarWatcher2;
+module.exports = iniciarWatcher5;
+
+
+
+
+
+
+
+
+
 

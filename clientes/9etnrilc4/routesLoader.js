@@ -23,7 +23,13 @@ const pedidosRouter = require('./pedidosRouter');
 const resetnu = require('./resetnu');
 const iaRoutes = require('./iaRoutes');
 const instruccionesRoutes = require('./instruccionesRoutes');
-
+const iniciarWatcher2 = require('./dosetapa');
+const iniciarWatcher3 = require('./dosetapa2');
+const iniciarWatcher4 = require('./dosetapa3');
+const iniciarWatcher5 = require('./dosetapa4');
+const iniciarWatcher6 = require('./dosetapa5');
+const iniciarWatcher7 = require('./dosetapa6');
+const iniciarWatcher8 = require('./dosetapa7');
 
 
 const router = express.Router();
@@ -35,6 +41,7 @@ router.use('/', express.static(path.join(__dirname)));
 
 // Rutas
 // router.use('/webhook', webhookRoute);
+
 router.use('/', instruccionesRoutes);
 router.use('/', rutasSala1);
 router.use('/', resetnu);
@@ -58,6 +65,13 @@ setInterval(() => {
 }, 4000);
 iniciarMonitoreoVideo();
 iniciarWatcher();
+iniciarWatcher2();
+iniciarWatcher3();
+iniciarWatcher4();
+iniciarWatcher5();
+iniciarWatcher6();
+iniciarWatcher7();
+iniciarWatcher8();
 startWatcherCitas(process.env.WHATSAPP_API_TOKEN);
 startWatcherAsesor(process.env.WHATSAPP_API_TOKEN);
 

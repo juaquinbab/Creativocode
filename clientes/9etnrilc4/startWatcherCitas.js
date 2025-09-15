@@ -102,7 +102,7 @@ function buildSignature(m) {
 function esCandidatoConfirmacion(m) {
   if (!m || !m.id) return false;
   if (m.enProceso === true) return false;
-  if (m.etapa !== 1) return false;
+  if (m.etapa !== 5) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
@@ -151,9 +151,8 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoGracias =  `
     
-Asesor: 🎉 ¡Gracias por tu pedido!
-Ya estamos trabajando 🔥 para que recibas lo mejor.
-¡Prepárate, 🚀 lo que viene te va a encantar!
+Asesor: 🎉 ¡Gracias!
+Ya estamos trabajando en tu solicitud.
 
     `;
 

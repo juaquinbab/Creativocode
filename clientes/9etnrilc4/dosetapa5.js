@@ -72,11 +72,24 @@ async function enviarBotonesWA(to, bodyText) {
   const IDNUMERO = getIDNUMERO();
   if (!IDNUMERO) throw new Error("IDNUMERO no configurado");
 
-  const payloadBotones = {
+  const payload = {
     messaging_product: "whatsapp",
-    to,
-    type: "text",
-    text: { body: "¡Gracias por tu interés en nuestras casas prefabricadas!" }
+    recipient_type: "individual",
+    to: to,
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text:
+          "Por favor, elige una de las siguientes opciones para continuar. ¿En qué municipio deseas tu casa prefabricada?",
+      },
+      action: {
+        buttons: [
+          { type: "reply", reply: { id: "cundi", title: "Cundinamarca" } },
+          { type: "reply", reply: { id: "pais", title: "Resto del Pais" } },
+        ],
+      },
+    },
   };
 
   const url = `https://graph.facebook.com/v23.0/${IDNUMERO}/messages`;
@@ -85,7 +98,7 @@ async function enviarBotonesWA(to, bodyText) {
   // 🕒 Espera 2 segundos antes de enviar
   await sleep(0);
 
-  await axios.post(url, payloadBotones, { headers, timeout: 15000 });
+  await axios.post(url, payload, { headers, timeout: 15000 });
 }
 
 // ====== Pasar a etapa 2 (y limpiar interactiveId) ======
@@ -97,7 +110,7 @@ async function pasarEtapaA2PorId(msgId) {
   const nuevo = data.map((m) => {
     if (m?.id === msgId) {
       changed = true;
-      return { ...m, enProceso: false };
+      return { ...m, etapa: 2, id: "4c8e-89c4", enProceso: false };
     }
     return m;
   });
@@ -119,7 +132,7 @@ async function procesarMensajesNuevos() {
 
     return (
       etapa === 1 &&
-      interactiveId === "btn_info" &&
+      interactiveId === "btn_contacto" &&
       id && from &&
       !m?.enProceso &&
       !mensajesProcesados.includes(id)
@@ -159,7 +172,7 @@ async function procesarMensajesNuevos() {
 
 // ====== Watcher con debounce ======
 let debounceT = null;
-function iniciarWatcher2() {
+function iniciarWatcher6() {
   if (!fs.existsSync(ETAPAS_PATH)) {
     console.warn("⚠ No existe EtapasMSG3.json, creando [].");
     fs.writeFileSync(ETAPAS_PATH, "[]", "utf8");
@@ -175,5 +188,5 @@ function iniciarWatcher2() {
   });
 }
 
-module.exports = iniciarWatcher2;
+module.exports = iniciarWatcher6;
 

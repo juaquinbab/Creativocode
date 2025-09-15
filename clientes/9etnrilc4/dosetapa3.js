@@ -75,15 +75,17 @@ async function enviarBotonesWA(to, bodyText) {
   const payloadBotones = {
     messaging_product: "whatsapp",
     to,
-    type: "text",
-    text: { body: "¡Gracias por tu interés en nuestras casas prefabricadas!" }
+    type: "image",
+    image: {
+      link: "https://server-production-ae4b.up.railway.app/2.jpeg"
+    }
   };
 
   const url = `https://graph.facebook.com/v23.0/${IDNUMERO}/messages`;
   const headers = { Authorization: `Bearer ${whatsappToken}`, "Content-Type": "application/json" };
 
   // 🕒 Espera 2 segundos antes de enviar
-  await sleep(0);
+  await sleep(2000);
 
   await axios.post(url, payloadBotones, { headers, timeout: 15000 });
 }
@@ -159,7 +161,7 @@ async function procesarMensajesNuevos() {
 
 // ====== Watcher con debounce ======
 let debounceT = null;
-function iniciarWatcher2() {
+function iniciarWatcher4() {
   if (!fs.existsSync(ETAPAS_PATH)) {
     console.warn("⚠ No existe EtapasMSG3.json, creando [].");
     fs.writeFileSync(ETAPAS_PATH, "[]", "utf8");
@@ -175,5 +177,6 @@ function iniciarWatcher2() {
   });
 }
 
-module.exports = iniciarWatcher2;
+module.exports = iniciarWatcher4;
+
 

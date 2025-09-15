@@ -7,7 +7,7 @@ const path = require("path");
 
 // === RUTAS ===
 const registroPath = path.join(__dirname, "bienvenida.json");
-const etapasPath = path.join(__dirname, "../../data/EtapasMSG.json");
+const etapasPath = path.join(__dirname, "../../data/EtapasMSG4.json");
 const usuariosPath = path.join(__dirname, "../../data/usuarios.json");
 
 // ============ UTILIDADES JSON FRESCO ============
@@ -49,7 +49,7 @@ function toArray(x) {
 
 // Resuelve IDNUMERO (iduser) desde usuarios.json, priorizando cliente1 y si no, el primero que tenga iduser
 function getNumeroFromUsuarios(usuariosData) {
-  if (usuariosData?.cliente1?.iduser) return usuariosData.cliente1.iduser;
+  if (usuariosData?.cliente4?.iduser) return usuariosData.cliente4.iduser;
   for (const k of Object.keys(usuariosData || {})) {
     const maybe = usuariosData[k]?.iduser;
     if (maybe) return maybe;
@@ -147,13 +147,13 @@ async function manejarBienvenida(from, body) {
       body: {
         text:
           "¡Gracias por ponerte en contacto con 🏠 Casas Prefabricadas Castelo!\n\n" +
-          "Soy tu asistente robot 🤖. Por favor, escribe el número de la opción que elijas:\n\n" +
+          "Soy tu asistente robot 🤖. Por favor, Selecciona la opción que elijas:\n\n" +
           "*Selecciona la opción*",
       },
       action: {
         buttons: [
           { type: "reply", reply: { id: "btn_info", title: "Solicitar catálogo" } },
-          { type: "reply", reply: { id: "btn_contacto", title: "Hablar con un asesor" } },
+          { type: "reply", reply: { id: "btn_contacto", title: "Contactar vendedor" } },
         ],
       },
     },
