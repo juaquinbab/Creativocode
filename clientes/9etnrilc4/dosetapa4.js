@@ -13,7 +13,7 @@ const USUARIOS_PATH     = path.resolve(__dirname, "../../data/usuarios.json");
 const ETAPAS_PATH       = path.resolve(__dirname, "../../data/EtapasMSG4.json");
 const PROCESADOS_PATH   = path.resolve(__dirname, "../../mensajes_procesados.json");
 // NUEVO: ruta del mapa de bienvenida (llaves = números)
-const BIENVENIDA_PATH   = path.resolve(__dirname, "./bienvenida.json");
+const BIENVENIDA_PATH   = path.resolve(__dirname, "./bienvenida4.json");
 
 // === Utils ===
 function requireFresh(p) {
