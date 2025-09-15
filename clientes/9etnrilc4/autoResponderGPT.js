@@ -166,7 +166,7 @@ const responderConGPT = async (mensaje) => {
 
     // Prompt a OpenAI
     const openaiPayload = {
-     model: "gpt-4.1-mini",
+      model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -193,7 +193,7 @@ ${texto}
     const reply = response.data.choices[0].message.content;
 
     // Simular tiempo de escritura (opcional)
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Enviar respuesta por WhatsApp — leer SIEMPRE fresco el IDNUMERO
     const IDNUMERO = getIDNUMERO();
@@ -249,7 +249,7 @@ const procesarEtapas = (mensajes) => {
     aTexto(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
   const mensaje = mensajes.find(m => {
-    if (Number(m?.etapa) !== 1) return false;
+    if (Number(m?.etapa) !== 5) return false;
     if (m?.enProceso) return false;
 
     const bodyStr = aTexto(m?.body);       // <-- fuerza string
@@ -279,7 +279,7 @@ function iniciarWatcher() {
         const claveUnica = `${m.id}::${bodyStr}::${m.timestamp}`;
         return (
           Number(m?.etapa) === 5 &&
-          bodyStr.length >= 1 &&                // <-- antes era > 1 (descartaba "1")
+          bodyStr.length >= 1 &&               
           !m.enProceso &&
           !mensajesProcesados.includes(claveUnica)
         );
