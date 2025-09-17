@@ -187,281 +187,381 @@
     }
 
 
-.clientes-destacados {
-  padding: 4rem 2rem;
-  background: #ffffff;
-  text-align: center;
-}
-.clientes-destacados h2 {
-  font-size: 2.5rem;
-  color: #004d40;
-}
-.clientes-destacados p {
-  margin-top: 0.5rem;
-  color: #555;
-  font-size: 1.1rem;
-}
-.grid-clientes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-.cliente-box {
-  background: #f1f8f6;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-}
-.cliente-box img {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  margin-bottom: 1rem;
-}
-.cliente-box h3 {
-  font-size: 1.3rem;
-  color: #00796b;
-}
-.cliente-box p {
-  font-size: 1rem;
+    .clientes-destacados {
+      padding: 4rem 2rem;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .clientes-destacados h2 {
+      font-size: 2.5rem;
+      color: #004d40;
+    }
+
+    .clientes-destacados p {
+      margin-top: 0.5rem;
+      color: #555;
+      font-size: 1.1rem;
+    }
+
+    .grid-clientes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .cliente-box {
+      background: #f1f8f6;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .cliente-box img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      margin-bottom: 1rem;
+    }
+
+    .cliente-box h3 {
+      font-size: 1.3rem;
+      color: #00796b;
+    }
+
+    .cliente-box p {
+      font-size: 1rem;
+      color: #333;
+    }
+
+
+
+
+
+
+    .beneficios {
+      padding: 80px 20px;
+      background-color: #f9fdf9;
+      text-align: center;
+    }
+
+    .beneficios h2 {
+      font-size: 2.5em;
+      color: #1b5e20;
+      margin-bottom: 10px;
+    }
+
+    .beneficios .subtitulo {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      color: #4d774e;
+      font-size: 1.1em;
+    }
+
+    .grid-beneficios {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .beneficio-box {
+      background: white;
+      padding: 30px 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 128, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .beneficio-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0, 128, 0, 0.1);
+    }
+
+    .beneficio-box .icono {
+      margin-bottom: 15px;
+    }
+
+    .beneficio-box svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .beneficio-box h3 {
+      font-size: 1.4em;
+      color: #2e7d32;
+      margin-bottom: 10px;
+    }
+
+    .beneficio-box p {
+      color: #555;
+      font-size: 0.95em;
+    }
+
+
+    .chat-simulation {
+      text-align: center;
+      padding: 4rem 1rem;
+      background: #f0fdf4;
+      color: #1a1a1a;
+    }
+
+    .chat-simulation h2 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .chat-simulation p {
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+
+    .phone-mockup {
+      width: 320px;
+      margin: 0 auto;
+      background: #e0e0e0;
+      border-radius: 2rem;
+      padding: 1rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+      border: 6px solid #ccc;
+    }
+
+    .screen {
+      background: #ffffff;
+      border-radius: 1rem;
+      padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-bubble {
+      max-width: 75%;
+      padding: 0.8rem;
+      border-radius: 1rem;
+      font-size: 0.95rem;
+      line-height: 1.3;
+      position: relative;
+    }
+
+    .chat-bubble.user {
+      background-color: #dcf8c6;
+      align-self: flex-end;
+    }
+
+    .chat-bubble.bot {
+      background-color: #f1f0f0;
+      align-self: flex-start;
+    }
+
+    .faq {
+      padding: 2rem;
+      background: #f5f5f5;
+      border-radius: 1rem;
+    }
+
+    .faq h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .faq-item {
+      margin-bottom: 1rem;
+    }
+
+    .faq-question {
+      width: 100%;
+      background: #0e7c59;
+      color: white;
+      padding: 1rem;
+      border: none;
+      text-align: left;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 0.5rem;
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: white;
+      padding: 0 1rem;
+      border-radius: 0 0 0.5rem 0.5rem;
+    }
+
+    .faq-item.active .faq-answer {
+      max-height: 200px;
+      padding: 1rem;
+    }
+
+
+    .boton-contacto {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #25D366;
+      color: white;
+      font-weight: bold;
+      padding: 14px 22px;
+      border-radius: 50px;
+      text-decoration: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      font-size: 16px;
+      z-index: 999;
+      transition: transform 0.3s ease;
+    }
+
+    .boton-contacto:hover {
+      transform: scale(1.05);
+      background-color: #1ebe5b;
+    }
+
+
+    .hero-automatice {
+
+      color: rgb(0, 150, 3);
+      text-align: center;
+      padding: 100px 20px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .hero-automatice h1 {
+      font-size: 3em;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 3px;
+      background-color: rgb(0, 173, 20);
+      animation: blink 0.7s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        background-color: transparent;
+      }
+    }
+
+
+
+    .hero-verde {
+      position: relative;
+      text-align: center;
+      padding: 6rem 2rem;
+      color: #fff;
+      max-width: 1200px;
+      /* ancho máximo */
+      margin: 4rem auto 6rem;
+      /* deja espacio arriba y abajo */
+      border-radius: 50% / 20%;
+      /* forma ovalada */
+      background: radial-gradient(circle at 50% 30%, #22c55e, #0e7c59 80%);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    }
+
+
+    .hero-verde .hero-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .hero-verde h1 {
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.1;
+      margin: 0 0 .75rem;
+    }
+
+    .hero-verde .lead {
+      font-size: clamp(1rem, 2.1vw, 1.25rem);
+      opacity: .95;
+      max-width: 860px;
+      margin: 0 auto 1.75rem;
+    }
+
+    .hero-verde .grad {
+      background: linear-gradient(90deg, #bbf7d0 0%, #86efac 50%, #bbf7d0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-verde .cta-row {
+      display: flex;
+      gap: .75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-outlined {
+      background: transparent;
+      color: #e8fff1;
+      border: 2px solid rgba(255, 255, 255, .55);
+      border-radius: 8px;
+      padding: 0.9rem 2rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .25s ease;
+      text-decoration: none;
+    }
+
+    .btn-outlined:hover {
+      background: rgba(255, 255, 255, .1);
+      border-color: #fff;
+    }
+
+    /* blobs decorativos */
+    .hero-verde .blob {
+      position: absolute;
+      width: 40rem;
+      height: 40rem;
+      filter: blur(90px);
+      opacity: .35;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .hero-verde .b1 {
+      left: -10%;
+      top: -10%;
+      background: radial-gradient(circle at 40% 40%, #22c55e, transparent 60%);
+    }
+
+    .hero-verde .b2 {
+      right: -15%;
+      bottom: -25%;
+      background: radial-gradient(circle at 60% 60%, #86efac, transparent 65%);
+    }
+
+
+
+nav a {
+  text-decoration: none;
+  font-size: 16px;
+  padding: 8px 12px;
   color: #333;
 }
 
-
-
-
-
-
-.beneficios {
-  padding: 80px 20px;
-  background-color: #f9fdf9;
-  text-align: center;
-}
-
-.beneficios h2 {
-  font-size: 2.5em;
-  color: #1b5e20;
-  margin-bottom: 10px;
-}
-
-.beneficios .subtitulo {
-  max-width: 600px;
-  margin: 0 auto 40px;
-  color: #4d774e;
-  font-size: 1.1em;
-}
-
-.grid-beneficios {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.beneficio-box {
-  background: white;
-  padding: 30px 20px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 128, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.beneficio-box:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 128, 0, 0.1);
-}
-
-.beneficio-box .icono {
-  margin-bottom: 15px;
-}
-
-.beneficio-box svg {
-  width: 48px;
-  height: 48px;
-}
-
-.beneficio-box h3 {
-  font-size: 1.4em;
-  color: #2e7d32;
-  margin-bottom: 10px;
-}
-
-.beneficio-box p {
-  color: #555;
-  font-size: 0.95em;
-}
-
-
-.chat-simulation {
-  text-align: center;
-  padding: 4rem 1rem;
-  background: #f0fdf4;
-  color: #1a1a1a;
-}
-
-.chat-simulation h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.chat-simulation p {
-  margin-bottom: 2rem;
-  font-size: 1.1rem;
-}
-
-.phone-mockup {
-  width: 320px;
-  margin: 0 auto;
-  background: #e0e0e0;
-  border-radius: 2rem;
-  padding: 1rem;
-  box-shadow: 0 0 20px rgba(0,0,0,0.15);
-  border: 6px solid #ccc;
-}
-
-.screen {
-  background: #ffffff;
-  border-radius: 1rem;
-  padding: 1rem;
-  height: 400px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.chat-bubble {
-  max-width: 75%;
-  padding: 0.8rem;
-  border-radius: 1rem;
-  font-size: 0.95rem;
-  line-height: 1.3;
-  position: relative;
-}
-
-.chat-bubble.user {
-  background-color: #dcf8c6;
-  align-self: flex-end;
-}
-
-.chat-bubble.bot {
-  background-color: #f1f0f0;
-  align-self: flex-start;
-}
-
-  .faq { padding: 2rem; background: #f5f5f5; border-radius: 1rem; }
-  .faq h2 { text-align: center; margin-bottom: 1.5rem; }
-  .faq-item { margin-bottom: 1rem; }
-  .faq-question {
-    width: 100%; background: #0e7c59; color: white; padding: 1rem; border: none;
-    text-align: left; font-size: 1rem; cursor: pointer; border-radius: 0.5rem;
-  }
-  .faq-answer {
-    max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-    background: white; padding: 0 1rem; border-radius: 0 0 0.5rem 0.5rem;
-  }
-  .faq-item.active .faq-answer {
-    max-height: 200px; padding: 1rem;
+/* Ajustes para móviles */
+@media (max-width: 768px) {
+  nav a {
+    display: none;   /* oculta los enlaces */
   }
 
-
-  .boton-contacto {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #25D366;
-    color: white;
-    font-weight: bold;
-    padding: 14px 22px;
-    border-radius: 50px;
-    text-decoration: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    font-size: 16px;
-    z-index: 999;
-    transition: transform 0.3s ease;
-  }
-
-  .boton-contacto:hover {
-    transform: scale(1.05);
-    background-color: #1ebe5b;
-  }
-
-  
- .hero-automatice {
-  
-    color: rgb(0, 150, 3);
+  .iniciar-conexion,
+  .iniciar-sesion {
+    font-size: 12px;
+    padding: 6px 12px;
+    width: 100%;        /* que ocupen todo el ancho */
     text-align: center;
-    padding: 100px 20px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
-
-  .hero-automatice h1 {
-    font-size: 3em;
-    font-weight: bold;
-    margin: 0;
-  }
-
-  .cursor {
-    display: inline-block;
-    width: 3px;
-    background-color: rgb(0, 173, 20);
-    animation: blink 0.7s steps(1) infinite;
-  }
-
-  @keyframes blink {
-    50% { background-color: transparent; }
-  }
-
-
-
-.hero-verde {
-  position: relative;
-  text-align: center;
-  padding: 6rem 2rem;
-  color: #fff;
-  max-width: 1200px;       /* ancho máximo */
-  margin: 4rem auto 6rem;  /* deja espacio arriba y abajo */
-  border-radius: 50% / 20%; /* forma ovalada */
-  background: radial-gradient(circle at 50% 30%, #22c55e, #0e7c59 80%);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
 }
-
-
-.hero-verde .hero-wrap{ max-width: 980px; margin: 0 auto; }
-.hero-verde h1{ font-size: clamp(2rem, 5vw, 3.4rem); line-height:1.1; margin:0 0 .75rem; }
-.hero-verde .lead{ font-size: clamp(1rem, 2.1vw, 1.25rem); opacity:.95; max-width: 860px; margin: 0 auto 1.75rem; }
-.hero-verde .grad{
-  background: linear-gradient(90deg,#bbf7d0 0%, #86efac 50%, #bbf7d0 100%);
-  -webkit-background-clip:text; background-clip:text; color:transparent;
-}
-.hero-verde .cta-row{ display:flex; gap: .75rem; justify-content:center; flex-wrap:wrap; }
-
-.btn-outlined{
-  background: transparent;
-  color: #e8fff1;
-  border: 2px solid rgba(255,255,255,.55);
-  border-radius: 8px;
-  padding: 0.9rem 2rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: .25s ease;
-  text-decoration:none;
-}
-.btn-outlined:hover{ background: rgba(255,255,255,.1); border-color:#fff; }
-
-/* blobs decorativos */
-.hero-verde .blob{
-  position:absolute; width:40rem; height:40rem; filter: blur(90px); opacity:.35; border-radius:999px; pointer-events:none;
-}
-.hero-verde .b1{ left:-10%; top:-10%; background: radial-gradient(circle at 40% 40%, #22c55e, transparent 60%); }
-.hero-verde .b2{ right:-15%; bottom:-25%; background: radial-gradient(circle at 60% 60%, #86efac, transparent 65%); }
-
-/* reutiliza tu botón verde existente */
-.btn-verde{ /* ya lo tienes, lo dejas como está */ }
-
-
 
   </style>
 </head>
@@ -472,19 +572,20 @@
       <img src="IMG/logo.png" alt="Creativos Code">
     </div>
 
-    <nav>
-      <a href="#clientes">Clientes</a>
-      <a href="#videos">Videos</a>
-      <a href="#plan">Plan</a>
-      <a href="#contacto">Contacto</a>
+   <nav>
+  <a href="#clientes">Clientes</a>
+  <a href="#videos">Videos</a>
+  <a href="#plan">Plan</a>
+  <a href="#contacto">Contacto</a>
 
-       <button class="btn btn-verde" onclick="launchWhatsAppSignup()">Iniciar conexión</button>
-    <a href="https://creativoscode.com/login.html" target="_blank" class="btn btn-verde" >Iniciar Sesión</a>
+  <button class="btn btn-verde iniciar-conexion" onclick="launchWhatsAppSignup()">Iniciar conexión</button>
+  <a href="https://pruebas-production-294c.up.railway.app/login.html" 
+     target="_blank" 
+     class="btn btn-verde iniciar-sesion">Iniciar Sesión</a>
+</nav>
 
-    </nav>
 
 
-   
 
     <style>
       .btn-verde {
@@ -496,136 +597,302 @@
         font-weight: bold;
         font-size: 1rem;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(37,211,102,0.12);
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.12);
         transition: background 0.3s, transform 0.2s;
       }
+
       .btn-verde:hover {
         background: #1ebe5b;
         transform: translateY(-2px) scale(1.04);
       }
 
 
-/* ===== Módulo: Plantillas de WhatsApp (fondo blanco) ===== */
-.wa-templates{
-  background:#ffffff;
-  padding: clamp(3rem, 6vw, 6rem) 1.5rem;
-}
-.wa-wrap{
-  max-width:1200px; margin:0 auto;
-  display:grid; grid-template-columns: 1.05fr 1fr; gap: clamp(1.5rem, 3vw, 3rem);
-  align-items:center;
-}
-.wa-copy h2{
-  font-size: clamp(2rem, 4.2vw, 3.2rem);
-  line-height:1.1; color:#0b2b1c; margin:0 0 .75rem;
-}
-.wa-copy .hi{
-  color:#16a34a; /* verde principal */
-}
-.wa-copy .lead{
-  color:#315a48; opacity:.95;
-  font-size: clamp(1rem, 1.8vw, 1.15rem);
-  margin:0 0 1.25rem; max-width: 52ch;
-}
-.wa-copy .features{
-  margin:0 0 1.5rem 0; padding:0; list-style:none; color:#204b34;
-  display:grid; gap:.5rem;
-}
-.wa-copy .features li{ display:flex; align-items:center; gap:.5rem }
-.wa-copy code{
-  background:#f0fdf4; color:#0e7c59; padding:.15rem .35rem; border-radius:.35rem;
-  font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9em;
-}
-.wa-copy .cta-row{ display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; }
-.btn-ghost{
-  background:transparent; color:#0e7c59; border:2px solid #0e7c59;
-  border-radius:8px; padding:.9rem 2rem; font-weight:700; text-decoration:none;
-  transition:.2s ease; display:inline-block;
-}
-.btn-ghost:hover{ background:#e8fff1 }
+      /* ===== Módulo: Plantillas de WhatsApp (fondo blanco) ===== */
+      .wa-templates {
+        background: #ffffff;
+        padding: clamp(3rem, 6vw, 6rem) 1.5rem;
+      }
 
-/* Visual */
-.wa-visual{
-  position:relative; display:grid; gap:1.25rem;
-  align-items:center; justify-items:center;
-}
-.phone{
-  width:min(320px, 90%); border:6px solid #e5e7eb; border-radius:28px;
-  box-shadow:0 10px 30px rgba(0,0,0,.12); background:#111827; padding:.6rem;
-}
-.screen{
-  height:460px; background:#ffffff; border-radius:18px; padding:.75rem;
-  display:flex; flex-direction:column; gap:.5rem; overflow:hidden;
-}
-.row{ display:flex; }
-.row.me{ justify-content:flex-end; }
-.row.bot{ justify-content:flex-start; }
-.bubble{
-  background:#f0fdf4; color:#0e7c59; padding:.6rem .75rem; border-radius:14px;
-  max-width:75%; font-size:.95rem; line-height:1.25; box-shadow:0 2px 6px rgba(0,0,0,.05);
-}
-.row.bot .bubble{ background:#f3f4f6; color:#111827 }
-.btns{ display:flex; gap:.4rem; margin-top:.5rem; flex-wrap:wrap }
-.btns span{
-  font-size:.85rem; background:#d1fae5; color:#065f46; padding:.35rem .55rem;
-  border-radius:999px;
-}
+      .wa-wrap {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1.05fr 1fr;
+        gap: clamp(1.5rem, 3vw, 3rem);
+        align-items: center;
+      }
 
-/* Panel de plantilla */
-.panel{
-  width:min(520px, 100%); background:#ffffff; border-radius:16px;
-  box-shadow:0 16px 50px rgba(0,0,0,.08); border:1px solid #eef2f7;
-}
-.panel-header{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:.9rem 1rem; border-bottom:1px solid #eef2f7; color:#0b2b1c;
-}
-.badge{
-  background:#e8fff1; color:#0e7c59; padding:.25rem .55rem; border-radius:999px; font-size:.85rem;
-}
-.panel-body{ padding:1rem 1.1rem 1.1rem }
-.panel pre{
-  margin:0; white-space:pre-wrap; background:#f9fafb; border-radius:.75rem;
-  padding:.85rem; border:1px solid #eef2f7; color:#1f2937; font-size:.95rem;
-}
-.panel-actions{
-  display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem;
-}
-.panel-actions .tag{
-  background:#f0fdf4; color:#0e7c59; border:1px solid #bbf7d0;
-  padding:.25rem .5rem; border-radius:999px; font-size:.82rem;
-}
+      .wa-copy h2 {
+        font-size: clamp(2rem, 4.2vw, 3.2rem);
+        line-height: 1.1;
+        color: #0b2b1c;
+        margin: 0 0 .75rem;
+      }
 
-/* Responsive */
-@media (max-width: 980px){
-  .wa-wrap{ grid-template-columns: 1fr; }
-  .wa-copy{ text-align:center }
-  .wa-copy .lead{ margin-left:auto; margin-right:auto }
-  .wa-copy .features{ justify-items:center }
-  .wa-visual{ margin-top:.5rem }
-}
+      .wa-copy .hi {
+        color: #16a34a;
+        /* verde principal */
+      }
+
+      .wa-copy .lead {
+        color: #315a48;
+        opacity: .95;
+        font-size: clamp(1rem, 1.8vw, 1.15rem);
+        margin: 0 0 1.25rem;
+        max-width: 52ch;
+      }
+
+      .wa-copy .features {
+        margin: 0 0 1.5rem 0;
+        padding: 0;
+        list-style: none;
+        color: #204b34;
+        display: grid;
+        gap: .5rem;
+      }
+
+      .wa-copy .features li {
+        display: flex;
+        align-items: center;
+        gap: .5rem
+      }
+
+      .wa-copy code {
+        background: #f0fdf4;
+        color: #0e7c59;
+        padding: .15rem .35rem;
+        border-radius: .35rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .9em;
+      }
+
+      .wa-copy .cta-row {
+        display: flex;
+        gap: .75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: #0e7c59;
+        border: 2px solid #0e7c59;
+        border-radius: 8px;
+        padding: .9rem 2rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: .2s ease;
+        display: inline-block;
+      }
+
+      .btn-ghost:hover {
+        background: #e8fff1
+      }
+
+      /* Visual */
+      .wa-visual {
+        position: relative;
+        display: grid;
+        gap: 1.25rem;
+        align-items: center;
+        justify-items: center;
+      }
+
+      .phone {
+        width: min(320px, 90%);
+        border: 6px solid #e5e7eb;
+        border-radius: 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+        background: #111827;
+        padding: .6rem;
+      }
+
+      .screen {
+        height: 460px;
+        background: #ffffff;
+        border-radius: 18px;
+        padding: .75rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        overflow: hidden;
+      }
+
+      .row {
+        display: flex;
+      }
+
+      .row.me {
+        justify-content: flex-end;
+      }
+
+      .row.bot {
+        justify-content: flex-start;
+      }
+
+      .bubble {
+        background: #f0fdf4;
+        color: #0e7c59;
+        padding: .6rem .75rem;
+        border-radius: 14px;
+        max-width: 75%;
+        font-size: .95rem;
+        line-height: 1.25;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .05);
+      }
+
+      .row.bot .bubble {
+        background: #f3f4f6;
+        color: #111827
+      }
+
+      .btns {
+        display: flex;
+        gap: .4rem;
+        margin-top: .5rem;
+        flex-wrap: wrap
+      }
+
+      .btns span {
+        font-size: .85rem;
+        background: #d1fae5;
+        color: #065f46;
+        padding: .35rem .55rem;
+        border-radius: 999px;
+      }
+
+      /* Panel de plantilla */
+      .panel {
+        width: min(520px, 100%);
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 16px 50px rgba(0, 0, 0, .08);
+        border: 1px solid #eef2f7;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: .9rem 1rem;
+        border-bottom: 1px solid #eef2f7;
+        color: #0b2b1c;
+      }
+
+      .badge {
+        background: #e8fff1;
+        color: #0e7c59;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+        font-size: .85rem;
+      }
+
+      .panel-body {
+        padding: 1rem 1.1rem 1.1rem
+      }
+
+      .panel pre {
+        margin: 0;
+        white-space: pre-wrap;
+        background: #f9fafb;
+        border-radius: .75rem;
+        padding: .85rem;
+        border: 1px solid #eef2f7;
+        color: #1f2937;
+        font-size: .95rem;
+      }
+
+      .panel-actions {
+        display: flex;
+        gap: .5rem;
+        flex-wrap: wrap;
+        margin-top: .75rem;
+      }
+
+      .panel-actions .tag {
+        background: #f0fdf4;
+        color: #0e7c59;
+        border: 1px solid #bbf7d0;
+        padding: .25rem .5rem;
+        border-radius: 999px;
+        font-size: .82rem;
+      }
+
+      /* Responsive */
+      @media (max-width: 980px) {
+        .wa-wrap {
+          grid-template-columns: 1fr;
+        }
+
+        .wa-copy {
+          text-align: center
+        }
+
+        .wa-copy .lead {
+          margin-left: auto;
+          margin-right: auto
+        }
+
+        .wa-copy .features {
+          justify-items: center
+        }
+
+        .wa-visual {
+          margin-top: .5rem
+        }
+      }
 
 
-header { flex-wrap: wrap; }
-header nav { display:flex; align-items:center; gap:.5rem; flex-wrap: wrap; }
+      header {
+        flex-wrap: wrap;
+      }
 
-/* Ajustes responsivos básicos */
-@media (max-width: 768px){
-  header { padding: .75rem 1rem; }
-  header .logo img { width: 140px; height:auto; }
-  header nav a, .btn { padding: .6rem 1rem; font-size: .95rem; }
-}
+      header nav {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        flex-wrap: wrap;
+      }
 
-/* Imágenes nunca desborden */
-img { max-width: 100%; height: auto; }
+      /* Ajustes responsivos básicos */
+      @media (max-width: 768px) {
+        header {
+          padding: .75rem 1rem;
+        }
 
+        header .logo img {
+          width: 140px;
+          height: auto;
+        }
+
+        header nav a,
+        .btn {
+          padding: .6rem 1rem;
+          font-size: .95rem;
+        }
+      }
+
+      /* Imágenes nunca desborden */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+
+      @media (prefers-reduced-motion: reduce) {
+        .animate-pulse {
+          animation: none !important;
+        }
+      }
     </style>
   </header>
 
 
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: {} } }</script>
 
 
-  
+
 
   <section class="hero">
     <h1>Conecta con tus clientes como nunca antes</h1>
@@ -634,145 +901,155 @@ img { max-width: 100%; height: auto; }
   </section>
 
 
-<section class="hero-automatice">
-  <h1><span class="typed-text"></span><span class="cursor">&nbsp;</span></h1>
-</section>
-
-
-<section class="chat-simulation">
-  <h2>🤖 Simulación en Vivo</h2>
-  <p>Así respondería un bot a tus clientes en WhatsApp.</p>
-
-  <div class="phone-mockup">
-    <div class="screen">
-      <div class="chat-bubble user">Hola, quiero confirmar mi cita</div>
-      <div class="chat-bubble bot">¡Hola! 👋 Claro, dime tu número de documento por favor.</div>
-      <div class="chat-bubble user">123456789</div>
-      <div class="chat-bubble bot">✅ Perfecto, tu cita está agendada para mañana a las 10:00 AM.</div>
-    </div>
-  </div>
-</section>
+  <section class="hero-automatice">
+    <h1><span class="typed-text"></span><span class="cursor">&nbsp;</span></h1>
+  </section>
 
 
 
-<section id="beneficios" class="beneficios">
-  <h2>¿Por qué elegir nuestros bots?</h2>
-  <p class="subtitulo">Transformamos tu WhatsApp en un asistente inteligente con múltiples ventajas para tu negocio.</p>
-  
-  <div class="grid-beneficios">
-    <div class="beneficio-box">
-      <!-- Icono IA -->
-      <div class="icono">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
-          <path d="M9 9h6v6H9z"></path>
-        </svg>
+
+
+
+
+
+  <section class="chat-simulation">
+    <h2>🤖 Simulación en Vivo</h2>
+    <p>Así respondería un bot a tus clientes en WhatsApp.</p>
+
+    <div class="phone-mockup">
+      <div class="screen">
+        <div class="chat-bubble user">Hola, quiero confirmar mi cita</div>
+        <div class="chat-bubble bot">¡Hola! 👋 Claro, dime tu número de documento por favor.</div>
+        <div class="chat-bubble user">123456789</div>
+        <div class="chat-bubble bot">✅ Perfecto, tu cita está agendada para mañana a las 10:00 AM.</div>
       </div>
-      <h3>Automatización con IA</h3>
-      <p>Responde con lenguaje natural gracias a la integración con ChatGPT.</p>
     </div>
-
-    <div class="beneficio-box">
-      <!-- Icono Asesores -->
-      <div class="icono">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="7" r="4"></circle>
-          <path d="M5.5 21a7 7 0 0 1 13 0"></path>
-        </svg>
-      </div>
-      <h3>Varios asesores en un solo número</h3>
-      <p>Gestiona múltiples clientes desde un solo WhatsApp, sin confusiones.</p>
-    </div>
-
-    <div class="beneficio-box">
-      <!-- Icono Envío -->
-      <div class="icono">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 2 11 13"></path>
-          <path d="M22 2 15 22 11 13 2 9z"></path>
-        </svg>
-      </div>
-      <h3>Envío de mensajes automáticos</h3>
-      <p>Recordatorios, confirmaciones, pedidos y mucho más sin intervención humana.</p>
-    </div>
-  </div>
-</section>
+  </section>
 
 
 
+  <section id="beneficios" class="beneficios">
+    <h2>¿Por qué elegir nuestros bots?</h2>
+    <p class="subtitulo">Transformamos tu WhatsApp en un asistente inteligente con múltiples ventajas para tu negocio.
+    </p>
 
-<!-- Módulo: Plantillas de WhatsApp -->
-<section class="wa-templates">
-  <div class="wa-wrap">
-    <div class="wa-copy">
-      <h2>Envía mensajes con <span class="hi">plantillas de WhatsApp</span></h2>
-      <p class="lead">
-        Crea, aprueba y envía plantillas (HSM) para notificaciones, recordatorios y campañas.
-        Personaliza con variables, botones y multimedia para maximizar la conversión.
-      </p>
-
-      <ul class="features">
-        <li>Campos dinámicos: <code>{{nombre}}</code>, <code>{{fecha}}</code>, <code>{{pedido}}</code></li>
-        <li>Botones: llamar, URL, respuesta rápida y catálogo</li>
-        <li>Soporte de multimedia: imagen, documento, PDF</li>
-        <li>Compatible con categorías: Marketing, Utilidad y Autenticación</li>
-      </ul>
-
-      <div class="cta-row">
-        <a href="https://wa.link/it9700" target="_blank" class="btn btn-verde">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-right:.5rem">
-            <path fill="currentColor"
-              d="M12.04 2a9.9 9.9 0 0 0-8.48 14.88L2 22l5.24-1.5A9.96 9.96 0 1 0 12.04 2Zm5.85 14.1c-.25.7-1.45 1.33-2.02 1.36-.54.03-1.22.04-1.97-.12-.45-.1-1.03-.34-1.79-.67-3.14-1.37-5.18-4.57-5.34-4.79-.16-.22-1.27-1.7-1.27-3.25 0-1.55.82-2.31 1.11-2.62.29-.31.64-.39.86-.39h.62c.2 0 .47-.07.73.56.25.63.85 2.16.92 2.31.07.15.11.33.02.54-.09.2-.14.33-.27.51-.14.18-.29.4-.41.54-.14.18-.29.37-.12.69.16.31.71 1.16 1.52 1.88 1.05.94 1.93 1.24 2.25 1.38.31.13.5.11.69-.07.2-.18.8-.93 1.02-1.25.22-.31.45-.26.74-.16.29.1 1.86.88 2.18 1.04.33.16.54.24.62.38.08.14.08.81-.17 1.51Z" />
+    <div class="grid-beneficios">
+      <div class="beneficio-box">
+        <!-- Icono IA -->
+        <div class="icono">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path>
+            <path d="M9 9h6v6H9z"></path>
           </svg>
-          Comenzar
-        </a>
-        <a href="#docs-plantillas" class="btn btn-ghost">Ver documentación</a>
+        </div>
+        <h3>Automatización con IA</h3>
+        <p>Responde con lenguaje natural gracias a la integración con ChatGPT.</p>
+      </div>
+
+      <div class="beneficio-box">
+        <!-- Icono Asesores -->
+        <div class="icono">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="7" r="4"></circle>
+            <path d="M5.5 21a7 7 0 0 1 13 0"></path>
+          </svg>
+        </div>
+        <h3>Varios asesores en un solo número</h3>
+        <p>Gestiona múltiples clientes desde un solo WhatsApp, sin confusiones.</p>
+      </div>
+
+      <div class="beneficio-box">
+        <!-- Icono Envío -->
+        <div class="icono">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M22 2 11 13"></path>
+            <path d="M22 2 15 22 11 13 2 9z"></path>
+          </svg>
+        </div>
+        <h3>Envío de mensajes automáticos</h3>
+        <p>Recordatorios, confirmaciones, pedidos y mucho más sin intervención humana.</p>
       </div>
     </div>
+  </section>
 
-    <div class="wa-visual">
-      <!-- Card principal (WhatsApp móvil) -->
-      <div class="phone">
-        <div class="screen">
-          <div class="row me">
-            <div class="bubble">Hola {{nombre}}, tu pedido #{{pedido}} fue enviado 🚚</div>
-          </div>
-          <div class="row bot">
-            <div class="bubble">
-              ¿Deseas rastrear tu envío?
-              <div class="btns">
-                <span>📦 Ver estado</span>
-                <span>🗓 Reprogramar</span>
+
+
+
+  <!-- Módulo: Plantillas de WhatsApp -->
+  <section class="wa-templates">
+    <div class="wa-wrap">
+      <div class="wa-copy">
+        <h2>Envía mensajes con <span class="hi">plantillas de WhatsApp</span></h2>
+        <p class="lead">
+          Crea, aprueba y envía plantillas (HSM) para notificaciones, recordatorios y campañas.
+          Personaliza con variables, botones y multimedia para maximizar la conversión.
+        </p>
+
+        <ul class="features">
+          <li>Campos dinámicos: <code>{{nombre}}</code>, <code>{{fecha}}</code>, <code>{{pedido}}</code></li>
+          <li>Botones: llamar, URL, respuesta rápida y catálogo</li>
+          <li>Soporte de multimedia: imagen, documento, PDF</li>
+          <li>Compatible con categorías: Marketing, Utilidad y Autenticación</li>
+        </ul>
+
+        <div class="cta-row">
+          <a href="https://wa.link/it9700" target="_blank" class="btn btn-verde">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" style="margin-right:.5rem">
+              <path fill="currentColor"
+                d="M12.04 2a9.9 9.9 0 0 0-8.48 14.88L2 22l5.24-1.5A9.96 9.96 0 1 0 12.04 2Zm5.85 14.1c-.25.7-1.45 1.33-2.02 1.36-.54.03-1.22.04-1.97-.12-.45-.1-1.03-.34-1.79-.67-3.14-1.37-5.18-4.57-5.34-4.79-.16-.22-1.27-1.7-1.27-3.25 0-1.55.82-2.31 1.11-2.62.29-.31.64-.39.86-.39h.62c.2 0 .47-.07.73.56.25.63.85 2.16.92 2.31.07.15.11.33.02.54-.09.2-.14.33-.27.51-.14.18-.29.4-.41.54-.14.18-.29.37-.12.69.16.31.71 1.16 1.52 1.88 1.05.94 1.93 1.24 2.25 1.38.31.13.5.11.69-.07.2-.18.8-.93 1.02-1.25.22-.31.45-.26.74-.16.29.1 1.86.88 2.18 1.04.33.16.54.24.62.38.08.14.08.81-.17 1.51Z" />
+            </svg>
+            Comenzar
+          </a>
+          <a href="#docs-plantillas" class="btn btn-ghost">Ver documentación</a>
+        </div>
+      </div>
+
+      <div class="wa-visual">
+        <!-- Card principal (WhatsApp móvil) -->
+        <div class="phone">
+          <div class="screen">
+            <div class="row me">
+              <div class="bubble">Hola {{nombre}}, tu pedido #{{pedido}} fue enviado 🚚</div>
+            </div>
+            <div class="row bot">
+              <div class="bubble">
+                ¿Deseas rastrear tu envío?
+                <div class="btns">
+                  <span>📦 Ver estado</span>
+                  <span>🗓 Reprogramar</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="row me">
-            <div class="bubble">Sí, ver estado</div>
+            <div class="row me">
+              <div class="bubble">Sí, ver estado</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Card secundaria (Editor de plantilla) -->
-      <div class="panel">
-        <div class="panel-header">
-          <strong>Plantilla: Recordatorio_Cita</strong>
-          <span class="badge">Marketing</span>
-        </div>
-        <div class="panel-body">
-          <pre>Hola {{nombre}}, te esperamos el {{fecha}} a las {{hora}}.
+        <!-- Card secundaria (Editor de plantilla) -->
+        <div class="panel">
+          <div class="panel-header">
+            <strong>Plantilla: Recordatorio_Cita</strong>
+            <span class="badge">Marketing</span>
+          </div>
+          <div class="panel-body">
+            <pre>Hola {{nombre}}, te esperamos el {{fecha}} a las {{hora}}.
 Confirma tu asistencia:
 • <u>Ver ubicación</u>
 • <u>Reprogramar cita</u></pre>
-          <div class="panel-actions">
-            <span class="tag">Variables: nombre, fecha, hora</span>
-            <span class="tag">Botones: 2</span>
-            <span class="tag">Estado: Aprobada ✅</span>
+            <div class="panel-actions">
+              <span class="tag">Variables: nombre, fecha, hora</span>
+              <span class="tag">Botones: 2</span>
+              <span class="tag">Estado: Aprobada ✅</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
 
 
@@ -780,21 +1057,115 @@ Confirma tu asistencia:
 
 
 
+  <section
+    class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-green-500 text-white my-12 mx-4">
+    <!-- Blobs decorativos -->
+    <div class="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/10 blur-2xl"></div>
+    <div class="pointer-events-none absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-emerald-300/20 blur-2xl">
+    </div>
+
+    <div class="mx-auto max-w-6xl px-5 py-12 md:py-16">
+      <div class="grid items-center gap-10 md:grid-cols-2">
+        <!-- Texto -->
+        <div class="text-center md:text-left">
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1 text-sm backdrop-blur">
+            <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-yellow-300"></span>
+            <span>Prueba gratis · 7 días · Sin tarjeta</span>
+          </div>
+
+          <h2 class="mt-3 text-3xl md:text-5xl font-extrabold leading-tight">
+            Automatiza tu WhatsApp <span class="text-yellow-300">7 días Gratis</span>
+          </h2>
+
+          <p class="mt-4 text-base md:text-lg leading-7 md:leading-8 text-white/90">
+            Envía <strong>mensajes masivos</strong>, conecta tu <strong>WhatsApp a una IA</strong> y responde 24/7.
+            Todo desde un panel sencillo y con conexión oficial.
+          </p>
+
+          <!-- Bullets -->
+          <ul class="mt-6 space-y-3 text-left text-white/95">
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 flex-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9 12.75 6.75 10.5 5.25 12l3 3 6.75-6.75-1.5-1.5z" />
+              </svg>
+              <span>Campañas masivas con alta entregabilidad</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 flex-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9 12.75 6.75 10.5 5.25 12l3 3 6.75-6.75-1.5-1.5z" />
+              </svg>
+              <span>Flows inteligentes: Confirmación, ventas y atención automática</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 flex-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M9 12.75 6.75 10.5 5.25 12l3 3 6.75-6.75-1.5-1.5z" />
+              </svg>
+              <span>Panel en tiempo real y soporte guiado</span>
+            </li>
+          </ul>
+
+          <!-- CTA -->
+          <div class="mt-8 flex flex-col items-center gap-3 md:flex-row md:items-start">
+            <a href="#" onclick="launchWhatsAppSignup()"
+              class="group inline-flex items-center justify-center rounded-2xl bg-yellow-300 px-7 py-3 text-lg font-bold text-emerald-900 shadow-lg shadow-emerald-900/20 transition-transform duration-200 hover:scale-[1.03] focus:outline-none focus:ring-4 focus:ring-yellow-300/40">
+              Iniciar conexión
+              <svg class="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24"
+                fill="currentColor" aria-hidden="true">
+                <path d="M13.5 4.5 21 12l-7.5 7.5-1.06-1.06L17.88 12l-5.44-6.44zM3 11.25h14.25v1.5H3z" />
+              </svg>
+            </a>
+            <p class="text-sm text-white/80 md:ml-3">
+              Configura en minutos · Cancela cuando quieras
+            </p>
+          </div>
 
 
+          <!-- Sellos -->
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 md:justify-start">
+            <span class="rounded-full bg-white/10 px-4 py-1 text-xs">Conexión oficial</span>
+            <span class="rounded-full bg-white/10 px-4 py-1 text-xs">Soporte en español</span>
+            <span class="rounded-full bg-white/10 px-4 py-1 text-xs">Modo IA 24/7</span>
+          </div>
+        </div>
 
-<section id="videos" class="videos">
-  <h2>Cómo funcionan nuestros bots</h2>
-  <p>Explora ejemplos reales de bots diseñados por nuestro equipo.</p>
-  <div class="videos-grid">
-    <iframe src="https://www.youtube.com/embed/ZYNfoCrNT7o?start=3" frameborder="0" allowfullscreen></iframe>
-    <iframe src="https://www.youtube.com/embed/iGahIeVB3nk?start=14" frameborder="0" allowfullscreen></iframe>
-  </div>
-</section>
+        <!-- Mockup -->
+        <div class="relative mx-auto w-full max-w-sm md:max-w-md">
+          <div class="relative rounded-3xl bg-white p-4 text-slate-800 shadow-2xl ring-1 ring-black/5">
+            <div class="space-y-3">
+              <div class="flex gap-2">
+                <div class="rounded-2xl bg-emerald-100 px-3 py-2 text-sm">Hola, quiero hacer un pedido de Clorofila
+                </div>
+              </div>
+              <div class="flex justify-end gap-2">
+                <div class="rounded-2xl bg-emerald-600 px-3 py-2 text-sm text-white">¡Claro! que si con gusto? cuantas
+                  unidades quieres </div>
+              </div>
+              <div class="flex gap-2">
+                <div class="rounded-2xl bg-emerald-100 px-3 py-2 text-sm">2 unidades</div>
+              </div>
+              <div class="flex justify-end gap-2">
+                <div class="rounded-2xl bg-emerald-600 px-3 py-2 text-sm text-white">Listo ✅ Te confirmo por aquí</div>
+              </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 rounded-2xl bg-slate-100 p-2 text-sm">
+              <div class="h-2 w-2 animate-pulse rounded-full bg-emerald-500"></div>
+              <span class="text-slate-600">IA escribiendo…</span>
+            </div>
+          </div>
+          <div
+            class="pointer-events-none absolute -inset-4 -z-10 animate-pulse rounded-[2rem] bg-emerald-300/20 blur-2xl">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- ======= /FIN MÓDULO ======= -->
+
+
 
   <section id="plan" class="plan">
     <h2>Plan Básico Inteligente</h2>
-    <h3>$60 USD/mes</h3>
+    <h3>$65 USD/mes</h3>
     <ul>
       <li>✅ Sala de Chat con nombre personalizado</li>
       <li>✅ Conexión 100% oficial a la API de WhatsApp</li>
@@ -814,18 +1185,18 @@ Confirma tu asistencia:
   <section id="contacto" class="contacto">
     <h2>¿Hablamos de tu proyecto?</h2>
     <p>Déjanos tus datos y uno de nuestros especialistas te contactará para ayudarte a crear tu chatbot ideal.</p>
-      <form id="formulario">
-  <input type="text" name="nombre" placeholder="Tu nombre" required>
-  <input type="email" name="email" placeholder="Tu correo" required>
-  <textarea name="mensaje" placeholder="Cuéntanos sobre tu negocio..." required></textarea>
-  <button class="btn" type="submit">Enviar mensaje</button>
-      </form>
+    <form id="formulario">
+      <input type="text" name="nombre" placeholder="Tu nombre" required>
+      <input type="email" name="email" placeholder="Tu correo" required>
+      <textarea name="mensaje" placeholder="Cuéntanos sobre tu negocio..." required></textarea>
+      <button class="btn" type="submit">Enviar mensaje</button>
+    </form>
   </section>
 
 
- <a href="https://wa.link/it9700" target="_blank" class="boton-contacto">
-  📲 Contáctenos
-</a>
+  <a href="https://wa.link/it9700" target="_blank" class="boton-contacto">
+    📲 Contáctenos
+  </a>
 
   <section id="clientes-destacados" class="clientes-destacados">
     <h2>Clientes Destacados</h2>
@@ -833,7 +1204,7 @@ Confirma tu asistencia:
     <div class="grid-clientes">
       <div class="cliente-box">
         <img src="./IMG/cliente1.png" alt="Cliente 1">
-       <h3>Clinica Medsalud</h3>
+        <h3>Clinica Medsalud</h3>
         <p>Automatización de salas de chat, todas las áreas de la empresa en un solo número. </p>
       </div>
       <div class="cliente-box">
@@ -849,7 +1220,7 @@ Confirma tu asistencia:
       <div class="cliente-box">
         <img src="./IMG/cliente4.png" alt="Cliente 4">
         <h3>JhonTV</h3>
-        <p>Lideres en plataformas de streaming  uso de api y mensajería masiva. </p>
+        <p>Lideres en plataformas de streaming uso de api y mensajería masiva. </p>
       </div>
     </div>
   </section>
@@ -857,44 +1228,45 @@ Confirma tu asistencia:
 
 
   <section class="faq">
-  <h2>Preguntas Frecuentes</h2>
-  <div class="faq-item">
-    <button class="faq-question">¿Qué es un chatbot?</button>
-    <div class="faq-answer">Es un asistente virtual que responde automáticamente en WhatsApp o tu sitio web.</div>
-  </div>
-  <div class="faq-item">
-    <button class="faq-question">¿Puedo tener varios asesores en un solo número?</button>
-    <div class="faq-answer">Sí. Automatizamos con múltiples asesores desde un solo WhatsApp con IA.</div>
-  </div>
-  <div class="faq-item">
-    <button class="faq-question">¿El bot puede confirmar citas?</button>
-    <div class="faq-answer">¡Claro! Confirmamos, reagendamos y enviamos recordatorios por WhatsApp automáticamente.</div>
-  </div>
-  <div class="faq-item">
-    <button class="faq-question">¿Es compatible con Chat GPT?</button>
-    <div class="faq-answer">Sí. Integramos ChatGPT para responder consultas frecuentes y personalizadas.</div>
-  </div>
-</section>
-
-
-<section class="hero hero-verde">
-  <div class="hero-wrap">
-    <h1>Impulse el crecimiento <span class="grad">de su empresa</span></h1>
-    <p class="lead">
-      Con agentes autónomos de IA para cada conversación con su cliente.
-      Acelere la generación de leads, impulse ventas y encante a sus clientes con soporte personalizado.
-    </p>
-    <div class="cta-row">
-      <a href="https://wa.link/it9700" target="_blank" class="btn btn-verde">
-  Iniciar una conversación
-</a>
-      <a class="btn btn-outlined" href="#beneficios">Ver beneficios</a>
+    <h2>Preguntas Frecuentes</h2>
+    <div class="faq-item">
+      <button class="faq-question">¿Qué es un chatbot?</button>
+      <div class="faq-answer">Es un asistente virtual que responde automáticamente en WhatsApp o tu sitio web.</div>
     </div>
-  </div>
-  <!-- decoración suave -->
-  <span class="blob b1"></span>
-  <span class="blob b2"></span>
-</section>
+    <div class="faq-item">
+      <button class="faq-question">¿Puedo tener varios asesores en un solo número?</button>
+      <div class="faq-answer">Sí. Automatizamos con múltiples asesores desde un solo WhatsApp con IA.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question">¿El bot puede confirmar citas?</button>
+      <div class="faq-answer">¡Claro! Confirmamos, reagendamos y enviamos recordatorios por WhatsApp automáticamente.
+      </div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-question">¿Es compatible con Chat GPT?</button>
+      <div class="faq-answer">Sí. Integramos ChatGPT para responder consultas frecuentes y personalizadas.</div>
+    </div>
+  </section>
+
+
+  <section class="hero hero-verde">
+    <div class="hero-wrap">
+      <h1>Impulse el crecimiento <span class="grad">de su empresa</span></h1>
+      <p class="lead">
+        Con agentes autónomos de IA para cada conversación con su cliente.
+        Acelere la generación de leads, impulse ventas y encante a sus clientes con soporte personalizado.
+      </p>
+      <div class="cta-row">
+        <a href="https://wa.link/it9700" target="_blank" class="btn btn-verde">
+          Iniciar una conversación
+        </a>
+        <a class="btn btn-outlined" href="#beneficios">Ver beneficios</a>
+      </div>
+    </div>
+    <!-- decoración suave -->
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+  </section>
 
 
 
@@ -903,109 +1275,109 @@ Confirma tu asistencia:
   </footer>
 
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-949162568"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-949162568"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-  gtag('config', 'AW-949162568');
-</script>
+    gtag('config', 'AW-949162568');
+  </script>
 
 
-<script>
-  document.querySelectorAll('.faq-question').forEach(button => {
-    button.addEventListener('click', () => {
-      const item = button.parentElement;
-      item.classList.toggle('active');
+  <script>
+    document.querySelectorAll('.faq-question').forEach(button => {
+      button.addEventListener('click', () => {
+        const item = button.parentElement;
+        item.classList.toggle('active');
+      });
     });
-  });
-</script>
+  </script>
 
-<script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  <script type="text/javascript">
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
     })(window, document, "clarity", "script", "sce1uazdlp");
-</script>
+  </script>
 
-<script>
-  const form = document.getElementById("formulario");
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const data = {
-      nombre: form.nombre.value,
-      email: form.email.value,
-      mensaje: form.mensaje.value,
+  <script>
+    const form = document.getElementById("formulario");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = {
+        nombre: form.nombre.value,
+        email: form.email.value,
+        mensaje: form.mensaje.value,
+      };
+
+      const res = await fetch("/guardar-mensaje", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const respuesta = await res.json();
+      alert(respuesta.mensaje);
+      form.reset();
+    });
+  </script>
+
+  <script>
+    const text = "AUTOMATIZA TU WHATSAPP";
+    const typedTextSpan = document.querySelector(".typed-text");
+    let charIndex = 0;
+
+    function type() {
+      if (charIndex < text.length) {
+        typedTextSpan.textContent += text.charAt(charIndex);
+        charIndex++;
+        setTimeout(type, 100);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", type);
+  </script>
+
+
+
+  <script>
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '531332619731859', // ← reemplaza con tu App ID
+        autoLogAppEvents: true,
+        xfbml: false,
+        version: 'v19.0'
+      });
     };
 
-    const res = await fetch("/guardar-mensaje", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s);
+      js.id = id;
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    })(document, 'script', 'facebook-jssdk');
 
-    const respuesta = await res.json();
-    alert(respuesta.mensaje);
-    form.reset();
-  });
-</script>
-
-<script>
-  const text = "AUTOMATIZA TU WHATSAPP";
-  const typedTextSpan = document.querySelector(".typed-text");
-  let charIndex = 0;
-
-  function type() {
-    if (charIndex < text.length) {
-      typedTextSpan.textContent += text.charAt(charIndex);
-      charIndex++;
-      setTimeout(type, 100);
+    function launchWhatsAppSignup() {
+      FB.login(function (response) {
+        //  console.log("🟢 Embedded Signup completado:", response);
+        alert("Conexión realizada. Verifica consola para detalles.");
+      }, {
+        config_id: '1546533655845405', // ← reemplaza con tu config ID
+        response_type: 'code',
+        override_default_response_type: true,
+        extras: {
+          setup: {},
+          featureType: 'whatsapp_business_app_onboarding',
+          sessionInfoVersion: '3'
+        }
+      });
     }
-  }
-
-  window.addEventListener("DOMContentLoaded", type);
-</script>
-
-
-
-<script>
-  window.fbAsyncInit = function () {
-    FB.init({
-      appId: '531332619731859', // ← reemplaza con tu App ID
-      autoLogAppEvents: true,
-      xfbml: false,
-      version: 'v19.0'
-    });
-  };
-
-  (function (d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s);
-    js.id = id;
-    js.src = "https://connect.facebook.net/en_US/sdk.js";
-    fjs.parentNode.insertBefore(js, fjs);
-  })(document, 'script', 'facebook-jssdk');
-
-  function launchWhatsAppSignup() {
-    FB.login(function (response) {
-    //  console.log("🟢 Embedded Signup completado:", response);
-      alert("Conexión realizada. Verifica consola para detalles.");
-    }, {
-      config_id: '1546533655845405', // ← reemplaza con tu config ID
-      response_type: 'code',
-      override_default_response_type: true,
-      extras: {
-        setup: {},
-        featureType: 'whatsapp_business_app_onboarding',
-        sessionInfoVersion: '3'
-      }
-    });
-  }
-</script>
+  </script>
 
 
 </body>
