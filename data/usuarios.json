@@ -39,5 +39,19 @@
     "ruta": "https://vital-plus-energy.up.railway.app/",
     "iduser": "0000000",
     "IA": true
+  },
+   "cliente1003MSG": {
+    "usuario": "Changan-nuevo",
+    "password": "Changan-nuevo@",
+    "ruta": "https://changan-nuevo-laredo-production.up.railway.app/",
+    "iduser": "0000000",
+    "IA": true
+  },
+   "cliente1004MSG": {
+    "usuario": "Creditpartes",
+    "password": "Creditpartes@",
+    "ruta": "https://credipartes-production.up.railway.app//",
+    "iduser": "0000000",
+    "IA": true
   }
 }
