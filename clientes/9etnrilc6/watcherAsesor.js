@@ -6,7 +6,7 @@ const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG6.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
@@ -19,7 +19,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
-    return usuariosData?.cliente4?.iduser || '';
+    return usuariosData?.cliente6?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';
@@ -102,7 +102,7 @@ function buildSignature(m) {
 function esCandidatoAsesor(m) {
   if (!m || !m.id) return false;
   if (m.enProceso === true) return false;
-  if (m.etapa !== 5) return false;
+  if (m.etapa !== 1) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
@@ -150,6 +150,7 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoRespuesta = `✅ ¡Gracias!
 Muy pronto uno de nuestros asesores te estará contactando 🤝
+
 `;
 
     // 1) Guardar en historial local

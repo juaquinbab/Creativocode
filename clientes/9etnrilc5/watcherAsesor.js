@@ -151,7 +151,7 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
     const textoRespuesta = `✅ ¡Gracias!
 Muy pronto uno de nuestros asesores te estará contactando 🤝
 
-— Zummy `;
+`;
 
     // 1) Guardar en historial local
     mensajes.push({

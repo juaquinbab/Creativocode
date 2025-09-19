@@ -9,7 +9,7 @@
     "usuario": "zummy",
     "password": "zummy@",
     "ruta": "/cliente2/index.html",
-    "iduser": "546671438534457",
+    "iduser": "789862370866920",
     "IA": true
   },
   "cliente3": {
@@ -27,10 +27,17 @@
     "IA": true
   },
    "cliente5": {
-    "usuario": "David",
-    "password": "picerros123",
+    "usuario": "Endo",
+    "password": "Endo@",
     "ruta": "/9etnrilc5/index.html",
-    "iduser": "789862370866920",
+    "iduser": "752653081272296",
+    "IA": true
+  },
+   "cliente6": {
+    "usuario": "Endo",
+    "password": "Endo@",
+    "ruta": "/9etnrilc5/index.html",
+    "iduser": "75265308127229677777",
     "IA": true
   },
    "cliente1002MSG": {

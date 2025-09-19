@@ -1,4 +1,4 @@
-// watcherAsesor.js
+// watcherCitas.js
 "use strict";
 
 const fs = require('fs');
@@ -6,11 +6,11 @@ const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG4.json");
-const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG6.json");
+const PROCESSED_PATH = path.join(__dirname, "../../data/processed_citas.json");
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
-// === usuarios.json SIEMPRE FRESCO ===
+// === cargar usuarios.json SIEMPRE FRESCO ===
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
   return require(p);
@@ -19,7 +19,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
-    return usuariosData?.cliente4?.iduser || '';
+    return usuariosData?.cliente6?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';
@@ -41,7 +41,7 @@ const MAX_RETRIES = 3;
 let lastStatMtime = 0;
 
 // ---------- Utils ----------
-const log = (...a) => console.log('[ASESOR]', ...a);
+const log = (...a) => console.log('[CITAS]', ...a);
 function ensureDir(filePath) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -49,8 +49,8 @@ function ensureDir(filePath) {
 const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-// Palabras/raíces que indican solicitud de asesor
-const PALABRAS_ASESOR = ["asesor", "asesora", "asesores"];
+// Palabras/raíces que indican confirmación
+const PALABRAS_CONFIRMACION = ["confirmar", "confirmo"]; // cubre varias formas
 
 function loadProcessed() {
   try {
@@ -65,7 +65,7 @@ function loadProcessed() {
       }
     }
   } catch (e) {
-    console.error("[ASESOR] No se pudo cargar processed_asesor.json:", e.message);
+    console.error("[CITAS] No se pudo cargar processed_citas.json:", e.message);
     processedMap = new Map();
   }
 }
@@ -79,7 +79,7 @@ function saveProcessed() {
     }
     fs.writeFileSync(PROCESSED_PATH, JSON.stringify(Array.from(processedMap.entries()), null, 2), 'utf8');
   } catch (e) {
-    console.error("[ASESOR] No se pudo guardar processed_asesor.json:", e.message);
+    console.error("[CITAS] No se pudo guardar processed_citas.json:", e.message);
   }
 }
 
@@ -98,21 +98,21 @@ function buildSignature(m) {
   ].join('|');
 }
 
-// Es candidato de “asesor”
-function esCandidatoAsesor(m) {
+// Es candidato de “cita confirmada”
+function esCandidatoConfirmacion(m) {
   if (!m || !m.id) return false;
   if (m.enProceso === true) return false;
-  if (m.etapa !== 5) return false;
+  if (m.etapa !== 1) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
   const nb = normalizar(body);
-  return PALABRAS_ASESOR.some(p => nb.includes(p));
+  return PALABRAS_CONFIRMACION.some(p => nb.includes(p));
 }
 
 // Encola si es nuevo o se actualizó
 function enqueueIfNewOrUpdated(m) {
   if (!m || !m.id) return;
-  if (!esCandidatoAsesor(m)) { log('skip: no es solicitud de asesor válida', m?.id); return; }
+  if (!esCandidatoConfirmacion(m)) { log('skip: no es confirmación válida', m.id); return; }
 
   const id = String(m.id);
   const sig = buildSignature(m);
@@ -132,37 +132,43 @@ function enqueueIfNewOrUpdated(m) {
   }
 }
 
-// ---------- Worker ----------
+// ---------- Worker principal ----------
 async function workerHandle(item, WHATSAPP_API_TOKEN) {
   const id = String(item.id);
   try {
     log('procesando', id);
 
+    // 1) Guardar mensaje de confirmación en ./sala1/<from>.json
     const from = String(item.from);
-    const filePath = path.join(__dirname, '../salachat', `${from}.json`);
+    const filePath = path.join(__dirname, './salachat', `${from}.json`);
     let mensajes = [];
     if (fs.existsSync(filePath)) {
       mensajes = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       if (!Array.isArray(mensajes)) mensajes = [];
     } else {
-      console.warn(`[ASESOR] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
+      console.warn(`[CITAS] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
     }
 
-    const textoRespuesta = `✅ ¡Gracias!
-Muy pronto uno de nuestros asesores te estará contactando 🤝
-`;
+    const textoGracias =  `
+    
+Asesor: 🎉 ¡Gracias por tu pedido!
+Ya estamos trabajando 🔥 para que recibas lo mejor.
+¡Prepárate, 🚀 lo que viene te va a encantar!
 
-    // 1) Guardar en historial local
+    `;
+
     mensajes.push({
       from,
-      body: `Asesor: ${textoRespuesta}`,
-      timestamp: new Date().toISOString()
+      body: `Asesor: ${textoGracias}`,
+      timestamp: new Date().toISOString(),
+      Cambio: 0,
+      confirmado: true
     });
     ensureDir(filePath);
     fs.writeFileSync(filePath, JSON.stringify(mensajes, null, 2));
     log('historial actualizado', `${from}.json`);
 
-    // 2) Enviar WhatsApp (WABA_PHONE_ID SIEMPRE FRESCO)
+    // 2) Enviar WhatsApp de confirmación (ID SIEMPRE FRESCO)
     const WABA_PHONE_ID = getWabaPhoneId();
     if (!WABA_PHONE_ID || !WHATSAPP_API_TOKEN) {
       console.warn("⚠️ No se envía confirmación: falta WABA_PHONE_ID o WHATSAPP_API_TOKEN");
@@ -172,7 +178,7 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
         recipient_type: 'individual',
         to: from,
         type: 'text',
-        text: { preview_url: false, body: textoRespuesta },
+        text: { preview_url: false, body: textoGracias },
       };
 
       await axios.post(`https://graph.facebook.com/v19.0/${WABA_PHONE_ID}/messages`, payload, {
@@ -199,15 +205,16 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
         const indexToUpdate = EtapasMSG.findIndex((x) => x && x.id === id);
         if (indexToUpdate !== -1) {
           EtapasMSG[indexToUpdate].etapa = 3;
+          EtapasMSG[indexToUpdate].confirmado = true;
           EtapasMSG[indexToUpdate].idp = 0;
           fs.writeFileSync(ETA_PATH, JSON.stringify(EtapasMSG, null, 2), 'utf8');
           log(`etapa/idp actualizados en EtapasMSG.json para id=${id}`);
         } else {
-          log(`id=${id} no encontrado al persistir etapa (posible reemplazo concurrente)`);
+          log(`id=${id} no encontrado al persistir etapa (probable reemplazo concurrente)`);
         }
       }
     } catch (e) {
-      // console.error('[ASESOR] Error actualizando EtapasMSG.json:', e.message);
+      console.error('[CITAS] Error actualizando EtapasMSG.json:', e.message);
     }
 
     // 4) Marcar firma como procesada
@@ -216,10 +223,9 @@ Muy pronto uno de nuestros asesores te estará contactando 🤝
     saveProcessed();
     log('ok', id);
   } catch (e) {
-    // console.error('[ASESOR] error', id, e?.response?.data || e?.message || e);
-    throw e; // que el scheduler gestione reintentos
+    console.error('[CITAS] error', id, e?.response?.data || e?.message || e);
+    throw e;
   } finally {
-    // permitir re-encolar si llega otra actualización del mismo id
     enqueuedMap.delete(id);
   }
 }
@@ -235,7 +241,7 @@ function workerTick(WHATSAPP_API_TOKEN) {
           setTimeout(() => pendingQueue.push(item), 300 * item.__retries);
           log('requeue', item.id, 'retry', item.__retries);
         } else {
-          console.error('[ASESOR] agotados reintentos', item.id);
+          console.error('[CITAS] agotados reintentos', item.id);
         }
       })
       .finally(() => { running--; });
@@ -243,7 +249,7 @@ function workerTick(WHATSAPP_API_TOKEN) {
 }
 
 // ---------- Watcher ----------
-const startWatcherAsesor = (WHATSAPP_API_TOKEN) => {
+const startWatcherCitas = (WHATSAPP_API_TOKEN) => {
   loadProcessed();
 
   setInterval(() => {
@@ -255,11 +261,11 @@ const startWatcherAsesor = (WHATSAPP_API_TOKEN) => {
 
       const contenido = fs.readFileSync(ETA_PATH, 'utf8');
       let EtapasMSG = [];
-      try {
+      try{ 
         EtapasMSG = JSON.parse(contenido);
         if (!Array.isArray(EtapasMSG)) EtapasMSG = [];
       } catch (e) {
-        console.error('[ASESOR] JSON inválido:', e.message);
+        console.error('[CITAS] JSON inválido:', e.message);
         return;
       }
 
@@ -278,9 +284,9 @@ const startWatcherAsesor = (WHATSAPP_API_TOKEN) => {
 
       workerTick(WHATSAPP_API_TOKEN);
     } catch (err) {
-      console.error('[ASESOR] Error watcher:', err.message);
+      console.error('[CITAS] Error watcher:', err.message);
     }
   }, FILE_POLL_MS);
 };
 
-module.exports = { startWatcherAsesor };
+module.exports = { startWatcherCitas };
