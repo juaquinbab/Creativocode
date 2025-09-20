@@ -3,7 +3,7 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const path = require('path');
 
-const rutaEtapas = path.join(__dirname, '../../data/EtapasMSG6.json');
+const rutaEtapas = path.join(__dirname, '../../data/EtapasMSG7.json');
 const rutaSalida = path.join(__dirname, './salachat');
 
 async function ensureDir(p) {

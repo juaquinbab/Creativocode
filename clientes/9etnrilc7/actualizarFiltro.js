@@ -19,7 +19,7 @@ function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // Mantengo tu clave original (cliente4). Cambia aquí si necesitas otro cliente.
-    return usuariosData?.cliente6?.iduser || '';
+    return usuariosData?.cliente7?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';

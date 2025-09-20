@@ -26,35 +26,49 @@
     "iduser": "102009246136773",
     "IA": true
   },
-   "cliente5": {
+  "cliente5": {
     "usuario": "Endo",
     "password": "Endo@",
     "ruta": "/9etnrilc5/index.html",
     "iduser": "752653081272296",
     "IA": true
   },
-   "cliente6": {
-    "usuario": "Endo",
-    "password": "Endo@",
-    "ruta": "/9etnrilc5/index.html",
+  "cliente6": {
+    "usuario": "Endo2",
+    "password": "Endo2@",
+    "ruta": "/9etnrilc6/index.html",
     "iduser": "75265308127229677777",
     "IA": true
   },
-   "cliente1002MSG": {
+  "cliente7": {
+    "usuario": "Endo3",
+    "password": "Endo3@",
+    "ruta": "/9etnrilc7/index.html",
+    "iduser": "75265308127229677777",
+    "IA": true
+  },
+    "cliente8": {
+    "usuario": "Endo4",
+    "password": "Endo4@",
+    "ruta": "/9etnrilc8/index.html",
+    "iduser": "75265308127229677777",
+    "IA": true
+  },
+  "cliente1002MSG": {
     "usuario": "VitalPlus@",
     "password": "VitalPlus@",
     "ruta": "https://vital-plus-energy.up.railway.app/",
     "iduser": "0000000",
     "IA": true
   },
-   "cliente1003MSG": {
+  "cliente1003MSG": {
     "usuario": "Changan-nuevo",
     "password": "Changan-nuevo@",
     "ruta": "https://changan-nuevo-laredo-production.up.railway.app/",
     "iduser": "0000000",
     "IA": true
   },
-   "cliente1004MSG": {
+  "cliente1004MSG": {
     "usuario": "Creditpartes",
     "password": "Creditpartes@",
     "ruta": "https://credipartes-production.up.railway.app//",
