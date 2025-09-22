@@ -100,6 +100,8 @@ app.use('/auth', authRouter);
 
 
 
+
+
 // === Config ===
 
 const BASE_DIR = path.resolve(process.cwd(), "clientes");
