@@ -68,10 +68,25 @@
     "iduser": "0000000",
     "IA": true
   },
+  
   "cliente1004MSG": {
     "usuario": "Creditpartes",
     "password": "Creditpartes@",
     "ruta": "https://credipartes-production.up.railway.app//",
+    "iduser": "0000000",
+    "IA": true
+  },
+   "cliente1006MSG": {
+    "usuario": "VitalPlus2",
+    "password": "VitalPlus2@",
+    "ruta": "https://txtenergy-production.up.railway.app/",
+    "iduser": "0000000",
+    "IA": true
+  },
+   "cliente1007MSG": {
+    "usuario": "Creditpartes2",
+    "password": "Creditpartes2@",
+    "ruta": "https://txtcreditpartes-production.up.railway.app/",
     "iduser": "0000000",
     "IA": true
   }
