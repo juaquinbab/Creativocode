@@ -895,7 +895,7 @@ nav a {
 
 
   <section class="hero">
-    <h1>Conecta con tus clientes como nunca antes</h1>
+    <h1>Entrena un AGENTE de IA para que atienda a tus CLIENTES</h1>
     <p>Somos expertos en construir chatbots de WhatsApp personalizados, con conexión oficial y panel de control
       inteligente. Automatiza, responde y fideliza.</p>
   </section>
@@ -1179,6 +1179,92 @@ Confirma tu asistencia:
   </section>
 
 
+ <section class="mx-auto max-w-3xl p-4 md:p-8">
+  <!-- Encabezado -->
+  <div class="mb-6 md:mb-10">
+    <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Centro de entrenamiento IA</h1>
+    <p class="text-sm md:text-base text-gray-600 mt-2">
+      Mira los videos y sigue los pasos de registro y entrenamiento para poner tu IA a trabajar en minutos.
+    </p>
+  </div>
+
+  <!-- UNA SOLA COLUMNA -->
+  <div class="space-y-6">
+    <!-- 🔵 CTA -->
+
+
+    <!-- Video 1 -->
+    <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <header class="px-4 md:px-6 pt-4 md:pt-6">
+        <h2 class="text-lg md:text-xl font-semibold">Video 1 — Registro de la plataforma</h2>
+        <p class="text-gray-500 text-sm mt-1">Cómo crear tu cuenta y obtener tu clave de API.</p>
+      </header>
+      <div class="aspect-video mt-4">
+        <iframe class="w-full h-full" src="https://embed.app.guidde.com/playbooks/xbkpXVxNVTYvXYoLm3jznC?mode=videoOnly" title="Registro"
+          frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen></iframe>
+      </div>
+      <footer class="px-4 md:px-6 pb-4 md:pb-6 flex items-center gap-3">
+        <button class="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg border hover:bg-gray-50"
+                onclick="scrollToStep('registro')">
+          <span aria-hidden="true">📝</span> Ver pasos de Registro
+        </button>
+      </footer>
+    </article>
+
+    <!-- Video 2 -->
+    <article class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <header class="px-4 md:px-6 pt-4 md:pt-6">
+        <h2 class="text-lg md:text-xl font-semibold">Video 2 — Entrenamiento de la IA</h2>
+        <p class="text-gray-500 text-sm mt-1">Carga de datos, entrenamiento y prueba del modelo.</p>
+      </header>
+      <div class="aspect-video mt-4">
+        <iframe class="w-full h-full" src="https://embed.app.guidde.com/playbooks/k4bRDk4dN4KL8LBpKmNTeA?mode=videoOnly" title="Entrenamiento"
+          frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen></iframe>
+      </div>
+      <footer class="px-4 md:px-6 pb-4 md:pb-6 flex items-center gap-3">
+        <button class="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-lg border hover:bg-gray-50"
+                onclick="scrollToStep('entrenamiento')">
+          <span aria-hidden="true">⚙️</span> Ver pasos de Entrenamiento
+        </button>
+      </footer>
+    </article>
+  </div>
+
+
+   <div class="mt-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-5">
+  <h4 class="text-lg font-semibold">¿Necesitas ayuda para integrarlo?</h4>
+  <p class="text-white/90 text-sm mt-1">
+    Te acompañamos en la carga de datos, entrenamiento y despliegue.
+  </p>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <a href="javascript:void(0)" onclick="launchWhatsAppSignup()"
+       class="px-4 py-2 bg-white text-blue-700 rounded-lg text-sm font-semibold">
+       Empezar
+    </a>
+    <a href="https://wa.link/it9700" target="_blank"
+       class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm">
+       Hablar con soporte
+    </a>
+  </div>
+</div>
+
+</section>
+
+<script>
+  // Opcionales si no los tienes aún
+  function launchWhatsAppSignup() {
+    // Tu lógica aquí
+    // p.ej.: window.location.href = "/registro-whatsapp";
+    alert("🚀 Iniciando registro de WhatsApp...");
+  }
+  function scrollToStep(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
 
 
 
@@ -1198,32 +1284,108 @@ Confirma tu asistencia:
     📲 Contáctenos
   </a>
 
-  <section id="clientes-destacados" class="clientes-destacados">
-    <h2>Clientes Destacados</h2>
-    <p>Estas marcas han confiado en Creativos Code para transformar su atención al cliente.</p>
-    <div class="grid-clientes">
-      <div class="cliente-box">
-        <img src="./IMG/cliente1.png" alt="Cliente 1">
-        <h3>Clinica Medsalud</h3>
-        <p>Automatización de salas de chat, todas las áreas de la empresa en un solo número. </p>
+<!-- Clientes Destacados — UI sutil y refinada -->
+<section id="clientes-destacados" class="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-10">
+  <!-- Título del módulo -->
+  <div class="text-center max-w-2xl mx-auto">
+    <span class="inline-block text-[11px] uppercase tracking-widest text-gray-400">
+      Confían en nosotros
+    </span>
+    <h2 class="mt-2 text-2xl md:text-3xl font-semibold tracking-tight">
+      Clientes Destacados
+    </h2>
+    <p class="mt-2 text-sm text-gray-600">
+      Marcas que transforman su atención con Creativos Code.
+    </p>
+  </div>
+
+
+  <!-- Grid de logos/cards -->
+  <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+    <!-- Card -->
+    <article class="group relative rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-sm p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="flex items-center gap-3">
+        <div class="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden ring-1 ring-gray-100">
+          <img src="./IMG/cliente1.png" alt="Clinica Medsalud" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition duration-300" loading="lazy">
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm md:text-base font-medium truncate">Clínica Medsalud</h3>
+          <p class="text-[11px] text-gray-500">Salas unificadas por WhatsApp</p>
+        </div>
       </div>
-      <div class="cliente-box">
-        <img src="./IMG/cliente2.png" alt="Cliente 2">
-        <h3>Clínica Belen</h3>
-        <p>Automatización, recolección de información en ordenes médicas y agendamiento. </p>
+      <!-- Descripción sutil (hover/ focus) -->
+      <p class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs text-gray-600 mt-3">
+        Automatización de salas de chat; todas las áreas en un solo número.
+      </p>
+    </article>
+
+    <article class="group relative rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-sm p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="flex items-center gap-3">
+        <div class="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden ring-1 ring-gray-100">
+          <img src="./IMG/cliente2.png" alt="Clínica Belén" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition duration-300" loading="lazy">
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm md:text-base font-medium truncate">Clínica Belén</h3>
+          <p class="text-[11px] text-gray-500">Flujos médicos automatizados</p>
+        </div>
       </div>
-      <div class="cliente-box">
-        <img src="./IMG/cliente3.jpeg" alt="Cliente 3">
-        <h3>Dr. Estefano</h3>
-        <p>Empresa Mexicana, con agendamiento online de consultas médicas. </p>
+      <p class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs text-gray-600 mt-3">
+        Recolección de órdenes y agendamiento inteligente.
+      </p>
+    </article>
+
+    <article class="group relative rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-sm p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="flex items-center gap-3">
+        <div class="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden ring-1 ring-gray-100">
+          <img src="./IMG/cliente3.jpeg" alt="Dr. Estefano" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition duration-300" loading="lazy">
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm md:text-base font-medium truncate">Dr. Estefano</h3>
+          <p class="text-[11px] text-gray-500">Agendamiento online</p>
+        </div>
       </div>
-      <div class="cliente-box">
-        <img src="./IMG/cliente4.png" alt="Cliente 4">
-        <h3>JhonTV</h3>
-        <p>Lideres en plataformas de streaming uso de api y mensajería masiva. </p>
+      <p class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs text-gray-600 mt-3">
+        Empresa mexicana con reservas médicas por WhatsApp.
+      </p>
+    </article>
+
+    <article class="group relative rounded-2xl border border-gray-100 bg-white/80 backdrop-blur-sm p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
+      <div class="flex items-center gap-3">
+        <div class="shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-xl overflow-hidden ring-1 ring-gray-100">
+          <img src="./IMG/cliente4.png" alt="JhonTV" class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition duration-300" loading="lazy">
+        </div>
+        <div class="min-w-0">
+          <h3 class="text-sm md:text-base font-medium truncate">JhonTV</h3>
+          <p class="text-[11px] text-gray-500">Streaming + WhatsApp API</p>
+        </div>
       </div>
+      <p class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-xs text-gray-600 mt-3">
+        Mensajería masiva y uso avanzado de plantillas.
+      </p>
+    </article>
+  </div>
+
+  <!-- Fila de micro-métricas (opcional, elegante y pequeña) -->
+  <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+    <div class="rounded-xl border border-gray-100 bg-white p-4">
+      <div class="text-lg font-semibold">+120K</div>
+      <div class="text-[11px] text-gray-500">Mensajes/mes</div>
     </div>
-  </section>
+    <div class="rounded-xl border border-gray-100 bg-white p-4">
+      <div class="text-lg font-semibold">99.9%</div>
+      <div class="text-[11px] text-gray-500">Uptime</div>
+    </div>
+    <div class="rounded-xl border border-gray-100 bg-white p-4">
+      <div class="text-lg font-semibold">-45%</div>
+      <div class="text-[11px] text-gray-500">Tiempo de respuesta</div>
+    </div>
+    <div class="rounded-xl border border-gray-100 bg-white p-4">
+      <div class="text-lg font-semibold">+30</div>
+      <div class="text-[11px] text-gray-500">Integraciones</div>
+    </div>
+  </div>
+</section>
+
 
 
 
@@ -1376,6 +1538,47 @@ Confirma tu asistencia:
           sessionInfoVersion: '3'
         }
       });
+    }
+  </script>
+
+
+<script>
+    function scrollToStep(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // pequeño highlight
+      el.classList.add('ring-2','ring-blue-300');
+      setTimeout(()=> el.classList.remove('ring-2','ring-blue-300'), 900);
+    }
+
+    function copyBlock(e) {
+      const sel = e.currentTarget.getAttribute('data-copy');
+      const pre = document.querySelector(sel);
+      if (!pre) return;
+      const text = pre.innerText;
+      navigator.clipboard.writeText(text).then(()=>{
+        const btn = e.currentTarget;
+        const old = btn.textContent;
+        btn.textContent = 'Copiado ✓';
+        setTimeout(()=> btn.textContent = old, 1200);
+      });
+    }
+
+    function toggleCard(btn) {
+      const card = btn.closest('.bg-white.rounded-2xl');
+      const ol = card.querySelector('ol');
+      const preBlocks = card.querySelectorAll('pre');
+      const isHidden = ol.classList.contains('hidden');
+      if (isHidden) {
+        ol.classList.remove('hidden');
+        preBlocks.forEach(p => p.parentElement.classList.remove('hidden'));
+        btn.textContent = 'Ocultar';
+      } else {
+        ol.classList.add('hidden');
+        preBlocks.forEach(p => p.parentElement.classList.add('hidden'));
+        btn.textContent = 'Mostrar';
+      }
     }
   </script>
 
