@@ -89,5 +89,12 @@
     "ruta": "https://txtcreditpartes-production.up.railway.app/",
     "iduser": "0000000",
     "IA": true
+  },
+   "cliente1008MSG": {
+    "usuario": "MotornationCancún",
+    "password": "MotornationCancún@",
+    "ruta": "https://motornation-cancu-n-production.up.railway.app/",
+    "iduser": "0000000",
+    "IA": true
   }
 }
