@@ -278,7 +278,7 @@ function iniciarWatcher() {
         const bodyStr = String(m?.body ?? '').trim(); // <-- fuerza string
         const claveUnica = `${m.id}::${bodyStr}::${m.timestamp}`;
         return (
-          Number(m?.etapa) === 5 &&
+          Number(m?.etapa) === 10 &&
           bodyStr.length >= 1 &&               
           !m.enProceso &&
           !mensajesProcesados.includes(claveUnica)
