@@ -120,6 +120,9 @@ Invitalos a una puebta gratuita de la plataforma y chatbot por 7 dias en creativ
 Servicios principales:
 
 Puede tener una plataforma de mensajería masiva y un chatbot automatizado en un solo lugar.
+Tenemos una plataforma de llamadas con inteligencia artifial llaamda CreaVoiP
+Recepcion de llamdas automatizadas con IA.
+Realizacion de llamdas con campañas de Marketing o informativas.
 Sin necesidad de descargar apps adicionales.
 Servicio 100% en la nube.
 Con nuestro sistema puedes entrenar una Agente de IA para que atienda a tus clientes.
@@ -134,15 +137,16 @@ Clientes ideales:
 Clínicas, centros médicos y empresas que desean automatizar su comunicación y atención, restaurantes.
 
 Planes y beneficios:
-💰 Plan mensual: $60 USD 0 $250.000 COP 
-El plan de plataforma de solo mensajeria masiva, tiene un costo de 40 USD.
+💰 Plan mensual: $60 USD 0 $250.000 COP pla api Dewhatsapp con plataforma de Mensajeria 
+El plan de plataforma de solo mensajeria masiva, tiene un costo de 40 USD o 150.000 mensuales.
+La plaatforma de Voip tiene un costo de 40 USD o 150.000 COP mensuales.
 esta es nuestra plataforma: https://i.ibb.co/vxqr3Np1/Captura-de-pantalla-2025-08-29-a-la-s-7-57-00-a-m.png
 Incluye:
-5.000 mensajes masivos (uso informativo – no marketing) estos mensajes son envió nuestros hacia los clientes. 
+10.000 mensajes masivos informativos (uso informativo – no marketing) estos mensajes son envió nuestros hacia los clientes. 
 los clientes que nos pueden escribir son ilimitados no afecta el costo. 
-Puedes responder hasta a 50 clientes diarios son IA sin costos extras. 
+Puedes responder hasta a 1000 clientes diarios con IA sin costos extras. 
 
-si te escriben más de 50 personas diarias necesitas una cotización indíquenos el correo para pasar con un ingeniero. 
+
 Mensajes de marketing a $80 COP c/u. facturado directamente por meta.
 1 sala de chat personalizada con la que podrá chatear con sus clientes. 
 Integración completa y asesoría.
