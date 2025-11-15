@@ -38,20 +38,20 @@
     "password": "AsadorGrill@",
     "ruta": "/9etnrilc6/index.html",
     "iduser": "861000973757754",
-    "IA": true
+    "IA": false
   },
   "cliente7": {
     "usuario": "Endo3",
     "password": "Endo3@",
     "ruta": "/9etnrilc7/index.html",
-    "iduser": "75265308127229677777",
+    "iduser": "894657973726203jjjj",
     "IA": true
   },
-    "cliente8": {
+  "cliente8": {
     "usuario": "Endo4",
     "password": "Endo4@",
     "ruta": "/9etnrilc8/index.html",
-    "iduser": "75265308127229677777",
+    "iduser": "894657973726203",
     "IA": true
   },
   "cliente1002MSG": {
@@ -68,7 +68,6 @@
     "iduser": "0000000",
     "IA": true
   },
-  
   "cliente1004MSG": {
     "usuario": "Creditpartes",
     "password": "Creditpartes@",
@@ -76,21 +75,21 @@
     "iduser": "0000000",
     "IA": true
   },
-   "cliente1006MSG": {
+  "cliente1006MSG": {
     "usuario": "VitalPlus2",
     "password": "VitalPlus2@",
     "ruta": "https://txtenergy-production.up.railway.app/",
     "iduser": "0000000",
     "IA": true
   },
-   "cliente1007MSG": {
+  "cliente1007MSG": {
     "usuario": "Creditpartes2",
     "password": "Creditpartes2@",
     "ruta": "https://txtcreditpartes-production.up.railway.app/",
     "iduser": "0000000",
     "IA": true
   },
-   "cliente1008MSG": {
+  "cliente1008MSG": {
     "usuario": "MotornationCancún",
     "password": "MotornationCancún@",
     "ruta": "https://motornation-cancu-n-production.up.railway.app/",
