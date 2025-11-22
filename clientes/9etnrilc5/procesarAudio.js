@@ -213,7 +213,7 @@ async function confirmToUser(to) {
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "🎧 Audio recibido. ¡Gracias!" },
+        text: { preview_url: false, body: "🎧⏳" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
     ),
@@ -376,9 +376,9 @@ async function processOneAudio(entry) {
     queueHistory(from, nuevo);
 
     // Confirmación (no bloqueante)
-    confirmToUser(from).catch((e) =>
-      console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
-    );
+    // confirmToUser(from).catch((e) =>
+    //   console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
+    // );
 
     // Marcar procesado
     processed.add(audioID);

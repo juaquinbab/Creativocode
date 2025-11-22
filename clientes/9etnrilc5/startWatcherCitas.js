@@ -151,7 +151,7 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoGracias =  `
     
-Asesor: Imagen Recibida
+Asesor: ⏳ 
 
     `;
 
