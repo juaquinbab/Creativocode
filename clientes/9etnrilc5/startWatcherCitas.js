@@ -151,9 +151,7 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
 
     const textoGracias =  `
     
-Asesor: 🎉 ¡Gracias por tu pedido!
-Ya estamos trabajando 🔥 para que recibas lo mejor.
-¡Prepárate, 🚀 lo que viene te va a encantar!
+Asesor: Imagen Recibida
 
     `;
 
