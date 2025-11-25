@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo sobre WhatsApp Business y WhatsApp API | Creativos Code</title>
+
+  <!-- SEO básico -->
+  <meta name="description"
+    content="Guía completa sobre WhatsApp Business y WhatsApp API: diferencias, buenas prácticas, cómo evitar bloqueos y cómo usar la automatización inteligente con Creativos Code.">
+
+  <link rel="icon" type="image/x-icon" href="/IMG/favicon.ico" />
+  <link rel="shortcut icon" href="/IMG/favicon.ico" />
+
+  <!-- Puedes reutilizar tu styles.css si quieres -->
+  <!-- <link rel="stylesheet" href="/styles.css"> -->
+
+  <style>
+    :root {
+      --verde-oscuro: #004d40;
+      --verde: #10b981;
+      --verde-claro: #bbf7d0;
+      --gris-fondo: #f4faf7;
+      --texto: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    }
+
+    body {
+      background: var(--gris-fondo);
+      color: var(--texto);
+      line-height: 1.6;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    header {
+      background: var(--verde-oscuro);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .15);
+    }
+
+    header .logo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    header .logo img {
+      height: 40px;
+      width: auto;
+    }
+
+    header nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: .95rem;
+    }
+
+    header nav a {
+      color: #e5fdf5;
+      font-weight: 500;
+      padding: .35rem .7rem;
+      border-radius: 999px;
+      transition: background .2s ease, color .2s ease;
+    }
+
+    header nav a:hover {
+      background: rgba(255, 255, 255, .12);
+      color: #fff;
+    }
+
+    .btn-cta {
+      background: var(--verde);
+      color: #022c22;
+      font-weight: 600;
+      padding: .55rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, .35);
+      font-size: .9rem;
+    }
+
+    .btn-cta:hover {
+      background: #0ea773;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(16, 185, 129, .45);
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    /* HERO */
+    .hero {
+      background: radial-gradient(circle at 0 0, #a7f3d0, transparent 55%),
+        radial-gradient(circle at 100% 0, #6ee7b7, transparent 55%),
+        radial-gradient(circle at 100% 100%, #22c55e, transparent 60%),
+        #022c22;
+      color: #ecfdf5;
+      border-radius: 2rem;
+      padding: 3rem 2.5rem;
+      margin-bottom: 3rem;
+      display: grid;
+      grid-template-columns: 3fr 2.3fr;
+      gap: 2.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .1;
+      background-image: radial-gradient(circle at 1px 1px, rgba(245, 255, 250, .3) 1px, transparent 0);
+      background-size: 18px 18px;
+      pointer-events: none;
+    }
+
+    .hero-left {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-kicker {
+      font-size: .8rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      opacity: .85;
+      margin-bottom: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .18rem .8rem;
+      border-radius: 999px;
+      background: rgba(15, 118, 110, .7);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.1rem, 4vw, 2.7rem);
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(120deg, #bbf7d0, #6ee7b7, #bbf7d0);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      font-size: 1rem;
+      max-width: 520px;
+      opacity: .95;
+      margin-bottom: 1.4rem;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-tag {
+      font-size: .75rem;
+      padding: .25rem .7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(226, 255, 250, .6);
+      background: rgba(6, 95, 70, .75);
+    }
+
+    .hero-right {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-card {
+      background: #ecfdf5;
+      color: #022c22;
+      border-radius: 1.5rem;
+      padding: 1.3rem 1.1rem;
+      width: 100%;
+      max-width: 320px;
+      box-shadow: 0 14px 55px rgba(6, 95, 70, .55);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .7rem;
+    }
+
+    .hero-card-title {
+      font-size: .9rem;
+      font-weight: 600;
+    }
+
+    .hero-card-badge {
+      font-size: .7rem;
+      padding: .15rem .5rem;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    .hero-card-chat {
+      margin-top: .35rem;
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      font-size: .8rem;
+    }
+
+    .hero-bubble {
+      max-width: 80%;
+      padding: .55rem .75rem;
+      border-radius: 1rem;
+      position: relative;
+    }
+
+    .hero-bubble.user {
+      margin-left: auto;
+      background: #22c55e;
+      color: #022c22;
+      border-bottom-right-radius: .2rem;
+    }
+
+    .hero-bubble.bot {
+      background: #e5e7eb;
+      border-bottom-left-radius: .2rem;
+    }
+
+    .hero-card-footer {
+      margin-top: .9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .75rem;
+      color: #047857;
+    }
+
+    /* SECCIONES GENERALES */
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    .section-header {
+      margin-bottom: 1.25rem;
+    }
+
+    .section-kicker {
+      font-size: .8rem;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      color: #047857;
+      margin-bottom: .3rem;
+    }
+
+    .section-title {
+      font-size: 1.7rem;
+      margin-bottom: .3rem;
+      color: #022c22;
+    }
+
+    .section-subtitle {
+      font-size: .95rem;
+      color: #4b5563;
+      max-width: 650px;
+    }
+
+    /* GRID CONCEPTOS */
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 1.2rem;
+      padding: 1.4rem 1.3rem;
+      box-shadow: 0 12px 38px rgba(15, 118, 110, .07);
+      border: 1px solid rgba(148, 163, 184, .26);
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      margin-bottom: .4rem;
+      color: #022c22;
+    }
+
+    .card p {
+      font-size: .9rem;
+      color: #4b5563;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: .7rem;
+      padding: .18rem .6rem;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #047857;
+      margin-bottom: .45rem;
+      font-weight: 600;
+    }
+
+    ul.list {
+      margin-top: .5rem;
+      padding-left: 1rem;
+      font-size: .88rem;
+      color: #4b5563;
+    }
+
+    ul.list li {
+      margin-bottom: .3rem;
+    }
+
+    /* TIMELINE BLOQUEOS */
+
+    .timeline {
+      position: relative;
+      padding-left: 1.4rem;
+      margin-top: .8rem;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: .38rem;
+      top: .1rem;
+      bottom: .2rem;
+      width: 2px;
+      background: linear-gradient(to bottom, #22c55e, transparent);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1rem;
+      padding-left: 1rem;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -0.05rem;
+      top: .25rem;
+      width: .55rem;
+      height: .55rem;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, .3);
+    }
+
+    .timeline-title {
+      font-size: .92rem;
+      font-weight: 600;
+      color: #064e3b;
+      margin-bottom: .15rem;
+    }
+
+    .timeline-text {
+      font-size: .86rem;
+      color: #4b5563;
+    }
+
+    /* FAQ */
+
+    .faq-grid {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .faq-intro {
+      font-size: .9rem;
+      color: #4b5563;
+    }
+
+    .faq-item {
+      background: #ffffff;
+      border-radius: 1rem;
+      padding: .9rem 1rem;
+      margin-bottom: .6rem;
+      border: 1px solid rgba(148, 163, 184, .4);
+      cursor: pointer;
+      transition: border .15s ease, box-shadow .15s ease, transform .1s ease;
+    }
+
+    .faq-item:hover {
+      border-color: #22c55e;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, .14);
+      transform: translateY(-1px);
+    }
+
+    .faq-q {
+      font-size: .9rem;
+      font-weight: 600;
+      color: #022c22;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .faq-a {
+      font-size: .86rem;
+      color: #4b5563;
+      margin-top: .4rem;
+      display: none;
+    }
+
+    .faq-item.active .faq-a {
+      display: block;
+    }
+
+    /* CTA FINAL */
+
+    .cta-final {
+      background: linear-gradient(135deg, #22c55e, #0f766e);
+      border-radius: 1.8rem;
+      padding: 2rem 1.7rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      color: #ecfdf5;
+    }
+
+    .cta-final h2 {
+      font-size: 1.5rem;
+      margin-bottom: .25rem;
+    }
+
+    .cta-final p {
+      font-size: .9rem;
+      max-width: 420px;
+      opacity: .9;
+    }
+
+    .cta-note {
+      font-size: .75rem;
+      opacity: .9;
+      margin-top: .2rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.8rem 1rem 2.2rem;
+      font-size: .8rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        padding-inline: 1rem;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 2.2rem 1.6rem 2.5rem;
+      }
+
+      .hero-right {
+        order: -1;
+      }
+
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .faq-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      header {
+        padding-inline: 1rem;
+      }
+
+      header nav {
+        display: none;
+      }
+
+      .hero {
+        border-radius: 1.4rem;
+      }
+
+      .cta-final {
+        border-radius: 1.4rem;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+  <header>
+    <div class="logo">
+      <a href="/index.html">
+        <img src="/IMG/logo.png" alt="Creativos Code">
+      </a>
+      <span style="font-size:.85rem;opacity:.9;">Creativos Code</span>
+    </div>
+    <nav>
+      <a href="/index.html#clientes">Clientes</a>
+      <a href="/index.html#plan">Plan</a>
+      <a href="/index.html#videos">Videos</a>
+      <a href="/index.html#contacto">Contacto</a>
+      <button class="btn-cta" onclick="window.location.href='https://wa.link/dnxs5n'">
+        Hablar con un asesor
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-kicker">
+          <span>Guía práctica</span> · <span>Todo sobre WhatsApp</span>
+        </div>
+        <h1>
+          Todo sobre <span>WhatsApp Business</span> y
+          <span>WhatsApp API</span> sin bloqueos.
+        </h1>
+        <p>
+          Entiende las diferencias entre la app, WhatsApp Business y la API oficial en la nube,
+          aprende buenas prácticas para evitar bloqueos y descubre cómo usar la automatización de forma segura.
+        </p>
+        <div class="hero-tags">
+          <div class="hero-tag">Evitar bloqueos</div>
+          <div class="hero-tag">Buenas prácticas oficiales</div>
+          <div class="hero-tag">Automatización inteligente</div>
+        </div>
+        <button class="btn-cta" onclick="window.location.href='https://wa.link/dnxs5n'">
+          Quiero revisar mi cuenta de WhatsApp
+        </button>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-card">
+          <div class="hero-card-header">
+            <div class="hero-card-title">Simulación de chat</div>
+            <div class="hero-card-badge">Cuenta estable</div>
+          </div>
+          <div class="hero-card-chat">
+            <div class="hero-bubble user">
+              Hola, quiero usar WhatsApp sin que me bloqueen. 😅
+            </div>
+            <div class="hero-bubble bot">
+              Perfecto, lo primero es usar siempre la API oficial y tener el consentimiento de tus clientes. ✅
+            </div>
+            <div class="hero-bubble user">
+              ¿Y los mensajes masivos?
+            </div>
+            <div class="hero-bubble bot">
+              Úsalos solo con listas opt-in, contenido útil y respetando la frecuencia. ¡Así WhatsApp es tu aliado, no tu enemigo! 💚
+            </div>
+          </div>
+          <div class="hero-card-footer">
+            <span>Guía Creativos Code</span>
+            <span>WhatsApp API Cloud</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONCEPTOS BÁSICOS -->
+    <section id="conceptos">
+      <div class="section-header">
+        <div class="section-kicker">Fundamentos</div>
+        <h2 class="section-title">¿Qué tipos de WhatsApp existen?</h2>
+        <p class="section-subtitle">
+          Antes de automatizar o enviar campañas, es clave entender qué versión de WhatsApp estás usando
+          y para qué sirve cada una.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <span class="pill">1 · App normal</span>
+          <h3>WhatsApp personal</h3>
+          <p>
+            Es la app de uso diario para conversar con amigos y familia. No está pensada para automatización
+            ni envíos masivos. Si la usas como empresa, puedes tener limitaciones y reportes con facilidad.
+          </p>
+          <ul class="list">
+            <li>Máximo 1 dispositivo principal.</li>
+            <li>No tiene herramientas de negocio.</li>
+            <li>No debes usarla para campañas comerciales continuas.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="pill">2 · Para negocios pequeños</span>
+          <h3>WhatsApp Business (app)</h3>
+          <p>
+            Es la app que descargas en el celular pero con funciones extra:
+            perfil de empresa, respuestas rápidas, catálogos y etiquetas.
+          </p>
+          <ul class="list">
+            <li>Ideal para emprendimientos y atención manual.</li>
+            <li>Un solo número y un solo celular principal.</li>
+            <li>Sin automatización avanzada ni integraciones profundas.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="pill">3 · Nivel profesional</span>
+          <h3>WhatsApp Business API (Cloud)</h3>
+          <p>
+            Es la versión oficial para empresas que quieren automatizar: bots, CRM, campañas,
+            agendamiento y reportes. No se maneja desde el celular si no desde un servidor y plataformas
+            como la que te ofrece Creativos Code.
+          </p>
+          <ul class="list">
+            <li>Permite múltiples usuarios atendiendo el mismo número.</li>
+            <li>Mensajes preaprobados (plantillas) y métricas.</li>
+            <li>Ideal para empresas, clínicas, e-commerce y soporte 24/7.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- EVITAR BLOQUEOS -->
+    <section id="bloqueos">
+      <div class="section-header">
+        <div class="section-kicker">Seguridad y reputación</div>
+        <h2 class="section-title">Cómo reducir el riesgo de bloqueos en WhatsApp</h2>
+        <p class="section-subtitle">
+          No existe un truco mágico para “engañar al sistema”. Lo que sí existe son buenas prácticas para
+          trabajar <strong>a favor</strong> de las reglas de WhatsApp, no en contra.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <h3>1. Respeta el consentimiento (opt-in)</h3>
+          <p>
+            Solo deberías escribirle a personas que te han dado permiso para contactarlas por WhatsApp.
+            Ese permiso puede provenir de un formulario, tu sitio web, una campaña, una firma en físico, etc.
+          </p>
+          <ul class="list">
+            <li>No compres bases de datos.</li>
+            <li>Explica claramente qué tipo de mensajes vas a enviar.</li>
+            <li>Permite que el usuario se salga fácilmente (opt-out).</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>2. Cuida el contenido y la frecuencia</h3>
+          <p>
+            WhatsApp penaliza el spam: mensajes irrelevantes, muy seguidos o engañosos.
+            La clave es que el usuario sienta que tus mensajes le aportan valor.
+          </p>
+          <ul class="list">
+            <li>Envía información útil: confirmaciones, recordatorios, novedades reales.</li>
+            <li>Evita bombardear todos los días con promociones.</li>
+            <li>Respeta horarios razonables según tu país.</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h3>3. Usa la API oficial y proveedores serios</h3>
+          <p>
+            Plataformas no autorizadas, números “hacks” o métodos no oficiales pueden terminar en bloqueos
+            definitivos. Con la API oficial, Meta monitorea el uso pero te da herramientas profesionales.
+          </p>
+          <ul class="list">
+            <li>Trabaja con Meta Partners o proveedores verificados.</li>
+            <li>Configura bien tus plantillas antes de lanzar campañas grandes.</li>
+            <li>Analiza las métricas y escucha las señales (bloqueos/reportes).</li>
+          </ul>
+        </article>
+      </div>
+
+      <div style="margin-top:2rem;">
+        <h3 style="font-size:1.05rem;color:#022c22;margin-bottom:.4rem;">Camino recomendado para una cuenta sana</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-title">1. Calienta el número progresivamente</div>
+            <div class="timeline-text">
+              No empieces enviando miles de mensajes el primer día. Comienza con volúmenes bajos,
+              conversaciones genuinas y aumenta poco a poco.
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-title">2. Mantente atento a los reportes</div>
+            <div class="timeline-text">
+              Si los usuarios marcan tus mensajes como spam o bloquean el número, es una alerta.
+              Ajusta tu estrategia de contenido y segmentación.
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <div class="timeline-title">3. Documenta tu política de uso</div>
+            <div class="timeline-text">
+              Define internamente qué tipo de mensajes se envían, quién los aprueba y cómo se maneja
+              la baja de usuarios. Eso te evita errores humanos que terminan en sanciones.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API EXPLICADA -->
+    <section id="api">
+      <div class="section-header">
+        <div class="section-kicker">Automatización</div>
+        <h2 class="section-title">¿Qué es exactamente la WhatsApp Business API?</h2>
+        <p class="section-subtitle">
+          Piensa en la API como el “conector oficial” que permite que tus sistemas (bots, CRM, plataformas)
+          hablen con WhatsApp de forma segura y controlada.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <h3>Conexión de sistemas</h3>
+          <p>
+            La API no es una app, es un puente. Desde allí conectamos tu CRM, tu sistema de agendamiento,
+            tu chatbot o tu plataforma interna para que envíen y reciban mensajes.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Plantillas y notificaciones</h3>
+          <p>
+            Para iniciarle la conversación a un usuario, se usan plantillas preaprobadas por Meta
+            (por ejemplo, confirmaciones de cita o recordatorios). Eso permite mantener la calidad de la experiencia.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Escalabilidad y métricas</h3>
+          <p>
+            Con la API puedes manejar grandes volúmenes de mensajes, varios agentes humanos, bots híbridos,
+            así como estadísticas de entrega, lectura, respuestas y satisfacción.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+      <div class="section-header">
+        <div class="section-kicker">Preguntas frecuentes</div>
+        <h2 class="section-title">Preguntas comunes sobre WhatsApp y automatización</h2>
+      </div>
+
+      <div class="faq-grid">
+        <div class="faq-intro">
+          <p>
+            Aquí respondemos dudas típicas de empresas que quieren escalar su atención usando WhatsApp.
+            Todo pensado desde la experiencia de implementar proyectos reales en Colombia y Latinoamérica.
+          </p>
+          <p style="margin-top:.6rem;">
+            Recuerda: automatizar no significa robotizar todo. Se trata de combinar bots inteligentes
+            con humanos donde realmente agregan valor.
+          </p>
+        </div>
+
+        <div>
+          <div class="faq-item">
+            <div class="faq-q">
+              <span>¿Si uso la API ya no me pueden bloquear?</span>
+              <span>+</span>
+            </div>
+            <div class="faq-a">
+              No existe una cuenta 100% “a prueba de bloqueos”. La API es el camino correcto, pero
+              WhatsApp sigue monitoreando calidad, reportes y comportamiento. Si respetas las reglas
+              y cuidas la experiencia del usuario, tu cuenta puede mantenerse sana a largo plazo.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q">
+              <span>¿Puedo usar la misma línea para atención humana y bot?</span>
+              <span>+</span>
+            </div>
+            <div class="faq-a">
+              Sí. De hecho, es el modelo más recomendado: un bot atiende lo repetitivo
+              (preguntas frecuentes, filtros, agendamiento) y cuando hace falta,
+              deriva a un asesor humano dentro de la misma conversación.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q">
+              <span>¿Es buena idea enviar promociones todos los días?</span>
+              <span>+</span>
+            </div>
+            <div class="faq-a">
+              No. WhatsApp está diseñado para conversaciones cercanas, no como un “megáfono” de spam.
+              Envía promociones con una frecuencia razonable, a segmentos específicos y combinadas
+              con contenido útil (tips, recordatorios, información relevante).
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-q">
+              <span>¿Qué gano pasando de la app Business a la API?</span>
+              <span>+</span>
+            </div>
+            <div class="faq-a">
+              Ganas escalabilidad: múltiples agentes, bots, integraciones con tus sistemas,
+              métricas, automatizaciones avanzadas, reglas de negocio y mucho más control.
+              Es pasar de atender chats en un celular a tener una plataforma profesional.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section id="cta">
+      <div class="cta-final">
+        <div>
+          <h2>¿Quieres revisar si tu estrategia actual de WhatsApp es segura?</h2>
+          <p>
+            En Creativos Code analizamos tu uso actual de WhatsApp, te ayudamos a migrar a la API oficial
+            y diseñamos contigo una estrategia que cuide tu cuenta y mejore los resultados.
+          </p>
+          <p class="cta-note">
+            Revisamos temas como: tipo de mensajes, frecuencia, plantillas, opt-in, segmentación
+            y herramientas que estás usando.
+          </p>
+        </div>
+        <div>
+          <button class="btn-cta" onclick="window.location.href='https://wa.link/dnxs5n'">
+            Agendar una sesión de revisión
+          </button>
+          <div style="font-size:.8rem;margin-top:.4rem;opacity:.9;">
+            Atención de 8:00 a.m. a 10:00 p.m. (hora Colombia).
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="year"></span> Creativos Code · Automatización Inteligente con WhatsApp &amp; IA
+  </footer>
+
+  <script>
+    // Año dinámico
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // FAQ toggle simple
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.addEventListener('click', () => {
+        item.classList.toggle('active');
+      });
+    });
+  </script>
+</body>
+
+</html>

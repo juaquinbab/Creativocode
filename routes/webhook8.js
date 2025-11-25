@@ -109,10 +109,12 @@ function extractBodyAndMedia(msg) {
 }
 
 router.post("/", (req, res, next) => {
-  const entry         = req.body.entry?.[0] || {};
-  const messageChange = entry.changes?.[0]?.value || {};
-  const messages      = messageChange.messages;
-  const phoneId       = messageChange.metadata?.phone_number_id || "";
+  const entry  = req.body.entry?.[0] || {};
+  const change = entry.changes?.[0] || {};
+  const field  = change.field;              // 🔹 NUEVO: tipo de webhook (messages / smb_message_echoes)
+  const value  = change.value || {};
+
+  const phoneId = value.metadata?.phone_number_id || "";
 
   // 🔄 IDNUMERO siempre fresco desde usuarios.json
   const EXPECTED_PHONE_ID = getCliente3PhoneId();
@@ -120,10 +122,32 @@ router.post("/", (req, res, next) => {
   // Filtrar solo el número que te interesa (si está configurado)
   if (EXPECTED_PHONE_ID && phoneId !== EXPECTED_PHONE_ID) return next();
 
-  const msg0  = messages?.[0];
-  const from  = msg0?.from || 0;
-  const name  = messageChange.contacts?.[0]?.profile?.name || "";
-  const type  = msg0?.type;
+  let msg0;
+  let from;
+  let name;
+  let type;
+  let isEcho = false;                       // 🔹 NUEVO: flag para smb_message_echoes
+
+  if (field === "messages") {
+    // ✅ Comportamiento ACTUAL (mensaje entrante del usuario)
+    const messages = value.messages;
+    msg0  = messages?.[0];
+    from  = msg0?.from || 0;               // cliente
+    name  = value.contacts?.[0]?.profile?.name || "";
+    type  = msg0?.type;
+  } else if (field === "smb_message_echoes") {
+    // 🔹 NUEVO: mensaje enviado desde el WhatsApp Business / Web del negocio
+    const echoes = value.message_echoes;
+    msg0  = echoes?.[0];
+    // En los ecos: "to" es el usuario final, lo usamos como "from" para agrupar por cliente
+    from  = msg0?.to || 0;
+    name  = "";                            // normalmente no viene contacts, pero no es crítico
+    type  = msg0?.type;
+    isEcho = true;
+  } else {
+    // Otros tipos de webhook que no nos interesan aquí
+    return res.sendStatus(200);
+  }
 
   // --- Extraer todo (prioriza button.text -> body)
   let {
@@ -135,6 +159,14 @@ router.post("/", (req, res, next) => {
     interactiveListId,  interactiveListTitle,
     reactedMessageId, emoji
   } = extractBodyAndMedia(msg0);
+
+  // Si es un mensaje del asesor (smb_message_echoes), prefijamos el texto
+  if (isEcho) {
+    const base = body_raw || "";
+    // Prefijo tal cual pediste:
+    body_raw = `Asesor: ${base}`.trim();
+    body     = body_raw;
+  }
 
   // 📍 Ubicación
   const isLocation = type === "location" && msg0?.location;
@@ -166,10 +198,10 @@ router.post("/", (req, res, next) => {
 
   // Base de actualización (sin tocar "etapa" en updates)
   const baseUpdate = {
-     id: uuidv4(),
+    id: uuidv4(),
     from,
     body: body_lower,           // ← mantén compat: tu router suele usar minúsculas
-    body_raw,                   // ← valor tal cual llegó (por si lo necesitas mostrar)
+    body_raw,                   // ← valor tal cual llegó (con "Asesor:" si aplica)
     name,
     imgID,
     audioID,
@@ -233,10 +265,13 @@ router.post("/", (req, res, next) => {
   // Guardar
   saveEtapas(EtapasMSG);
 
-  // Lógica de bienvenida / ruteo principal (usa body_lower para comparaciones)
-  // Si necesitas tratar específicamente quick reply:
-  // if (msg0?.type === "button" && buttonText) { ... }
-  manejarBienvenida(from, body_lower, EXPECTED_PHONE_ID || phoneId);
+  // 🔹 IMPORTANTÍSIMO:
+  // - Para mantener el comportamiento actual, SOLO llamamos manejarBienvenida
+  //   en mensajes "messages" (usuario → negocio).
+  // - Los ecos (smb_message_echoes) solo se registran, no disparan IA ni flujos.
+  if (!isEcho) {
+    manejarBienvenida(from, body_lower, EXPECTED_PHONE_ID || phoneId);
+  }
 
   return res.sendStatus(200);
 });
