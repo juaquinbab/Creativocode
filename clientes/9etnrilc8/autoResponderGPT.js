@@ -255,6 +255,8 @@ const procesarEtapas = (mensajes) => {
     const bodyStr = aTexto(m?.body);       // <-- fuerza string
     if (bodyStr.length < 1) return false;  // acepta "1" o 1
 
+      if (bodyStr.startsWith("Asesor:")) return false;
+
     const textoNorm = normalizar(bodyStr);
     return !palabrasClave.some(palabra => textoNorm.includes(palabra));
   });
