@@ -50,7 +50,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican solicitud de asesor
-const PALABRAS_ASESOR = ["asesor", "asesora", "asesores"];
+const PALABRAS_ASESOR = ["asesor", "asesora", "asesores", "Asesor", "Asesora" ];
 
 function loadProcessed() {
   try {
@@ -105,6 +105,12 @@ function esCandidatoAsesor(m) {
   if (m.etapa !== 1) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
+
+if (/^Asesor:/i.test(body)) {
+    return false;
+  }
+
+
   const nb = normalizar(body);
   return PALABRAS_ASESOR.some(p => nb.includes(p));
 }

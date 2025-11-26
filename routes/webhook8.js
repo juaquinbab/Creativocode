@@ -1,5 +1,4 @@
-// routes/cliente3/webhook.js
-"use strict";
+
 
 const express = require("express");
 const router = express.Router();
@@ -187,7 +186,7 @@ router.post("/", (req, res, next) => {
   }
 
   // Normalización para routers que esperan minúsculas (opcional)
-  const body_lower = typeof body === "string" ? body.toLowerCase() : "";
+const body_original = typeof body === "string" ? body : "";
 
   // Cargar Etapas desde disco
   const EtapasMSG = loadEtapas();
@@ -200,7 +199,7 @@ router.post("/", (req, res, next) => {
   const baseUpdate = {
     id: uuidv4(),
     from,
-    body: body_lower,           // aquí irá "asesor: ..." en minúsculas para la IA
+    body: body_original,           // aquí irá "asesor: ..." en minúsculas para la IA
     body_raw,                   // aquí se mantiene "Asesor: ..." con A mayúscula
     name,
     imgID,
