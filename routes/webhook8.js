@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const router = express.Router();
 const { v4: uuidv4 } = require("uuid");
@@ -108,12 +106,19 @@ function extractBodyAndMedia(msg) {
 }
 
 router.post("/", (req, res, next) => {
-  const entry  = req.body.entry?.[0] || {};
-  const change = entry.changes?.[0] || {};
-  const field  = change.field;      // messages / smb_message_echoes
-  const value  = change.value || {};
+  const entry         = req.body.entry?.[0] || {};
+  const messageChange = entry.changes?.[0]?.value || {};
+  
+  const messages   = messageChange.messages;
+  const smbEchoes  = messageChange.smb_message_echoes; // ⭐ NUEVO
+  const hasEcho    = Array.isArray(smbEchoes) && smbEchoes.length > 0; // ⭐ NUEVO
 
-  const phoneId = value.metadata?.phone_number_id || "";
+  // ⭐ NUEVO: si NO hay messages normales pero SÍ hay smb_message_echoes,
+  // usamos esos como origen del mensaje
+  const useEcho    = (!messages || messages.length === 0) && hasEcho; // ⭐ NUEVO
+  const msgArray   = useEcho ? smbEchoes : messages;                  // ⭐ NUEVO
+
+  const phoneId    = messageChange.metadata?.phone_number_id || "";
 
   // 🔄 IDNUMERO siempre fresco desde usuarios.json
   const EXPECTED_PHONE_ID = getCliente3PhoneId();
@@ -121,32 +126,15 @@ router.post("/", (req, res, next) => {
   // Filtrar solo el número que te interesa (si está configurado)
   if (EXPECTED_PHONE_ID && phoneId !== EXPECTED_PHONE_ID) return next();
 
-  let msg0;
-  let from;
-  let name;
-  let type;
-  let isEcho = false;               // solo para saber si viene de smb_message_echoes
-
-  if (field === "messages") {
-    // Comportamiento ACTUAL (mensaje entrante del usuario)
-    const messages = value.messages;
-    msg0  = messages?.[0];
-    from  = msg0?.from || 0;               // cliente
-    name  = value.contacts?.[0]?.profile?.name || "";
-    type  = msg0?.type;
-  } else if (field === "smb_message_echoes") {
-    // Mensaje enviado desde el WhatsApp Business / Web del negocio
-    const echoes = value.message_echoes;
-    msg0  = echoes?.[0];
-    // En los ecos: "to" es el usuario final, lo usamos como "from" para agrupar por cliente
-    from  = msg0?.to || 0;
-    name  = "";                            // usualmente no viene, no pasa nada
-    type  = msg0?.type;
-    isEcho = true;
-  } else {
-    // Otros tipos de webhook que no nos interesan aquí
+  // Si no hay mensajes ni ecos, salimos en silencio
+  if (!msgArray || msgArray.length === 0) {
     return res.sendStatus(200);
   }
+
+  const msg0  = msgArray[0]; // ahora puede ser message normal o smb_message_echo
+  const from  = msg0?.from || msg0?.to || 0; // pequeño seguro: si en eco viene "to"
+  const name  = messageChange.contacts?.[0]?.profile?.name || "";
+  const type  = msg0?.type;
 
   // --- Extraer todo (prioriza button.text -> body)
   let {
@@ -159,11 +147,9 @@ router.post("/", (req, res, next) => {
     reactedMessageId, emoji
   } = extractBodyAndMedia(msg0);
 
-  // Si es un mensaje del asesor (smb_message_echoes), prefijamos el texto
-  if (isEcho) {
-    const base = body_raw || "";
-    // Prefijo tal cual pediste: "Asesor:" con A mayúscula
-    body_raw = `Asesor: ${base}`.trim();
+  // ⭐ NUEVO: si es un smb_message_echo, forzamos prefijo "Asesor: "
+  if (useEcho && body_raw) {
+    body_raw = `Asesor: ${body_raw}`;
     body     = body_raw;
   }
 
@@ -186,7 +172,13 @@ router.post("/", (req, res, next) => {
   }
 
   // Normalización para routers que esperan minúsculas (opcional)
-const body_original = typeof body === "string" ? body : "";
+  // ❗ Si es eco, NO convertir a minúsculas, se conserva "Asesor: ..."
+  let body_lower;
+  if (useEcho) {
+    body_lower = body;  // Mantener "Asesor:" tal cual
+  } else {
+    body_lower = typeof body === "string" ? body.toLowerCase() : "";
+  }
 
   // Cargar Etapas desde disco
   const EtapasMSG = loadEtapas();
@@ -199,8 +191,8 @@ const body_original = typeof body === "string" ? body : "";
   const baseUpdate = {
     id: uuidv4(),
     from,
-    body: body_original,           // aquí irá "asesor: ..." en minúsculas para la IA
-    body_raw,                   // aquí se mantiene "Asesor: ..." con A mayúscula
+    body: body_lower,           // normalmente minúsculas; en eco queda "Asesor: ..."
+    body_raw,                   // valor tal cual llegó (o con "Asesor: ..." si es eco)
     name,
     imgID,
     audioID,
@@ -264,8 +256,7 @@ const body_original = typeof body === "string" ? body : "";
   // Guardar
   saveEtapas(EtapasMSG);
 
-  // 🔁 Dejamos el COMPORTAMIENTO EXACTO que tenías:
-  // Siempre llamamos manejarBienvenida, tanto para messages como para smb_message_echoes
+  // Lógica de bienvenida / ruteo principal (usa body_lower para comparaciones)
   manejarBienvenida(from, body_lower, EXPECTED_PHONE_ID || phoneId);
 
   return res.sendStatus(200);
