@@ -13,6 +13,9 @@ const manejarBienvenida = require("../clientes/cliente3/bienvenida");
 const usuariosPath = path.join(__dirname, "../data/usuarios.json");
 const ETAPAS_PATH  = path.join(__dirname, "../data/EtapasMSG3.json");
 
+// 👇 NUEVO: para evitar procesar el mismo mensaje varias veces
+const processedMessageIds = new Set();
+
 // === CARGA JSON SIN CACHÉ ===
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
@@ -90,8 +93,8 @@ function extractBodyAndMedia(msg) {
 
   return {
     // Texto
-    body_raw, // original (con mayúsculas, acentos, etc.)
-    body: body_raw, // compat: dejaremos que el caller lo normalice a minúsculas si quiere
+    body_raw,        // original
+    body: body_raw,  // por compatibilidad
     // Medias
     imgID, audioID, videoID, documentId,
     // Botón plantilla (quick reply)
@@ -109,10 +112,12 @@ function extractBodyAndMedia(msg) {
 }
 
 router.post("/", (req, res, next) => {
-  const entry         = req.body.entry?.[0] || {};
-  const messageChange = entry.changes?.[0]?.value || {};
-  const messages      = messageChange.messages;
-  const phoneId       = messageChange.metadata?.phone_number_id || "";
+  const entry  = req.body.entry?.[0] || {};
+  const change = entry.changes?.[0] || {};
+  const field  = change.field;      // "messages" / "smb_message_echoes"
+  const value  = change.value || {};
+
+  const phoneId = value.metadata?.phone_number_id || "";
 
   // 🔄 IDNUMERO siempre fresco desde usuarios.json
   const EXPECTED_PHONE_ID = getCliente3PhoneId();
@@ -120,10 +125,46 @@ router.post("/", (req, res, next) => {
   // Filtrar solo el número que te interesa (si está configurado)
   if (EXPECTED_PHONE_ID && phoneId !== EXPECTED_PHONE_ID) return next();
 
-  const msg0  = messages?.[0];
-  const from  = msg0?.from || 0;
-  const name  = messageChange.contacts?.[0]?.profile?.name || "";
-  const type  = msg0?.type;
+  let msg0;
+  let from;
+  let name;
+  let type;
+  let isEcho = false;
+
+  if (field === "messages") {
+    // Mensaje entrante del usuario (o algunos otros eventos)
+    const messages = value.messages;
+    msg0  = messages?.[0];
+    if (!msg0) return res.sendStatus(200); // nada que procesar
+
+    from  = msg0.from || 0;               // cliente
+    name  = value.contacts?.[0]?.profile?.name || "";
+    type  = msg0.type;
+  } else if (field === "smb_message_echoes") {
+    // Mensaje enviado desde el WhatsApp Business / Web del negocio
+    const echoes = value.message_echoes;
+    msg0  = echoes?.[0];
+    if (!msg0) return res.sendStatus(200); // nada que procesar
+
+    // En los ecos: "to" es el usuario final, lo usamos como "from" para agrupar por cliente
+    from  = msg0.to || 0;
+    name  = "";
+    type  = msg0.type;
+    isEcho = true;
+  } else {
+    // Otros tipos de webhook que no nos interesan aquí
+    return res.sendStatus(200);
+  }
+
+  // 🔁 Anti-duplicados por message_id
+  const messageId = msg0.id;
+  if (messageId) {
+    if (processedMessageIds.has(messageId)) {
+      // Ya se procesó este mensaje antes, ignorarlo
+      return res.sendStatus(200);
+    }
+    processedMessageIds.add(messageId);
+  }
 
   // --- Extraer todo (prioriza button.text -> body)
   let {
@@ -136,8 +177,16 @@ router.post("/", (req, res, next) => {
     reactedMessageId, emoji
   } = extractBodyAndMedia(msg0);
 
+  // Si es un mensaje del asesor (smb_message_echoes), prefijamos el texto
+  if (isEcho) {
+    const base = body_raw || "";
+    // Prefijo tal cual pediste: "Asesor:" con A mayúscula
+    body_raw = `Asesor: ${base}`.trim();
+    body     = body_raw;
+  }
+
   // 📍 Ubicación
-  const isLocation = type === "location" && msg0?.location;
+  const isLocation = type === "location" && msg0.location;
   const latitude   = isLocation ? msg0.location.latitude : null;
   const longitude  = isLocation ? msg0.location.longitude : null;
   const locName    = isLocation ? (msg0.location.name || "") : "";
@@ -154,8 +203,8 @@ router.post("/", (req, res, next) => {
     body     = body_raw;
   }
 
-  // Normalización para routers que esperan minúsculas (opcional)
-  const body_lower = typeof body === "string" ? body.toLowerCase() : "";
+  // Guardar body exactamente como viene (sin toLowerCase)
+  const body_original = typeof body === "string" ? body : "";
 
   // Cargar Etapas desde disco
   const EtapasMSG = loadEtapas();
@@ -166,9 +215,10 @@ router.post("/", (req, res, next) => {
 
   // Base de actualización (sin tocar "etapa" en updates)
   const baseUpdate = {
+    id: uuidv4(),
     from,
-    body: body_lower,           // ← mantén compat: tu router suele usar minúsculas
-    body_raw,                   // ← valor tal cual llegó (por si lo necesitas mostrar)
+    body: body_original,  // mensaje tal cual (con "Asesor:" si aplica)
+    body_raw,             // también original
     name,
     imgID,
     audioID,
@@ -232,10 +282,8 @@ router.post("/", (req, res, next) => {
   // Guardar
   saveEtapas(EtapasMSG);
 
-  // Lógica de bienvenida / ruteo principal (usa body_lower para comparaciones)
-  // Si necesitas tratar específicamente quick reply:
-  // if (msg0?.type === "button" && buttonText) { ... }
-  manejarBienvenida(from, body_lower, EXPECTED_PHONE_ID || phoneId);
+  // Mantienes tu comportamiento original: siempre pasa por manejarBienvenida
+  manejarBienvenida(from, body_original, EXPECTED_PHONE_ID || phoneId);
 
   return res.sendStatus(200);
 });

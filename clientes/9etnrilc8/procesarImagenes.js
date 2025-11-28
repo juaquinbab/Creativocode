@@ -352,7 +352,7 @@ async function processOneImage(entry) {
     };
     queueHistory(from, nuevo);
 
-    confirmToUser(from).catch(() => {});
+    // confirmToUser(from).catch(() => {});
     processed.add(imgID);
     scheduleSaveProcessed();
   } catch (e) {

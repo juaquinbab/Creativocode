@@ -376,9 +376,9 @@ async function processOneAudio(entry) {
     queueHistory(from, nuevo);
 
     // Confirmación (no bloqueante)
-    confirmToUser(from).catch((e) =>
-      console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
-    );
+    // confirmToUser(from).catch((e) =>
+    //   console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
+    // );
 
     // Marcar procesado
     processed.add(audioID);
