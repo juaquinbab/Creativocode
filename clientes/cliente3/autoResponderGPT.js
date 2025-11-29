@@ -166,7 +166,7 @@ const responderConGPT = async (mensaje) => {
 
     // Prompt a OpenAI
     const openaiPayload = {
-      model: "gpt-4.1-mini",
+     model: "gpt-4.1-mini",
       messages: [
         {
           role: "system",
@@ -193,7 +193,7 @@ ${texto}
     const reply = response.data.choices[0].message.content;
 
     // Simular tiempo de escritura (opcional)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Enviar respuesta por WhatsApp — leer SIEMPRE fresco el IDNUMERO
     const IDNUMERO = getIDNUMERO();
@@ -242,7 +242,7 @@ ${texto}
 
 // ====== Lógica para filtrar y ENCOLAR (NO responder aquí) ======
 const procesarEtapas = (mensajes) => {
-  const palabrasClave = ['confirmar'];
+  const palabrasClave = ['confirmar', 'asesor', 'Asesor', 'Confirmar' ];
 
   const aTexto = (v) => String(v ?? '').trim();
   const normalizar = (t) =>
@@ -254,6 +254,8 @@ const procesarEtapas = (mensajes) => {
 
     const bodyStr = aTexto(m?.body);       // <-- fuerza string
     if (bodyStr.length < 1) return false;  // acepta "1" o 1
+
+      if (bodyStr.startsWith("Asesor:")) return false;
 
     const textoNorm = normalizar(bodyStr);
     return !palabrasClave.some(palabra => textoNorm.includes(palabra));

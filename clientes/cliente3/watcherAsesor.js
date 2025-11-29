@@ -10,7 +10,7 @@ const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG3.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
-// === usuarios.json SIEMPRE FRESCO ===
+// === usuarios.json SIEMPRE FRESCO ===ƒ
 function requireFresh(p) {
   delete require.cache[require.resolve(p)];
   return require(p);
@@ -18,7 +18,7 @@ function requireFresh(p) {
 function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
-    // usa cliente3 como en tu versión original; cambia aquí si necesitas otro cliente
+    // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
     return usuariosData?.cliente3?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
@@ -50,7 +50,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican solicitud de asesor
-const PALABRAS_ASESOR = ["asesor", "asesora", "asesores"];
+const PALABRAS_ASESOR = ["asesor", "asesora", "asesores", "Asesor", "Asesora" ];
 
 function loadProcessed() {
   try {
@@ -105,6 +105,12 @@ function esCandidatoAsesor(m) {
   if (m.etapa !== 1) return false;
   const body = typeof m.body === 'string' ? m.body.trim() : '';
   if (body.length === 0) return false;
+
+if (/^Asesor:/i.test(body)) {
+    return false;
+  }
+
+
   const nb = normalizar(body);
   return PALABRAS_ASESOR.some(p => nb.includes(p));
 }
@@ -151,7 +157,7 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
     const textoRespuesta = `✅ ¡Gracias!
 Muy pronto uno de nuestros asesores te estará contactando 🤝
 
- `;
+`;
 
     // 1) Guardar en historial local
     mensajes.push({
