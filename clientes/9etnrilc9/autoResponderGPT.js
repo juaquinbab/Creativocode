@@ -8,6 +8,7 @@ require('dotenv').config();
 const apiKey = process.env.OPENAI_KEY;
 const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
+
 // --- Rutas absolutas (más seguras) ---
 const USUARIOS_PATH = path.resolve(__dirname, '../../data/usuarios.json');
 const INSTRUCCIONES_PATH = path.resolve(__dirname, '../../data/instruciones9.json'); // ojo con el nombre
