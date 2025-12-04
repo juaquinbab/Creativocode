@@ -913,18 +913,169 @@
   <script>tailwind.config = { theme: { extend: {} } }</script>
 
 
+<section
+  id="hero-anti-bloqueos"
+  class="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-900 text-white"
+>
+  <!-- Halo de fondo -->
+  <div class="pointer-events-none absolute -left-32 top-10 h-72 w-72 rounded-full bg-emerald-400/30 blur-3xl"></div>
+  <div class="pointer-events-none absolute -right-40 bottom-0 h-80 w-80 rounded-full bg-lime-400/20 blur-3xl"></div>
 
+  <div class="mx-auto flex max-w-6xl flex-col gap-12 px-6 py-16 lg:flex-row lg:items-center lg:py-24">
+    <!-- LADO IZQUIERDO: TEXTO -->
+    <div class="relative z-10 max-w-xl space-y-6">
+      <span class="inline-flex items-center gap-2 rounded-full bg-emerald-950/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] text-emerald-200">
+        <span class="h-2 w-2 rounded-full bg-lime-400 animate-pulse"></span>
+        Conexión Oficial • Anti-bloqueos
+      </span>
 
-  <section class="hero">
-    <h1>Entrena un AGENTE de IA para que atienda a tus CLIENTES</h1>
-    <p>Somos expertos en construir chatbots de WhatsApp personalizados, con conexión oficial y panel de control
-      inteligente. Automatiza, responde y fideliza.</p>
-  </section>
+      <h1 class="text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
+        Evita los <span class="text-lime-400">bloqueos de WhatsApp</span><br />
+        usando la <span class="underline decoration-lime-400/70 decoration-4 underline-offset-4">
+          API Oficial
+        </span>
+      </h1>
 
+      <p class="text-sm text-emerald-100 sm:text-base">
+        Conecta tu número a la API oficial de WhatsApp y deja atrás los bloqueos, simuladores y celulares esclavos.
+        Tu agente de IA atiende 24/7 con métricas, seguridad y
+        cumplimiento de políticas.
+      </p>
 
-  <section class="hero-automatice">
-    <h1><span class="typed-text"></span><span class="cursor">&nbsp;</span></h1>
-  </section>
+      <!-- Texto dinámico -->
+      <div class="flex flex-wrap items-center gap-3 text-sm text-emerald-100">
+        <span class="rounded-full bg-emerald-950/60 px-3 py-1">✅ Menos riesgo de bloqueo</span>
+        <span class="rounded-full bg-emerald-950/60 px-3 py-1">⚡ Respuesta instantánea</span>
+      </div>
+      <div class="mt-2 text-sm text-emerald-100">
+        <span class="font-semibold text-lime-300">Nuestro sistema ya está:</span>
+        <span id="hero-phrase" class="ml-2 font-medium"></span>
+      </div>
+
+      <!-- BOTONES CTA -->
+      <div class="mt-6 flex flex-wrap gap-3">
+        <button
+          class="inline-flex items-center justify-center rounded-xl bg-lime-400 px-6 py-3 text-sm font-semibold text-emerald-950 shadow-lg shadow-lime-500/30 transition hover:-translate-y-0.5 hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-lime-300"
+        >
+          Iniciar conexión sin bloqueos
+          <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </button>
+
+        <button
+          class="inline-flex items-center justify-center rounded-xl border border-emerald-300/60 bg-emerald-900/30 px-5 py-3 text-sm font-medium text-emerald-50 backdrop-blur transition hover:-translate-y-0.5 hover:bg-emerald-900/60"
+        >
+          Ver demo en video
+        </button>
+      </div>
+
+      <!-- BADGES flotando -->
+      <div class="mt-6 flex flex-wrap gap-3 text-xs text-emerald-100">
+        <div data-floating-badge class="flex items-center gap-2 rounded-full bg-emerald-950/70 px-3 py-1">
+          <span class="h-5 w-5 rounded-full bg-lime-400/10 ring-1 ring-lime-300/40 flex items-center justify-center">
+            ✅
+          </span>
+          Cumple políticas de Meta
+        </div>
+        <div data-floating-badge class="flex items-center gap-2 rounded-full bg-emerald-950/70 px-3 py-1">
+          <span class="h-5 w-5 rounded-full bg-lime-400/10 ring-1 ring-lime-300/40 flex items-center justify-center">
+            📊
+          </span>
+          Reportes y métricas en tiempo real
+        </div>
+      </div>
+    </div>
+
+    <!-- LADO DERECHO: TARJETA VISUAL -->
+    <div class="relative z-10 flex-1">
+      <div
+        class="mx-auto w-full max-w-sm rounded-3xl bg-emerald-950/60 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)] backdrop-blur-sm"
+      >
+        <!-- Encabezado pseudo-móvil -->
+        <div class="mb-4 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-emerald-900 text-xs font-bold">
+              CC
+            </span>
+            <div>
+              <p class="text-xs font-semibold text-emerald-50">Creativos Code BOT</p>
+              <p class="text-[11px] text-emerald-300/80">Conexión oficial</p>
+            </div>
+          </div>
+          <span
+            class="inline-flex items-center gap-1 rounded-full bg-emerald-900/80 px-2.5 py-1 text-[10px] font-semibold text-emerald-100"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-lime-400 animate-pulse"></span>
+            Online
+          </span>
+        </div>
+
+        <!-- Comparativa -->
+        <div class="grid grid-cols-2 gap-3 text-[11px]">
+          <!-- No oficial -->
+          <div class="rounded-2xl bg-rose-950/50 p-3 ring-1 ring-rose-500/40">
+            <div class="mb-2 flex items-center justify-between">
+              <p class="font-semibold text-rose-100">No oficial</p>
+              <span class="rounded-full bg-rose-900/80 px-2 py-0.5 text-[10px]">Riesgo alto</span>
+            </div>
+            <ul class="space-y-1 text-rose-100/80">
+              <li>• Celulares físicos encendidos</li>
+              <li>• Envió masivo sin control</li>
+              <li>• <span class="font-semibold">Cuenta bloqueada</span> sin aviso</li>
+            </ul>
+            <div class="mt-3 flex items-center gap-1 text-rose-200">
+              <span class="text-sm">🔒</span>
+              <span class="text-[10px]">Bloqueado por uso indebido</span>
+            </div>
+          </div>
+
+          <!-- Oficial -->
+          <div class="relative rounded-2xl bg-emerald-900/70 p-3 ring-1 ring-lime-400/50">
+            <div class="mb-2 flex items-center justify-between">
+              <p class="font-semibold text-emerald-50">API Oficial</p>
+              <span class="rounded-full bg-lime-400 px-2 py-0.5 text-[10px] font-semibold text-emerald-950">
+                Recomendado
+              </span>
+            </div>
+            <ul class="space-y-1 text-emerald-100">
+              <li>• Envíos segmentados y seguros</li>
+              <li>• IA que responde 24/7</li>
+              <li>• Plantillas aprobadas por Meta</li>
+            </ul>
+            <div class="mt-3 flex items-center gap-1 text-emerald-100">
+              <span class="text-sm">🛡️</span>
+              <span class="text-[10px]">Protección contra bloqueos</span>
+            </div>
+
+            <!-- Luz animada -->
+            <div
+              class="pointer-events-none absolute -right-6 -top-6 h-14 w-14 rounded-full bg-lime-400/40 blur-xl"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Mensajes ejemplo -->
+        <div class="mt-4 space-y-2 text-[11px]">
+          <div class="flex justify-start">
+            <div class="max-w-[80%] rounded-2xl rounded-tl-sm bg-emerald-900/80 px-3 py-2 text-emerald-50">
+              Hola 👋 Soy tu agente de IA. ¿Quieres conectar tu número con la API oficial sin bloqueos?
+            </div>
+          </div>
+          <div class="flex justify-end">
+            <div class="max-w-[80%] rounded-2xl rounded-tr-sm bg-lime-400 px-3 py-2 text-emerald-950">
+              Sí, quiero agendar una demo.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Burbujas decorativas -->
+      <div class="pointer-events-none absolute -right-4 -top-4 hidden h-24 w-24 rounded-full bg-lime-400/20 blur-2xl md:block"></div>
+    </div>
+  </div>
+</section>
+
 
 
 
@@ -946,6 +1097,22 @@
       </div>
     </div>
   </section>
+
+
+
+  <section class="hero">
+    <h1>Entrena un AGENTE de IA para que atienda a tus CLIENTES</h1>
+    <p>Somos expertos en construir chatbots de WhatsApp personalizados, con conexión oficial y panel de control
+      inteligente. Automatiza, responde y fideliza.</p>
+  </section>
+
+
+  <section class="hero-automatice">
+    <h1><span class="typed-text"></span><span class="cursor">&nbsp;</span></h1>
+  </section>
+
+
+
 
 
 
@@ -1071,7 +1238,6 @@ Confirma tu asistencia:
       </div>
     </div>
   </section>
-
 
 
 
@@ -1625,6 +1791,49 @@ Confirma tu asistencia:
       }
     }
   </script>
+
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Rotación de frases
+    const phrases = [
+      "evitando bloqueos con monitoreo inteligente.",
+      "cumpliendo las políticas de WhatsApp y Meta.",
+      "con IA que responde como tu mejor asesor.",
+      "listo para campañas masivas sin miedo a sanciones."
+    ];
+
+    const phraseSpan = document.getElementById("hero-phrase");
+    let idx = 0;
+
+    const updatePhrase = () => {
+      if (!phraseSpan) return;
+      phraseSpan.classList.add("opacity-0", "transition", "duration-300");
+      setTimeout(() => {
+        phraseSpan.textContent = phrases[idx];
+        phraseSpan.classList.remove("opacity-0");
+        idx = (idx + 1) % phrases.length;
+      }, 250);
+    };
+
+    updatePhrase();
+    setInterval(updatePhrase, 2600);
+
+    // Movimiento ligero de badges
+    const badges = document.querySelectorAll("[data-floating-badge]");
+    badges.forEach((badge, i) => {
+      let direction = 1;
+      let offset = 0;
+
+      setInterval(() => {
+        offset += 0.15 * direction;
+        if (offset > 4 || offset < -4) direction *= -1;
+        badge.style.transform = `translateY(${offset}px)`;
+      }, 40 + i * 15);
+    });
+  });
+</script>
 
 
 </body>
