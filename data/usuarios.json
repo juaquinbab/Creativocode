@@ -48,11 +48,11 @@
     "IA": true
   },
   "cliente8": {
-    "usuario": "Endo4",
-    "password": "Endo4@",
+    "usuario": "MarketRodeo",
+    "password": "MarketRodeo@",
     "ruta": "/9etnrilc8/index.html",
-    "iduser": "824361257436458",
-    "IA": true
+    "iduser": "636565266204293",
+    "IA": false
   },
   "cliente9": {
     "usuario": "AguaOceans",
@@ -61,6 +61,7 @@
     "iduser": "2593944227294964",
     "IA": false
   },
+
   "cliente1002MSG": {
     "usuario": "VitalPlus@",
     "password": "VitalPlus@",
@@ -68,6 +69,7 @@
     "iduser": "0000000",
     "IA": true
   },
+
   "cliente1003MSG": {
     "usuario": "Changan-nuevo",
     "password": "Changan-nuevo@",
