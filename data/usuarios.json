@@ -32,6 +32,8 @@
     "ruta": "/9etnrilc5/index.html",
     "iduser": "114925851509540",
     "IA": false
+
+    
   },
   "cliente6": {
     "usuario": "AsadorGrill",
@@ -62,12 +64,12 @@
     "IA": false
   },
 
-  "cliente1002MSG": {
-    "usuario": "VitalPlus@",
-    "password": "VitalPlus@",
-    "ruta": "https://vital-plus-energy.up.railway.app/",
-    "iduser": "0000000",
-    "IA": true
+  "cliente10": {
+    "usuario": "Ag",
+    "password": "Agua",
+    "ruta": "/9etnrilc10/index.html",
+    "iduser": "707300635810074",
+    "IA": false
   },
 
   "cliente1003MSG": {
