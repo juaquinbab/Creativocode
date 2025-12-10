@@ -8,7 +8,7 @@ const https = require("https");
 const FormData = require("form-data"); // 👈 para la transcripción
 require("dotenv").config();
 
-const { responderConIA } = require("./iaResponder"); // 👈 módulo común de IA
+const { responderConIA } = require("./autoResponderGPT"); // 👈 módulo común de IA
 
 // =========================
 // Rutas
