@@ -6,7 +6,7 @@ const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG7.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG12.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
@@ -19,7 +19,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
-    return usuariosData?.cliente7?.iduser || '';
+    return usuariosData?.cliente12?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';

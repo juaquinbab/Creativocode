@@ -23,7 +23,7 @@ const toBool = (v) =>
 router.get('/status', async (_req, res) => {
   try {
     const data = await read();
-    const ia = toBool(data?.cliente7?.IA); // si no existe, será false
+    const ia = toBool(data?.cliente12?.IA); // si no existe, será false
     res.json({ ia });
   } catch (e) {
     console.error('Leer usuarios.json:', e);
@@ -35,11 +35,11 @@ router.get('/status', async (_req, res) => {
 router.post('/toggle', async (_req, res) => {
   try {
     const data = await read();
-    if (!data.cliente7|| typeof data.cliente7 !== 'object') data.cliente7 = {};
+    if (!data.cliente12|| typeof data.cliente12 !== 'object') data.cliente12 = {};
 
-    const current = toBool(data.cliente7.IA);
+    const current = toBool(data.cliente12.IA);
     const next = !current;
-    data.cliente7.IA = next;
+    data.cliente12.IA = next;
 
     await write(data);
     res.json({ ia: next });

@@ -8,7 +8,7 @@ require("dotenv").config();
 // =========================
 // Rutas
 // =========================
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG7.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG12.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_audios.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
@@ -74,7 +74,7 @@ async function readJsonFresh(file, fallback) {
 async function getWabaPhoneIdFresh() {
   const usuariosData = await readJsonFresh(USUARIOS_PATH, null);
   if (!usuariosData) return "";
-  const candidate = usuariosData?.client7?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
+  const candidate = usuariosData?.cliente12?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
   return candidate || "";
 }
 

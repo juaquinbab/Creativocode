@@ -25,7 +25,6 @@
     "ruta": "/9etnrilc4/index.html",
     "iduser": "102009246136773",
     "IA": true
-    
   },
   "cliente5": {
     "usuario": "RepuestoVerde",
@@ -33,8 +32,6 @@
     "ruta": "/9etnrilc5/index.html",
     "iduser": "114925851509540",
     "IA": false
-
-    
   },
   "cliente6": {
     "usuario": "AsadorGrill",
@@ -64,23 +61,20 @@
     "iduser": "2593944227294964",
     "IA": false
   },
-
   "cliente10": {
-    "usuario": "Ag",
-    "password": "Agua",
+    "usuario": "tucamion1",
+    "password": "tucamion1@",
     "ruta": "/9etnrilc10/index.html",
-    "iduser": "707300635810074",
-    "IA": false
+    "iduser": "685422971310358",
+    "IA": true
   },
-
-   "cliente11": {
-    "usuario": "Ag",
-    "password": "Agua",
+  "cliente11": {
+    "usuario": "laloma_user",
+    "password": "Loma2025*",
     "ruta": "/9etnrilc11/index.html",
-    "iduser": "707",
+    "iduser": "113968471757683",
     "IA": false
   },
-
   "cliente1003MSG": {
     "usuario": "Changan-nuevo",
     "password": "Changan-nuevo@",
