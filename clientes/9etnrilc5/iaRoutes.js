@@ -35,7 +35,7 @@ router.get('/status', async (_req, res) => {
 router.post('/toggle', async (_req, res) => {
   try {
     const data = await read();
-    if (!data.cliente5 || typeof data.cliente5 !== 'object') data.cliente5 = {};
+    if (!data.cliente5|| typeof data.cliente5 !== 'object') data.cliente5 = {};
 
     const current = toBool(data.cliente5.IA);
     const next = !current;

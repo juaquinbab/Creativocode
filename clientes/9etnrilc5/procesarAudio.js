@@ -1,14 +1,9 @@
-"use strict";
-
 const fs = require("fs");
 const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
 const https = require("https");
-const FormData = require("form-data"); // 👈 para la transcripción
 require("dotenv").config();
-
-const { responderConIA } = require("./autoResponderGPT"); // 👈 módulo común de IA
 
 // =========================
 // Rutas
@@ -23,8 +18,6 @@ const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/";
 const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, ""); // sin slash final
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN || "";
-const apiKey = process.env.OPENAI_KEY || "";
-
 const MAX_AUDIO_CONCURRENCY = Math.max(
   1,
   Number.isFinite(Number(process.env.MAX_AUDIO_CONCURRENCY))
@@ -81,7 +74,7 @@ async function readJsonFresh(file, fallback) {
 async function getWabaPhoneIdFresh() {
   const usuariosData = await readJsonFresh(USUARIOS_PATH, null);
   if (!usuariosData) return "";
-  const candidate = usuariosData?.cliente5?.iduser || ""; // 👈 cliente11
+  const candidate = usuariosData?.cliente5?.iduser || ""; // ajusta cliente1/cliente3 según tu setup
   return candidate || "";
 }
 
@@ -300,44 +293,6 @@ async function downloadToFile(fileUrl, destPath) {
 }
 
 // =========================
-// Transcripción con OpenAI
-// =========================
-async function transcribeAudio(filePath) {
-  if (!apiKey) {
-    console.error("❌ Falta OPENAI_KEY para transcribir audio");
-    return "";
-  }
-
-  try {
-    const form = new FormData();
-    form.append("file", fs.createReadStream(filePath));
-    form.append("model", "gpt-4o-mini-transcribe"); // o "whisper-1"
-    form.append("language", "es");
-    form.append("response_format", "json");
-
-    const resp = await axios.post(
-      "https://api.openai.com/v1/audio/transcriptions",
-      form,
-      {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          ...form.getHeaders(),
-        },
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity,
-      }
-    );
-
-    const text = resp.data?.text || "";
-    console.log(`[${now()}] 📝 Transcripción obtenida (${filePath}): ${text}`);
-    return text.trim();
-  } catch (e) {
-    console.error(`[${now()}] ❌ Error transcribiendo audio:`, e.response?.data || e.message);
-    return "";
-  }
-}
-
-// =========================
 // Reglas de filtrado
 // =========================
 function isAudioCandidate(e) {
@@ -397,14 +352,13 @@ async function processOneAudio(entry) {
       return;
     }
 
-    // 1) Descargar audio
     await downloadToFile(audioUrl, filePath).catch((e) => {
       const s = e?.response?.status;
       if (s && s >= 400 && s < 500 && s !== 429) noteFatal(audioID);
       throw e;
     });
 
-    // 2) Guardar en historial el link del audio
+    // Encolar historial (batch)
     const nuevo = {
       from,
       body: `${BASE_URL}/Audio/${filename}`,
@@ -421,31 +375,7 @@ async function processOneAudio(entry) {
     };
     queueHistory(from, nuevo);
 
-    // 3) Transcribir el audio
-    const transcript = await transcribeAudio(filePath);
-    if (transcript) {
-      // Guardar también la transcripción como mensaje del usuario
-      queueHistory(from, {
-        from,
-        body: transcript,
-        etapa: 1, // como si fuera mensaje de texto normal
-        timestamp: Date.now(),
-        IDNAN: 4,
-        Cambio: 1,
-        Idp: 1,
-        idp: 0,
-        source_ts: timestamp || null,
-        message_id: id || null,
-        audioID,
-      });
-
-      // 4) Llamar a la IA para responder
-      await responderConIA({ from, body: transcript });
-    } else {
-      console.warn(`[${now()}] ⚠️ Sin transcripción, no se responde con IA`);
-    }
-
-    // 5) (Opcional) confirmación simple de recepción
+    // Confirmación (no bloqueante)
     // confirmToUser(from).catch((e) =>
     //   console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message)
     // );

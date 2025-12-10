@@ -220,6 +220,13 @@
           id="btnEntrenarIA" onclick="abrirEntrenadorIA()">
           Entrenar IA
         </button>
+     
+
+       <button
+          class="custom-btn min-w-[160px] h-11 bg-slate-50 border border-emerald-500 text-emerald-600 rounded-xl text-xs sm:text-sm px-3 flex items-center justify-center shadow-sm hover:bg-emerald-50 transition"
+          id="btnEntrenarIA" onclick="abririnforme()">
+          Ver Estadísticas
+        </button>
       </div>
 
 
@@ -1073,6 +1080,11 @@
     function abrirEntrenadorIA() {
       window.open(`${basePath}/admin-instrucciones.html`, '_blank');
     }
+
+      function abririnforme() {
+      window.open(`${basePath}/informe.html`, '_blank');
+    }
+    
   </script>
 
 </body>

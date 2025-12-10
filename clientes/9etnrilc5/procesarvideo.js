@@ -302,7 +302,7 @@ async function processOneVideo(entry) {
     queueHistory(from, nuevo);
 
     // 4) Confirmación (no bloqueante)
-    // confirmToUser(from).catch(() => {});
+    confirmToUser(from).catch(() => {});
 
     // 5) Marcar procesado
     processed.add(videoID);
