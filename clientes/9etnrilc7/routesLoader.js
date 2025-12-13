@@ -16,13 +16,14 @@ const iniciarMonitoreoAudio = require('./procesarAudio');
 const iniciarMonitoreoImagen = require('./procesarImagenes');
 const iniciarMonitoreoVideo = require('./procesarvideo');
 const routerAudio = require('./routerAudio');
-const iniciarWatcher  = require('./autoResponderGPT');
+const { iniciarWatcher }  = require('./autoResponderGPT');
 const { startWatcherCitas } = require('./startWatcherCitas');
 const { startWatcherAsesor } = require('./watcherAsesor');
 const pedidosRouter = require('./pedidosRouter');
 const resetnu = require('./resetnu');
 const iaRoutes = require('./iaRoutes');
 const instruccionesRoutes = require('./instruccionesRoutes');
+const salachatRoutes = require("./salachatRoutes");
 
 
 
@@ -35,6 +36,7 @@ router.use('/', express.static(path.join(__dirname)));
 
 // Rutas
 // router.use('/webhook', webhookRoute);
+router.use("/api", salachatRoutes);
 router.use('/', instruccionesRoutes);
 router.use('/', rutasSala1);
 router.use('/', resetnu);

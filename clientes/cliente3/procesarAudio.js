@@ -1,4 +1,4 @@
-// clientes/cliente1/procesarAudio.js
+// procesarAudio.js
 "use strict";
 
 const fs = require("fs");
@@ -6,7 +6,11 @@ const fsp = require("fs/promises");
 const path = require("path");
 const axios = require("axios");
 const https = require("https");
+const FormData = require("form-data");
 require("dotenv").config();
+
+// 👇 Reusar tu responder existente
+const { responderConGPT } = require("./autoResponderGPT");
 
 // =========================
 // Rutas
@@ -16,11 +20,13 @@ const PROCESSED_PATH = path.join(__dirname, "../../data/processed_audios.json");
 const USUARIOS_PATH = path.join(__dirname, "../../data/usuarios.json");
 
 // =========================
-/** Entorno / Config */
+// Entorno / Config
 // =========================
 const RAW_BASE_URL = process.env.PUBLIC_BASE_URL || "https://creativoscode.com/";
 const BASE_URL = String(RAW_BASE_URL).replace(/\/+$/, "");
 const WABA_TOKEN = process.env.WHATSAPP_API_TOKEN || "";
+const apiKey = process.env.OPENAI_KEY || "";
+
 const MAX_AUDIO_CONCURRENCY = Math.max(
   1,
   Number.isFinite(Number(process.env.MAX_AUDIO_CONCURRENCY))
@@ -35,13 +41,14 @@ const SALA_CHAT_DIR = path.join(__dirname, "./salachat");
 // =========================
 // HTTPS / HTTP clients
 // =========================
-const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 2 });
+const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25 });
 const http = axios.create({ timeout: 15_000, httpsAgent });
 
 // =========================
 // Utils
 // =========================
 function now() { return new Date().toISOString(); }
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
 async function ensureDir(p) {
   try {
@@ -64,17 +71,36 @@ async function writeJsonAtomic(file, obj) {
   await fsp.writeFile(tmp, JSON.stringify(obj, null, 2));
   await fsp.rename(tmp, file);
 }
+
 async function readJsonFresh(file, fallback) {
   try { return JSON.parse(await fsp.readFile(file, "utf8")); }
   catch { return fallback; }
 }
 
-// WABA phone id fresco (ajusta cliente si aplica)
+// WABA phone id fresco
 async function getWabaPhoneIdFresh() {
   const usuariosData = await readJsonFresh(USUARIOS_PATH, null);
   if (!usuariosData) return "";
-  const candidate = usuariosData?.cliente3?.iduser || ""; // ajusta cliente según tu setup
+  const candidate = usuariosData?.cliente3?.iduser || "";
   return candidate || "";
+}
+
+// Retry con backoff exponencial y clasificación de errores
+async function withRetry(fn, { retries = 3, baseDelay = 600, classify = () => "retryable" } = {}) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try { return await fn(); }
+    catch (e) {
+      lastErr = e;
+      const type = classify(e);
+      if (type === "fatal" || i === retries) break;
+      const jitter = Math.random() * 0.4 + 0.8;
+      const d = Math.round(baseDelay * Math.pow(2, i) * jitter);
+      console.warn(`[${now()}] ⚠️ Retry #${i + 1} en ${d}ms ::`, e?.response?.status || e?.code || e?.message);
+      await sleep(d);
+    }
+  }
+  throw lastErr;
 }
 
 // =========================
@@ -87,23 +113,40 @@ let processedTimer = null;
 
 const inFlight = new Set();
 
-// Historial por usuario (batch)
-const historyQueues = new Map(); // from => []
-const historyTimers = new Map(); // from => timeoutId
+const historyQueues = new Map();
+const historyTimers = new Map();
 
-// Límite de intentos (descartar inmediato)
-const failCounts = new Map(); // audioID -> nº fallos
-const MAX_FAILS = 1;          // solo 1 intento: si falla, se descarta
+const failCounts = new Map();
+const MAX_FAILS = 5;
+const FAIL_RESET_ON_SUCCESS = true;
+
+const fatalTombstones = new Map();
+const FAIL_TTL_MS = 6 * 60 * 60 * 1000;
 
 function shouldSkip(audioID) {
   const fails = failCounts.get(audioID) || 0;
-  return fails >= MAX_FAILS;
+  if (fails >= MAX_FAILS) return true;
+  const t = fatalTombstones.get(audioID);
+  if (t && (Date.now() - t) < FAIL_TTL_MS) return true;
+  return false;
 }
 function noteFail(audioID) {
-  failCounts.set(audioID, (failCounts.get(audioID) || 0) + 1);
+  const current = failCounts.get(audioID) || 0;
+  const next = current + 1;
+  failCounts.set(audioID, next);
+  if (next >= MAX_FAILS) {
+    console.warn(`[${now()}] ⏭️ audioID=${audioID} omitido: alcanzó ${next}/${MAX_FAILS} fallos`);
+  } else {
+    console.warn(`[${now()}] 🔁 Falla #${next}/${MAX_FAILS} para audioID=${audioID}`);
+  }
+}
+function noteFatal(audioID) {
+  fatalTombstones.set(audioID, Date.now());
+  console.warn(`[${now()}] 🚫 Tombstone 4xx para audioID=${audioID} (TTL ${Math.round(FAIL_TTL_MS/3600000)}h)`);
 }
 function noteSuccess(audioID) {
-  failCounts.delete(audioID);
+  if (FAIL_RESET_ON_SUCCESS) failCounts.delete(audioID);
+  fatalTombstones.delete(audioID);
 }
 
 // =========================
@@ -157,48 +200,46 @@ async function flushUserHistory(from) {
 }
 
 // =========================
-// Confirmación al usuario (sin reintentos)
+// Confirmación al usuario (opcional)
 // =========================
 async function confirmToUser(to) {
   const WABA_PHONE_ID = await getWabaPhoneIdFresh();
-  if (!to || !WABA_PHONE_ID || !WABA_TOKEN) {
-    console.warn(`[${now()}] ⚠️ No se envía confirmación (to/WABA_PHONE_ID/WHATSAPP_API_TOKEN faltante)`);
-    return;
-  }
+  if (!to || !WABA_PHONE_ID || !WABA_TOKEN) return;
   const url = `https://graph.facebook.com/v20.0/${WABA_PHONE_ID}/messages`;
-  try {
-    await http.post(
+  await withRetry(
+    () => http.post(
       url,
       {
         messaging_product: "whatsapp",
         recipient_type: "individual",
         to,
         type: "text",
-        text: { preview_url: false, body: "🎧 Audio recibido. ¡Gracias!" },
+        text: { preview_url: false, body: "🎧⏳" },
       },
       { headers: { Authorization: `Bearer ${WABA_TOKEN}`, "Content-Type": "application/json" } }
-    );
-  } catch (e) {
-    console.error(`[${now()}] ❌ Error confirmando al usuario:`, e?.response?.data || e.message);
-  }
+    ),
+    { retries: 2, baseDelay: 800 }
+  );
 }
 
 // =========================
-// Meta / descarga (sin reintentos)
+// Meta / descarga
 // =========================
 async function fetchAudioMeta(audioID) {
-  try {
-    const url = `https://graph.facebook.com/v20.0/${audioID}?fields=url,mime_type`;
-    const { data } = await http.get(url, {
-      headers: { Authorization: `Bearer ${WABA_TOKEN}` }
-    });
-    return data; // { url, mime_type? }
-  } catch (e) {
-    console.error(`[${now()}] ❌ Error al obtener meta de audioID=${audioID}:`, e?.response?.status || e.message);
-    // marcar como fallo definitivo
-    failCounts.set(audioID, MAX_FAILS);
-    return null;
-  }
+  const url = `https://graph.facebook.com/v20.0/${audioID}?fields=url,mime_type`;
+  const { data } = await withRetry(
+    () => http.get(url, { headers: { Authorization: `Bearer ${WABA_TOKEN}` } }),
+    {
+      retries: 3,
+      baseDelay: 600,
+      classify: (e) => {
+        const s = e?.response?.status;
+        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
+        return "retryable";
+      },
+    }
+  );
+  return data;
 }
 
 function pickExt(mime) {
@@ -207,44 +248,83 @@ function pickExt(mime) {
   if (m.includes("mpeg")) return ".mp3";
   if (m.includes("wav")) return ".wav";
   if (m.includes("amr")) return ".amr";
-  return ".ogg"; // default
+  return ".ogg";
 }
 
-async function downloadToFile(fileUrl, destPath, audioID) {
+async function downloadToFile(fileUrl, destPath) {
   const tmpPath = `${destPath}.download`;
   console.log(`[${now()}] ⬇️ Descargando audio: ${fileUrl}`);
-  try {
-    const resp = await axios.get(fileUrl, {
+
+  const resp = await withRetry(
+    () => axios.get(fileUrl, {
       httpsAgent,
       responseType: "stream",
       headers: { Authorization: `Bearer ${WABA_TOKEN}` },
-      timeout: 20_000,
+      timeout: 0,
       maxBodyLength: Infinity,
       maxContentLength: Infinity,
-    });
+    }),
+    {
+      retries: 3,
+      baseDelay: 800,
+      classify: (e) => {
+        const s = e?.response?.status;
+        if (s && s >= 400 && s < 500 && s !== 429) return "fatal";
+        return "retryable";
+      },
+    }
+  );
 
-    await new Promise((resolve, reject) => {
-      const writer = fs.createWriteStream(tmpPath);
-      resp.data.on("error", reject);
-      writer.on("error", reject);
-      writer.on("finish", resolve);
-      resp.data.pipe(writer);
-    });
+  await new Promise((resolve, reject) => {
+    const writer = fs.createWriteStream(tmpPath);
+    resp.data.on("error", reject);
+    writer.on("error", reject);
+    writer.on("finish", resolve);
+    resp.data.pipe(writer);
+  });
 
-    // Fsync para evitar corrupción
-    const fh = await fsp.open(tmpPath, "r+");
-    await fh.sync();
-    await fh.close();
+  const fh = await fsp.open(tmpPath, "r+");
+  await fh.sync();
+  await fh.close();
 
-    await fsp.rename(tmpPath, destPath);
-    console.log(`[${now()}] ✅ Audio guardado: ${destPath}`);
-    return true;
+  await fsp.rename(tmpPath, destPath);
+  console.log(`[${now()}] ✅ Audio guardado: ${destPath}`);
+}
+
+// =========================
+// Transcripción con OpenAI
+// =========================
+async function transcribeAudio(filePath) {
+  if (!apiKey) {
+    console.error(`[${now()}] ❌ Falta OPENAI_KEY para transcribir audio`);
+    return "";
+  }
+
+  try {
+    const form = new FormData();
+    form.append("file", fs.createReadStream(filePath));
+    form.append("model", "gpt-4o-mini-transcribe"); // o "whisper-1"
+    form.append("language", "es");
+    form.append("response_format", "json");
+
+    const resp = await axios.post(
+      "https://api.openai.com/v1/audio/transcriptions",
+      form,
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...form.getHeaders(),
+        },
+        timeout: 60_000,
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+      }
+    );
+
+    return String(resp.data?.text || "").trim();
   } catch (e) {
-    console.error(`[${now()}] ❌ Error descargando audioID=${audioID}:`, e?.response?.status || e.message);
-    // fallo definitivo
-    failCounts.set(audioID, MAX_FAILS);
-    try { await fsp.rm(tmpPath, { force: true }); } catch {}
-    return false;
+    console.error(`[${now()}] ❌ Error transcribiendo audio:`, e.response?.data || e.message);
+    return "";
   }
 }
 
@@ -263,36 +343,30 @@ function isAudioCandidate(e) {
 }
 
 // =========================
-// Procesamiento individual (candado + un solo intento)
+// Procesamiento individual
 // =========================
 async function processOneAudio(entry) {
   const { from, id, audioID, timestamp } = entry;
 
-  if (shouldSkip(audioID)) {
-    console.warn(`[${now()}] ⏭️ audioID=${audioID} omitido (fallo previo)`);
-    return;
-  }
+  if (shouldSkip(audioID)) return;
   if (inFlight.has(audioID)) return;
   inFlight.add(audioID);
 
   try {
     if (processed.has(audioID)) return;
 
-    // 1) META
-    const meta = await fetchAudioMeta(audioID);
-    if (!meta || !meta.url) {
-      console.warn(`[${now()}] ⚠️ audioID=${audioID} sin URL/meta. Descartado.`);
-      return;
-    }
+    const meta = await fetchAudioMeta(audioID).catch((e) => {
+      const s = e?.response?.status;
+      if (s && s >= 400 && s < 500 && s !== 429) noteFatal(audioID);
+      throw e;
+    });
 
-    // 2) filename
-    const mime = meta?.mime_type || "";
-    const ext = pickExt(mime);
+    const ext = pickExt(meta?.mime_type || "");
     const safeFrom = String(from || "").replace(/[^\dA-Za-z._-]/g, "_");
     const filename = `${safeFrom}-${id}-${audioID}${ext}`;
     const filePath = path.join(PUBLIC_AUDIO_DIR, filename);
 
-    // Fast path: ya existe
+    // Si ya existe
     try {
       await fsp.access(filePath, fs.constants.F_OK);
       processed.add(audioID);
@@ -301,43 +375,62 @@ async function processOneAudio(entry) {
       return;
     } catch {}
 
-    // 3) DESCARGA
-    const ok = await downloadToFile(meta.url, filePath, audioID);
-    if (!ok) {
-      console.warn(`[${now()}] ⚠️ Falla definitiva al descargar audioID=${audioID}, descartado.`);
+    const audioUrl = meta?.url;
+    if (!audioUrl) {
+      noteFail(audioID);
       return;
     }
 
-    // 4) HISTORIAL
-    const nuevo = {
+    // Opcional: confirmar recepción
+    // confirmToUser(from).catch(() => {});
+
+    // Descargar
+    await downloadToFile(audioUrl, filePath);
+
+    // Guardar link audio
+    queueHistory(from, {
       from,
       body: `${BASE_URL}/Audio/${filename}`,
       filename,
       etapa: 32,
       timestamp: Date.now(),
-      IDNAN: 4,
-      Cambio: 1,
-      Idp: 1,
-      idp: 0,
+      audioID,
       source_ts: timestamp || null,
       message_id: id || null,
-      audioID,
-    };
-    queueHistory(from, nuevo);
+    });
 
-    // 5) CONFIRMACIÓN (no bloqueante)
-    confirmToUser(from).catch(() => {});
+    // Transcribir
+    const transcript = await transcribeAudio(filePath);
 
-    // 6) MARCAR PROCESADO
+    if (transcript) {
+      // Guardar transcripción como mensaje usuario (para contexto)
+      queueHistory(from, {
+        from,
+        body: transcript,
+        etapa: 1,
+        timestamp: new Date().toISOString(),
+        audioID,
+      });
+
+      // Responder con tu MISMA IA de texto
+      await responderConGPT({
+        from,
+        body: transcript,
+        etapa: 1,
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      console.warn(`[${now()}] ⚠️ No hubo transcripción para audioID=${audioID}`);
+    }
+
     processed.add(audioID);
     scheduleSaveProcessed();
     noteSuccess(audioID);
 
-    console.log(`[${now()}] 🎉 Audio procesado: ${audioID}`);
+    console.log(`[${now()}] 🎉 Audio procesado + IA: ${audioID}`);
   } catch (e) {
-    console.error(`[${now()}] ❌ Error procesando audioID=${audioID}:`, e?.response?.status ? `${e.response.status} ${e.message}` : e.message);
-    // fallo definitivo
-    failCounts.set(audioID, MAX_FAILS);
+    console.error(`[${now()}] ❌ Error procesando audioID=${audioID}:`, e?.response?.data || e.message);
+    noteFail(audioID);
   } finally {
     inFlight.delete(audioID);
   }
@@ -360,7 +453,7 @@ async function runPool(items, worker, concurrency = 2) {
 }
 
 // =========================
-// Motor de pendientes (dedupe)
+// Motor de pendientes
 // =========================
 async function processPendingAudios() {
   if (processing) return;
@@ -376,7 +469,6 @@ async function processPendingAudios() {
 
     if (raw.length === 0) return;
 
-    // Dedupe por audioID (toma el más antiguo por timestamp)
     const map = new Map();
     for (const e of raw) {
       const prev = map.get(e.audioID);
@@ -393,13 +485,15 @@ async function processPendingAudios() {
 }
 
 // =========================
-// Watcher + debounce + fallback polling
+// Watcher + debounce + polling
 // =========================
 let debounceTimer = null;
 function triggerProcessDebounced(delay = 250) {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    processPendingAudios().catch((e) => console.error(`[${now()}] ❌ processPendingAudios:`, e.message));
+    processPendingAudios().catch((e) =>
+      console.error(`[${now()}] ❌ processPendingAudios:`, e.message)
+    );
   }, delay);
 }
 
@@ -408,16 +502,11 @@ function startWatchEtapas() {
     const watcher = fs.watch(ETA_PATH, { persistent: true }, (eventType) => {
       if (eventType === "change" || eventType === "rename") triggerProcessDebounced();
     });
-    watcher.on("error", (e) => {
-      console.warn(`[${now()}] ⚠️ fs.watch error (${e.message}). Fallback a polling 2s`);
-      setInterval(triggerProcessDebounced, 2_000);
-    });
-  } catch (e) {
-    console.warn(`[${now()}] ⚠️ fs.watch no soportado (${e.message}). Fallback a polling 2s`);
+    watcher.on("error", () => setInterval(triggerProcessDebounced, 2_000));
+  } catch {
     setInterval(triggerProcessDebounced, 2_000);
   }
 
-  // Polling suave adicional (útil en contenedores)
   setInterval(triggerProcessDebounced, 2_000);
 }
 
@@ -428,25 +517,24 @@ function startWatchUsuarios() {
         console.log(`[${now()}] 🔄 usuarios.json cambiado (lectura fresca en próximos envíos).`);
       }
     });
-    watcher.on("error", (e) => {
-      console.warn(`[${now()}] ⚠️ fs.watch usuarios.json falló:`, e.message);
-    });
-  } catch (e) {
-    console.warn(`[${now()}] ⚠️ fs.watch no soportado para usuarios.json:`, e.message);
-  }
+    watcher.on("error", () => {});
+  } catch {}
 }
 
 // =========================
-/** Boot / API pública */
+// Boot
 // =========================
 async function iniciarMonitoreoAudio() {
   if (!WABA_TOKEN) {
-    console.error(`[${now()}] ❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media de WhatsApp Cloud API.`);
+    console.error(`[${now()}] ❌ Falta WHATSAPP_API_TOKEN. No se puede descargar media.`);
     return;
   }
+
   await ensureDir(PUBLIC_AUDIO_DIR);
   await ensureDir(SALA_CHAT_DIR);
+
   await initProcessed();
+
   await processPendingAudios();
   startWatchEtapas();
   startWatchUsuarios();

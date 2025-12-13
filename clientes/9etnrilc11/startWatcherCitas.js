@@ -204,7 +204,7 @@ Ya estamos trabajando 🔥 para que recibas lo mejor.
 
         const indexToUpdate = EtapasMSG.findIndex((x) => x && x.id === id);
         if (indexToUpdate !== -1) {
-          EtapasMSG[indexToUpdate].etapa = 3;
+          EtapasMSG[indexToUpdate].etapa = 1;
           EtapasMSG[indexToUpdate].confirmado = true;
           EtapasMSG[indexToUpdate].idp = 0;
           fs.writeFileSync(ETA_PATH, JSON.stringify(EtapasMSG, null, 2), 'utf8');
