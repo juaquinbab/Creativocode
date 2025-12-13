@@ -230,7 +230,7 @@ ${texto}
 
 // ====== Lógica para filtrar y ENCOLAR (NO responder aquí) ======
 const procesarEtapas = (mensajes) => {
-  const palabrasClave = ["confirmar", "asesor"];
+  const palabrasClave = [ "asesor"];
 
   const aTexto = (v) => String(v ?? "").trim();
   const normalizar = (t) =>

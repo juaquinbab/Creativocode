@@ -337,7 +337,7 @@ function isAudioCandidate(e) {
     typeof e.audioID === "string" &&
     e.audioID.trim() !== "" &&
     Number.isFinite(Number(e.etapa)) &&
-    e.etapa >= 0 && e.etapa <= 300 &&
+    e.etapa >= 1 && e.etapa <= 2 &&
     e.Idp !== -999
   );
 }
