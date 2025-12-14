@@ -57,10 +57,16 @@
     "Nequi numero 3218476312 titular Maria Hernandez",
     "Bancolombia numero 71999736062 titular Jhon Eduar Ramirez CC 1087489036",
     "Efectivo, conque billete ? ",
-    "No enumeres los medios de pago si no es necesario.",
     "Ejemplo de mensaje: ¿Con qué medio de pago deseas realizar el pedido? 💳",
     "",
-    "Paso 4: Preguntar si desea agregar algo más.",
+
+    "Paso 4: Indica el numero de pago segun el medio de pago elegido. junto con el total a pagar.",
+    "Daviplata numero 3106103730 titular Jhon Eduar Ramirez CC 1087489036",
+    "Nequi numero 3218476312 titular Maria Hernandez",
+    "Bancolombia numero 71999736062 titular Jhon Eduar Ramirez CC 1087489036",
+    "Efectivo, conque billete ? ",
+ 
+    "Paso 5: Preguntar si desea agregar algo más.",
     "Pregunta de forma breve si desea agregar algo más al pedido.",
     "Si el cliente responde que sí, vuelve a solicitar productos.",
     "Si el cliente responde que no, continúa con el resumen.",

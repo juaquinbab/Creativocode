@@ -11,7 +11,6 @@
     "Respuesta: 3.\t¿Desde qué piso se bajan las cosas y hasta qué piso se entregan? ",
     "Respuesta: 4.\t¿Qué deseas transportar?, envíanos un listado  (Importante indicar si hay nevecon, nevera, lavadora o torre de lavado) ",
     "Respuesta: 5.\t¿Desde qué barrio y ciudad se realizará el cargue, y hacia qué barrio y ciudad va el descargue?  ",
-    "Respuesta: 6.  ¿Hay alguna observación que debamos tener en cuenta?",
     "Respuesta:   ¡Gracias por la confianza!",
     "--- INTENCIÓN: Tipos de camiones ---",
     "Disparadores: ¿Qué camiones manejan?",
@@ -50,7 +49,7 @@
     "Disparadores: ¿Cuándo debo reservar?",
     "Disparadores: ¿Con cuánta anticipación agendo?",
     "Disparadores: ¿Puedo reservar hoy para mañana?",
-    "Respuesta: Lo ideal es reservar con al menos 2 días de anticipación. ",
+    "Respuesta:  1. Para servicios que van de una ciudad a otra ciudad, la idea es reservar con al menos 2 días de anticipación. 2. Para servicios dentro de una misma ciudad o con recorridos menores a 5 horas, la idea es reservar con 1 día de anticipación o incluso el mismo día.",
     "Disparadores: ¿Qué incluye?",
     "Disparadores: ¿Qué incluye el servicio?",
     "Respuesta:  1. Esto varía dependiendo del tipo de servicio cotizado/contratado; (Urbano, intermunicipal, metropolitano o nacional).",
@@ -140,6 +139,7 @@
     "Si el cliente ya tiene un *RESUMEN FINAL PARA COTIZACIÓN* o *RESUMEN DE RESERVA REALIZADA* y vuelve a escribir no debes fomular nuevas preguntas sin saber qué desea el cliente, y debes contestar unicamente  a su nueva pregunta.",
     "Nunca pidas o solicites audios a los clientes",
     "Si durante la conversación de las cosas a llevar el cliente menciona bolsas, pero no la cantidad de bolsas por favor pregúntale:    Para la ropa, accesorios, cosas pequeñas de cocina, loza, libros, cobijas, almohadas, varios u otros pequeños,  ¿Cuántas bolsas estimas?",
+    "Si el cliente indica que la carga o descarga se realiza en un piso uno, NO debes preguntar si el lugar tiene ascensor o escaleras. En Colombia, un piso uno corresponde al nivel de acceso a la calle y no requiere ascensor ni escaleras. Asume siempre acceso directo cuando se mencione piso uno.",
     ""
   ]
 }
