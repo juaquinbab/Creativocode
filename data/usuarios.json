@@ -78,10 +78,27 @@
   "cliente12": {
     "usuario": "Grupovivir",
     "password": "Grupovivir@",
-    "ruta": "/9etnrilc11/index.html",
+    "ruta": "/9etnrilc12/index.html",
     "iduser": "624388081879021",
     "IA": false
   },
+
+  "cliente13": {
+    "usuario": "Grup",
+    "password": "Grupo",
+    "ruta": "/9etnrilc13/index.html",
+    "iduser": "62",
+    "IA": false
+  },
+
+    "cliente14": {
+    "usuario": "Grup",
+    "password": "Grupo",
+    "ruta": "/9etnrilc14/index.html",
+    "iduser": "6442",
+    "IA": false
+  },
+
   "cliente1003MSG": {
     "usuario": "Changan-nuevo",
     "password": "Changan-nuevo@",
