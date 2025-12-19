@@ -14,19 +14,21 @@ const router = express.Router();
 const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
 const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || 'https://creativoscode.com//';
 
-// === Cargar iduser (IDNUMERO) desde usuarios.json ===
+// === usuarios.json SIEMPRE FRESCO ===
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
-let IDNUMERO = '';
-
-try {
-  const usuariosData = JSON.parse(fs.readFileSync(usuariosPath, 'utf8'));
-  if (usuariosData.cliente2 && usuariosData.cliente2.iduser) {
-    IDNUMERO = usuariosData.cliente2.iduser;
-  } else {
-    console.warn('⚠️ No se encontró iduser para cliente1 en usuarios.json');
+function requireFresh(p) {
+  delete require.cache[require.resolve(p)];
+  return require(p);
+}
+function getIDNUMERO() {
+  try {
+    const usuariosData = requireFresh(usuariosPath);
+    // Usa cliente4 como en tu código; cambia aquí si necesitas otro
+    return usuariosData?.cliente15?.iduser || '';
+  } catch (e) {
+    console.error('❌ Error leyendo usuarios.json:', e.message);
+    return '';
   }
-} catch (err) {
-  console.error('❌ Error al leer usuarios.json:', err);
 }
 
 // === Multer: guarda original, luego convertimos a .ogg ===
@@ -74,8 +76,6 @@ router.post('/send-audio', (req, res) => {
       .audioCodec('libopus')
       .format('ogg')
       .on('end', async () => {
-      //  console.log('[INFO] Conversión a OGG lista:', outputPath);
-
         const audioUrl = `${PUBLIC_BASE.replace(/\/+$/, '')}/sala1Audio/${outputFileName}`;
 
         // 2) Obtener último mensaje (from, name)
@@ -90,7 +90,6 @@ router.post('/send-audio', (req, res) => {
 
         // 3) Antiduplicado rápido
         if (sentAudioUrls.has(audioUrl)) {
-        //  console.log('⏭️ Audio ya enviado recientemente, se omite:', audioUrl);
           return res.status(200).send('Audio ya fue enviado recientemente.');
         }
 
@@ -100,7 +99,6 @@ router.post('/send-audio', (req, res) => {
         if (historial.length > 0) {
           const ultimo = historial[historial.length - 1];
           if (ultimo?.tipo === 'audio' && ultimo?.body?.includes(audioUrl)) {
-           // console.log('⏭️ Audio duplicado detectado en historial, se omite envío.');
             return res.status(200).send('Audio duplicado detectado, no se envía nuevamente.');
           }
         }
@@ -123,7 +121,8 @@ router.post('/send-audio', (req, res) => {
             return res.status(500).send('Error al guardar historial.');
           }
 
-          // 5) Enviar por WhatsApp
+          // 5) Enviar por WhatsApp (IDNUMERO SIEMPRE FRESCO)
+          const IDNUMERO = getIDNUMERO();
           if (!IDNUMERO || !WHATSAPP_API_TOKEN) {
             console.warn('⚠️ Falta IDNUMERO o WHATSAPP_API_TOKEN. Se guarda pero NO se envía por WhatsApp.');
             return res.status(200).send('Audio guardado. (Sin envío por falta de credenciales)');
@@ -136,8 +135,6 @@ router.post('/send-audio', (req, res) => {
             type: 'audio',
             audio: { link: audioUrl }
           };
-
-        //  console.log('[INFO] Payload para WhatsApp:', payload);
 
           axios.post(`https://graph.facebook.com/v23.0/${IDNUMERO}/messages`, payload, {
             headers: {

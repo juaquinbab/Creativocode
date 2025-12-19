@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Informe Gerencial – Sala de Chat</title>
+
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { border-radius: 999px; }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+  <div class="min-h-screen flex flex-col">
+
+    <!-- TOPBAR -->
+    <header class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-2xl bg-emerald-500 text-slate-900 flex items-center justify-center font-black shadow-xl shadow-emerald-500/40">
+            CC
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-semibold">Informe Gerencial – Sala de Chat</h1>
+            <p class="text-xs text-slate-400">Creativos Code – Dashboard de Conversaciones</p>
+          </div>
+        </div>
+
+        <!-- BOTÓN DE REGENERAR -->
+        <button
+          id="reloadBtn"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-sm transition">
+          <span>Generar Informe</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a8 8 0 107.446 4.965 1 1 0 10-1.886-.666A6 6 0 1110 4a1 1 0 100-2z" />
+          </svg>
+        </button>
+
+      </div>
+    </header>
+
+    <!-- CONTENIDO -->
+    <main class="flex-1">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- RESUMEN -->
+        <section>
+          <h2 class="text-xl font-semibold mb-3">Resumen Ejecutivo <span id="dataInfo" class="text-xs text-slate-500"></span></h2>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- cards -->
+            <div class="p-4 rounded-2xl border border-slate-800 bg-slate-900 shadow">
+              <p class="text-slate-400 text-xs uppercase">Conversaciones</p>
+              <p id="totalChats" class="text-2xl font-bold mt-2">–</p>
+            </div>
+
+            <div class="p-4 rounded-2xl border border-slate-800 bg-slate-900 shadow">
+              <p class="text-slate-400 text-xs uppercase">Mensajes</p>
+              <p id="totalMessages" class="text-2xl font-bold mt-2">–</p>
+            </div>
+
+            <div class="p-4 rounded-2xl border border-slate-800 bg-slate-900 shadow">
+              <p class="text-slate-400 text-xs uppercase">Intenciones Compra</p>
+              <p id="purchaseConversations" class="text-2xl font-bold mt-2">–</p>
+              <p id="purchaseConversationsPct" class="text-xs text-slate-500 mt-1">–</p>
+            </div>
+
+            <div class="p-4 rounded-2xl border border-slate-800 bg-slate-900 shadow">
+              <p class="text-slate-400 text-xs uppercase">Medios</p>
+              <p id="totalMedia" class="text-2xl font-bold mt-2">–</p>
+              <p id="mediaBreakdown" class="text-xs text-slate-500 mt-1">–</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- GRÁFICAS -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          <div class="lg:col-span-2 p-4 border border-slate-800 rounded-2xl bg-slate-900">
+            <h3 class="text-sm font-semibold mb-3">Actividad por día</h3>
+            <canvas id="messagesPerDayChart" class="h-64"></canvas>
+          </div>
+
+          <div class="p-4 border border-slate-800 rounded-2xl bg-slate-900">
+            <h3 class="text-sm font-semibold mb-3">Intenciones de compra</h3>
+            <canvas id="purchaseChart" class="h-64"></canvas>
+          </div>
+
+        </section>
+
+        <!-- PALABRAS -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 p-4 border border-slate-800 rounded-2xl bg-slate-900">
+            <h3 class="text-sm font-semibold mb-3">Top palabras clave</h3>
+            <canvas id="keywordsChart" class="h-64"></canvas>
+          </div>
+
+          <div class="p-4 border border-slate-800 rounded-2xl bg-slate-900">
+            <h3 class="text-sm font-semibold mb-3">Nube de temas</h3>
+            <div id="keywordsList" class="flex flex-wrap gap-2 text-xs"></div>
+          </div>
+        </section>
+
+        <!-- TABLA -->
+        <section class="p-4 border border-slate-800 rounded-2xl bg-slate-900">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-semibold">Detalle de conversaciones</h3>
+
+            <input id="searchPhone" class="text-xs px-3 py-1.5 rounded-full bg-slate-950 border border-slate-700"
+              placeholder="Buscar número..." />
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-700">
+            <table class="min-w-full text-xs">
+              <thead class="bg-slate-800">
+                <tr>
+                  <th class="px-3 py-2 text-left">Teléfono</th>
+                  <th class="px-3 py-2 text-left">Mensajes</th>
+                  <th class="px-3 py-2 text-left">Compra</th>
+                  <th class="px-3 py-2 text-left">Último mensaje</th>
+                  <th class="px-3 py-2 text-left">Última actividad</th>
+                </tr>
+              </thead>
+
+              <tbody id="conversationsTableBody" class="divide-y divide-slate-800">
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ---------------- JS DEL DASHBOARD ------------------- -->
+  <script>
+    const INDEX_URL = "./salachat_index.json";
+
+    let conversationsRaw = [];
+    let charts = {};
+
+    /* STOPWORDS */
+    const STOPWORDS = new Set(["yo","tu","usted","él","ella","como","hola","quiero","necesito","de","la","que","el","en","y","a","los","del","se","las","por","un","para","con","no","una","su","al","lo","muy","si"]);
+
+    const normalizeText = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const isAgentMessage = msg => String(msg.body || "").trim().toLowerCase().startsWith("asesor:");
+    const hasPurchaseIntent = t => ["comprar","pedido","cotizar","precio","pagar","ordenar","factura"].some(k => normalizeText(t).includes(k));
+    const parseTimestamp = t => isNaN(new Date(t).getTime()) ? null : new Date(t);
+    const formatDate = d => d ? d.toLocaleString("es-CO") : "–";
+
+    /* --------------------- ANALISIS ---------------------- */
+    function analyzeConversations(conversations) {
+      const stats = {
+        totalChats: conversations.length,
+        totalMessages: 0,
+        conversationsWithPurchaseIntent: 0,
+        messagesPerDay: {},
+        keywordCounts: {},
+        mediaCounts: { imagenes: 0, audios: 0, videos: 0, documentos: 0 },
+        perConversation: []
+      };
+
+      for (const conv of conversations) {
+        const phone = conv.phone;
+        const messages = conv.messages || [];
+        let msgCount = 0;
+        let hasPurchase = false;
+        let lastMsg = null;
+        let lastDate = null;
+
+        for (const msg of messages) {
+          msgCount++;
+          stats.totalMessages++;
+
+          const body = msg.body || "";
+          const d = parseTimestamp(msg.timestamp);
+
+          if (d) {
+            const day = d.toISOString().slice(0, 10);
+            stats.messagesPerDay[day] = (stats.messagesPerDay[day] || 0) + 1;
+
+            if (!lastDate || d > lastDate) {
+              lastDate = d;
+              lastMsg = body;
+            }
+          }
+
+          if (!isAgentMessage(msg)) {
+            if (hasPurchaseIntent(body)) hasPurchase = true;
+
+            const words = normalizeText(body).split(/[^a-z0-9ñ]+/).filter(Boolean);
+            for (const w of words) if (!STOPWORDS.has(w)) stats.keywordCounts[w] = (stats.keywordCounts[w] || 0) + 1;
+          }
+
+          const txt = body.toLowerCase();
+          if (/\.jpg|\.png|imgid/.test(txt)) stats.mediaCounts.imagenes++;
+          if (/\.mp3|audioid|\.wav/.test(txt)) stats.mediaCounts.audios++;
+          if (/\.mp4|videoid/.test(txt)) stats.mediaCounts.videos++;
+          if (/\.pdf|\.doc|documentid/.test(txt)) stats.mediaCounts.documentos++;
+        }
+
+        if (hasPurchase) stats.conversationsWithPurchaseIntent++;
+
+        stats.perConversation.push({
+          phone,
+          messages: msgCount,
+          hasPurchase,
+          lastMsg,
+          lastDate
+        });
+      }
+
+      stats.perConversation.sort((a,b) => (b.lastDate?.getTime() || 0) - (a.lastDate?.getTime() || 0));
+      return stats;
+    }
+
+    /* --------------------- UPDATE UI -------------------- */
+    function updateSummary(stats) {
+      totalChats.textContent = stats.totalChats;
+      totalMessages.textContent = stats.totalMessages;
+      purchaseConversations.textContent = stats.conversationsWithPurchaseIntent;
+
+      const pct = stats.totalChats ? ((stats.conversationsWithPurchaseIntent / stats.totalChats) * 100).toFixed(1) : 0;
+      purchaseConversationsPct.textContent = pct + "% del total";
+
+      const mediaTotal = Object.values(stats.mediaCounts).reduce((a,b)=>a+b,0);
+      totalMedia.textContent = mediaTotal;
+      mediaBreakdown.textContent =
+        `${stats.mediaCounts.imagenes} img · ${stats.mediaCounts.audios} aud · ${stats.mediaCounts.videos} vid · ${stats.mediaCounts.documentos} doc`;
+
+      dataInfo.textContent = `(${stats.totalChats} conversaciones analizadas)`;
+    }
+
+    function buildMessagesChart(stats) {
+      const ctx = document.getElementById("messagesPerDayChart");
+      const labels = Object.keys(stats.messagesPerDay).sort();
+      const data = labels.map(d => stats.messagesPerDay[d]);
+
+      if (charts.messagesChart) charts.messagesChart.destroy();
+      charts.messagesChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{ data }]
+        }
+      });
+    }
+
+    function buildPurchaseChart(stats) {
+      const ctx = document.getElementById("purchaseChart");
+      if (charts.purchaseChart) charts.purchaseChart.destroy();
+      charts.purchaseChart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Compra", "General"],
+          datasets: [{ data: [stats.conversationsWithPurchaseIntent, stats.totalChats - stats.conversationsWithPurchaseIntent] }]
+        }
+      });
+    }
+
+    function buildKeywordsChart(stats) {
+      const ctx = document.getElementById("keywordsChart");
+      const entries = Object.entries(stats.keywordCounts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+      if (charts.keywordsChart) charts.keywordsChart.destroy();
+      charts.keywordsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: entries.map(e=>e[0]),
+          datasets: [{ data: entries.map(e=>e[1]) }]
+        }
+      });
+
+      keywordsList.innerHTML = "";
+      for (const [word,count] of entries) {
+        const el = document.createElement("span");
+        el.className = "px-2 py-1 bg-slate-800 rounded-full border border-slate-700";
+        el.textContent = word + " (" + count + ")";
+        keywordsList.appendChild(el);
+      }
+    }
+
+    function buildTable(stats) {
+      const tbody = document.getElementById("conversationsTableBody");
+      tbody.innerHTML = "";
+
+      for (const c of stats.perConversation) {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="px-3 py-2">${c.phone}</td>
+          <td class="px-3 py-2">${c.messages}</td>
+          <td class="px-3 py-2">${c.hasPurchase ? "✔️" : "—"}</td>
+          <td class="px-3 py-2 truncate max-w-xs">${c.lastMsg || "—"}</td>
+          <td class="px-3 py-2">${formatDate(c.lastDate)}</td>
+        `;
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    /* ---------------- CARGA DE ARCHIVO ---------------- */
+    async function loadData() {
+      const res = await fetch(INDEX_URL + "?_=" + Date.now());
+      const data = await res.json();
+
+      conversationsRaw = data;
+
+      const stats = analyzeConversations(data);
+      updateSummary(stats);
+      buildMessagesChart(stats);
+      buildPurchaseChart(stats);
+      buildKeywordsChart(stats);
+      buildTable(stats);
+    }
+
+    /* ---------------- BOTÓN PARA REGENERAR ---------------- */
+    async function regenerateIndex() {
+      const btn = document.getElementById("reloadBtn");
+      const original = btn.innerHTML;
+
+      btn.innerHTML = `
+        <span>Generando...</span>
+        <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M10 2a8 8 0 107.446 4.965 1 1 0 10-1.886-.666A6 6 0 1110 4a1 1 0 100-2z" />
+        </svg>`;
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("api/rebuild-salachat-index", { method: "POST" });
+        const result = await res.json();
+
+        if (!result.ok) throw new Error(result.error || "Error generando índice");
+
+        await loadData();
+        alert("Informe regenerado correctamente.");
+      } catch (err) {
+        console.error(err);
+        alert("No se pudo generar el informe.");
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+
+    /* ---------------- INIT ---------------- */
+    document.addEventListener("DOMContentLoaded", () => {
+      loadData();
+
+      reloadBtn.addEventListener("click", () => {
+        regenerateIndex();
+      });
+
+      searchPhone.addEventListener("input", e => {
+        const val = e.target.value.trim();
+        const base = analyzeConversations(conversationsRaw);
+        const filtered = { ...base, perConversation: base.perConversation.filter(c => c.phone.includes(val)) };
+        buildTable(filtered);
+      });
+    });
+  </script>
+
+</body>
+</html>

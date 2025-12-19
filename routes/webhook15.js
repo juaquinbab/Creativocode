@@ -8,10 +8,10 @@ const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
-const manejarBienvenida = require("../clientes/9etnrilc2/bienvenida");
+const manejarBienvenida = require("../clientes/9etnrilc15/bienvenida");
 
 const usuariosPath = path.join(__dirname, "../data/usuarios.json");
-const ETAPAS_PATH  = path.join(__dirname, "../data/EtapasMSG2.json");
+const ETAPAS_PATH  = path.join(__dirname, "../data/EtapasMSG15.json");
 
 // 👇 NUEVO: para evitar procesar el mismo mensaje varias veces
 const processedMessageIds = new Set();
@@ -25,7 +25,7 @@ function requireFresh(p) {
 function getCliente3PhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
-    return usuariosData?.cliente2?.iduser || "";
+    return usuariosData?.cliente15?.iduser || "";
   } catch (e) {
     console.error("❌ Error leyendo usuarios.json:", e.message);
     return "";

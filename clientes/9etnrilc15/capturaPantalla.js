@@ -21,7 +21,7 @@ function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // Usando cliente4 como en tu ejemplo
-    return usuariosData?.cliente14?.iduser || '';
+    return usuariosData?.cliente15?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';

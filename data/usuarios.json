@@ -82,23 +82,27 @@
     "iduser": "624388081879021",
     "IA": false
   },
-
   "cliente13": {
-    "usuario": "Grup",
-    "password": "Grupo",
+    "usuario": "LasZapatillas",
+    "password": "Las Zapatillas@",
     "ruta": "/9etnrilc13/index.html",
-    "iduser": "62",
+    "iduser": "862703660268222",
     "IA": false
   },
-
-    "cliente14": {
+  "cliente14": {
     "usuario": "Grup",
     "password": "Grupo",
     "ruta": "/9etnrilc14/index.html",
     "iduser": "6442",
     "IA": false
   },
-
+   "cliente15": {
+    "usuario": "Grup",
+    "password": "Grupo",
+    "ruta": "/9etnrilc15/index.html",
+    "iduser": "6442",
+    "IA": false
+  },
   "cliente1003MSG": {
     "usuario": "Changan-nuevo",
     "password": "Changan-nuevo@",

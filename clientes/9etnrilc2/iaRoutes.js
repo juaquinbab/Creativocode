@@ -1,4 +1,4 @@
-// clientes/cliente2/iaRoutes.js
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs/promises');
@@ -35,13 +35,14 @@ router.get('/status', async (_req, res) => {
 router.post('/toggle', async (_req, res) => {
   try {
     const data = await read();
-    if (!data.cliente2 || typeof data.cliente2 !== 'object') data.cliente2 = {};
+    if (!data.cliente4|| typeof data.cliente2 !== 'object') data.cliente2 = {};
 
     const current = toBool(data.cliente2.IA);
     const next = !current;
     data.cliente2.IA = next;
 
     await write(data);
+
     res.json({ ia: next });
   } catch (e) {
     console.error('Escribir usuarios.json:', e);
