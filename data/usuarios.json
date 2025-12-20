@@ -6,11 +6,11 @@
     "iduser": "528202610374098"
   },
   "cliente2": {
-    "usuario": "zummy",
-    "password": "zummy@",
-    "ruta": "/cliente2/index.html",
-    "iduser": "789862370866920",
-    "IA": true
+    "usuario": "Mayra22",
+    "password": "Mayra@",
+    "ruta": "/9etnrilc2/index.html",
+    "iduser": "888761570990985",
+    "IA": false
   },
   "cliente3": {
     "usuario": "Moviapp",
@@ -96,7 +96,7 @@
     "iduser": "6442",
     "IA": false
   },
-   "cliente15": {
+  "cliente15": {
     "usuario": "Grup",
     "password": "Grupo",
     "ruta": "/9etnrilc15/index.html",
