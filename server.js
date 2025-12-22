@@ -65,6 +65,7 @@ const cliente12Router = require('./clientes/9etnrilc12/routesLoader');
 const cliente13Router = require('./clientes/9etnrilc13/routesLoader');
 const cliente14Router = require('./clientes/9etnrilc14/routesLoader');
 const cliente15Router = require('./clientes/9etnrilc15/routesLoader');
+const cliente16Router = require('./clientes/9etnrilc16/routesLoader');
 
 app.use('/cliente1', cliente1Router);
 app.use('/9etnrilc2', cliente2Router);
@@ -81,6 +82,7 @@ app.use('/9etnrilc12', cliente12Router);
 app.use('/9etnrilc13', cliente13Router);
 app.use('/9etnrilc14', cliente14Router);
 app.use('/9etnrilc15', cliente15Router);
+app.use('/9etnrilc16', cliente16Router);
 
 app.use(express.json());
 
@@ -100,6 +102,7 @@ const webhook12 = require('./routes/webhook12');
 const webhook13 = require('./routes/webhook13'); 
 const webhook14 = require('./routes/webhook14'); 
 const webhook15 = require('./routes/webhook15'); 
+const webhook16 = require('./routes/webhook16'); 
 
 
 app.use('/webhook', webhook1);
@@ -117,6 +120,7 @@ app.use('/webhook', webhook12);
 app.use('/webhook', webhook13);
 app.use('/webhook', webhook14);
 app.use('/webhook', webhook15);
+app.use('/webhook', webhook16);
 
 
 

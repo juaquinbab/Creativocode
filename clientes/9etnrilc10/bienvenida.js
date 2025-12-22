@@ -1,148 +1,166 @@
-
+"use strict";
 
 const axios = require("axios");
 const fs = require("fs");
+const fsp = require("fs/promises");
 const path = require("path");
 
-const registroPath = path.join(__dirname, "bienvenida10.json");
-const etapasPath   = path.join(__dirname, "../../data/EtapasMSG10.json");
+// === RUTAS ===
+const registroPath = path.join(__dirname, "bienvenida.json");
+const etapasPath = path.join(__dirname, "../../data/EtapasMSG10.json");
 const usuariosPath = path.join(__dirname, "../../data/usuarios.json");
 
-// ⬇️ Ruta del archivo que contiene el texto (se mantiene tal cual)
-const textoPath    = path.join(__dirname, "../../data/textoclinete10.json");
+// ============ UTILIDADES JSON FRESCO ============
 
-// --- Utilidades ---
-function requireFresh(p) {
-  delete require.cache[require.resolve(p)];
-  return require(p);
-}
-
-function cargarJSON(p, fallback) {
+// Lee JSON “siempre fresco” desde disco. Si falla, devuelve fallback.
+async function readJsonFresh(p, fallback) {
   try {
-    if (!fs.existsSync(p)) return fallback;
-    return JSON.parse(fs.readFileSync(p, "utf8"));
-  } catch (e) {
-    console.error(`❌ Error al parsear JSON "${p}":`, e.message);
+    await fsp.access(p, fs.constants.F_OK);
+  } catch {
+    return fallback;
+  }
+  try {
+    const raw = await fsp.readFile(p, "utf8");
+    return JSON.parse(raw);
+  } catch {
     return fallback;
   }
 }
 
-// Escritura ATÓMICA
-function guardarJSON(p, data) {
-  const dir = path.dirname(p);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+// Escritura atómica: write -> fsync -> rename
+async function writeJsonAtomic(p, data) {
   const tmp = `${p}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), "utf8");
-  fs.renameSync(tmp, p);
+  const payload = JSON.stringify(data, null, 2);
+  const fh = await fsp.open(tmp, "w");
+  try {
+    await fh.writeFile(payload, "utf8");
+    await fh.sync();
+  } finally {
+    await fh.close();
+  }
+  await fsp.rename(tmp, p);
 }
 
-function aArray(x) {
+// Convierte objeto indexado a array para iterar (o devuelve array tal cual)
+function toArray(x) {
   if (!x) return [];
   return Array.isArray(x) ? x : Object.values(x);
 }
 
-// ---- usuarios.json (siempre fresco) ----
-function getCliente4Config() {
-  try {
-    const data = requireFresh(usuariosPath);
-    return data?.cliente10 || {};
-  } catch (e) {
-    console.error("❌ Error leyendo usuarios.json:", e.message);
-    return {};
+// Resuelve IDNUMERO (iduser) desde usuarios.json, priorizando cliente1 y si no, el primero que tenga iduser
+function getNumeroFromUsuarios(usuariosData) {
+  if (usuariosData?.cliente10?.iduser) return usuariosData.cliente10.iduser;
+  for (const k of Object.keys(usuariosData || {})) {
+    const maybe = usuariosData[k]?.iduser;
+    if (maybe) return maybe;
   }
+  return "";
 }
 
-function toBoolean(v) {
-  if (typeof v === "boolean") return v;
-  if (typeof v === "number")  return v !== 0;
-  if (typeof v === "string") {
-    return ["1","true","verdadero","si","sí","on","activo","enabled"].includes(v.trim().toLowerCase());
+// Busca el candidato más reciente por “from” (máximo timestamp)
+function getUltimoPorFrom(etapasArr, from) {
+  let cand = null;
+  for (const e of etapasArr) {
+    if (!e || e.from !== from) continue;
+    if (!cand || (e.timestamp || 0) > (cand.timestamp || 0)) cand = e;
   }
-  return false;
-}
-// Si no viene IA, por defecto ACTIVADA
-function isIAEnabled(v) { return v === undefined ? true : toBoolean(v); }
-
-// Lee y valida el texto de bienvenida desde textoPath (se mantiene tal cual)
-function cargarTextoBienvenida() {
-  const data = cargarJSON(textoPath, null);
-  if (!data || typeof data.text !== "string" || !data.text.trim()) {
-    console.warn("⚠️ textoPath no tiene { text: string } válido. Usando fallback.");
-    return "¡Hola! 👋";
-  }
-  return data.text.trim();
+  return cand;
 }
 
-// --- Lógica principal (lo demás se mantiene igual) ---
+
+function aplicarActualizacionEtapa(etapasRaw, candidatoId) {
+  if (!etapasRaw || !candidatoId) return etapasRaw;
+
+  if (Array.isArray(etapasRaw)) {
+    const idx = etapasRaw.findIndex((it) => it && it.id === candidatoId);
+    if (idx !== -1) {
+      etapasRaw[idx].etapa = 4;
+      etapasRaw[idx].idp = 0;
+      etapasRaw[idx].Idp = 0;
+      if (typeof etapasRaw[idx].enProceso !== "undefined") {
+        etapasRaw[idx].enProceso = false;
+      }
+    }
+  } else {
+    if (etapasRaw[candidatoId]) {
+      etapasRaw[candidatoId].etapa = 4;
+      etapasRaw[candidatoId].idp = 0;
+      etapasRaw[candidatoId].Idp = 0;
+      if (typeof etapasRaw[candidatoId].enProceso !== "undefined") {
+        etapasRaw[candidatoId].enProceso = false;
+      }
+    }
+  }
+  return etapasRaw;
+}
+
+// ============ FLUJO PRINCIPAL ============
+
 async function manejarBienvenida(from, body) {
   const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
-  if (!WHATSAPP_API_TOKEN) {
-    console.error("❌ Falta WHATSAPP_API_TOKEN en variables de entorno.");
+
+  // 1) Cargar SIEMPRE FRESCO
+  const [registro, etapasRaw, usuariosData] = await Promise.all([
+    readJsonFresh(registroPath, {}) || {},
+    readJsonFresh(etapasPath, []) || [],
+    readJsonFresh(usuariosPath, {}) || {},
+  ]);
+
+  const EtapasMSG = toArray(etapasRaw);
+
+  // 2) Resolver IDNUMERO fresco
+  const IDNUMERO = getNumeroFromUsuarios(usuariosData);
+  if (!IDNUMERO) {
+    console.warn("⚠️ No se encontró iduser en usuarios.json; se omite el envío.");
     return;
   }
 
-  // IA + iduser “frescos” al inicio
-  const c4Inicio = getCliente4Config();
-  if (!isIAEnabled(c4Inicio.IA)) {
-    console.log("⚠️ IA desactivada para cliente4. No se ejecuta manejarBienvenida.");
-    return;
-  }
-  const IDNUMERO_INICIO = c4Inicio.iduser;
-  if (!IDNUMERO_INICIO) {
-    console.error("❌ Falta iduser (phone_number_id) en usuarios.json -> cliente4.iduser");
+  // 3) Evitar bienvenida repetida
+  if (registro[from]) {
     return;
   }
 
-  // 1) Cargar archivos
-  const registro  = cargarJSON(registroPath, {}) || {};
-  const etapasRaw = cargarJSON(etapasPath, []) || [];
-  const EtapasMSG = aArray(etapasRaw);
-
-  // 2) Evitar duplicado
-  if (registro[from]) return;
-
-  // 3) Registrar intento
+  // 4) Registrar primero (como pediste)
   const now = Date.now();
   registro[from] = {
     body,
     createdAt: now,
-    bienvenidaEnviada: false
+    bienvenidaEnviada: false,
   };
 
-  // Buscar último item de Etapas por "from"
-  let candidato = null;
-  for (const e of EtapasMSG) {
-    if (!e || e.from !== from) continue;
-    if (!candidato || (e.timestamp || 0) > (candidato?.timestamp || 0)) {
-      candidato = e;
-    }
+  // Candidato más reciente por from
+  const candidato = getUltimoPorFrom(EtapasMSG, from);
+  if (candidato?.id) {
+    registro[from].id = candidato.id;
   }
-  if (candidato?.id) registro[from].id = candidato.id;
-  guardarJSON(registroPath, registro);
 
-  // 4) Preparar texto desde JSON (siempre fresco)
-  const bodyText = cargarTextoBienvenida();
+  await writeJsonAtomic(registroPath, registro);
 
-  // 5) Payload correcto para WhatsApp Cloud API (mensaje de texto)
+  // 5) Enviar bienvenida
   const payload = {
     messaging_product: "whatsapp",
+    recipient_type: "individual",
     to: from,
-    type: "text",
-    text: { body: bodyText }
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text:
+          "¡Bienvenido/a a Tu Camión En Flete_Mudanzas!\n\n" +
+          "Estamos listos para ayudarte con tu flete o mudanza de manera rápida, segura y confiable. \n\n" +
+          "*Por favor, selecciona una opción para continuar 😊*",
+      },
+      action: {
+        buttons: [
+          { type: "reply", reply: { id: "deseo_cotizar", title: "Deseo cotizar" } },
+          { type: "reply", reply: { id: "reservar_agendar", title: "Reservar Agendar" } },
+          { type: "reply", reply: { id: "consulta_dudas", title: "Consulta Dudas" } },
+        ],
+      },
+    },
   };
 
-  // 6) Enviar (REVALIDAR IA e iduser justo antes de enviar)
   try {
-    const c4Envio = getCliente4Config();
-    if (!isIAEnabled(c4Envio.IA)) {
-      console.log("⏹️ IA se desactivó antes del envío. Se detiene.");
-      delete registro[from];
-      guardarJSON(registroPath, registro);
-      return;
-    }
-    const IDNUMERO = c4Envio.iduser || IDNUMERO_INICIO;
-    if (!IDNUMERO) throw new Error("IDNUMERO vacío al enviar");
-
     await axios.post(
       `https://graph.facebook.com/v19.0/${IDNUMERO}/messages`,
       payload,
@@ -156,41 +174,22 @@ async function manejarBienvenida(from, body) {
     );
   } catch (err) {
     console.error("❌ Error al enviar bienvenida:", err.response?.data || err.message);
-    // Permitir reintento futuro
+    // revertir registro para permitir reintento posterior
     delete registro[from];
-    guardarJSON(registroPath, registro);
+    await writeJsonAtomic(registroPath, registro);
     return;
   }
 
-  // 7) Actualizar Etapas (si existe candidato)
-  if (candidato) {
-    const isArray = Array.isArray(etapasRaw);
-    if (isArray) {
-      const idx = EtapasMSG.findIndex((it) => it && it.id === candidato.id);
-      if (idx !== -1) {
-        EtapasMSG[idx].etapa = 1;
-        EtapasMSG[idx].idp = 0;
-        EtapasMSG[idx].Idp = 0;
-        if (typeof EtapasMSG[idx].enProceso !== "undefined") {
-          EtapasMSG[idx].enProceso = false;
-        }
-      }
-      guardarJSON(etapasPath, EtapasMSG);
-    } else if (candidato.id && etapasRaw[candidato.id]) {
-      etapasRaw[candidato.id].etapa = 1;
-      etapasRaw[candidato.id].idp = 0;
-      etapasRaw[candidato.id].Idp = 0;
-      if (typeof etapasRaw[candidato.id].enProceso !== "undefined") {
-        etapasRaw[candidato.id].enProceso = false;
-      }
-      guardarJSON(etapasPath, etapasRaw);
-    }
+  // 6) Actualizar etapa del candidato (solo el más reciente para ese from)
+  if (candidato?.id) {
+    const actualizado = aplicarActualizacionEtapa(etapasRaw, candidato.id);
+    await writeJsonAtomic(etapasPath, actualizado);
   }
 
-  // 8) Marcar envío OK
+  // 7) Marcar bienvenida enviada
   registro[from].bienvenidaEnviada = true;
   registro[from].lastSentAt = Date.now();
-  guardarJSON(registroPath, registro);
+  await writeJsonAtomic(registroPath, registro);
 }
 
 module.exports = manejarBienvenida;

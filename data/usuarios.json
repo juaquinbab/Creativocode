@@ -73,7 +73,7 @@
     "password": "Loma2025*",
     "ruta": "/9etnrilc11/index.html",
     "iduser": "113968471757683",
-    "IA": true
+    "IA": false
   },
   "cliente12": {
     "usuario": "Grupovivir",
@@ -90,16 +90,23 @@
     "IA": false
   },
   "cliente14": {
-    "usuario": "Grup",
-    "password": "Grupo",
+    "usuario": "PatitasEncontradas",
+    "password": "PatitasEncontradas@",
     "ruta": "/9etnrilc14/index.html",
-    "iduser": "6442",
+    "iduser": "100696352666493",
     "IA": false
   },
   "cliente15": {
     "usuario": "Grup",
     "password": "Grupo",
     "ruta": "/9etnrilc15/index.html",
+    "iduser": "6442",
+    "IA": false
+  },
+   "cliente16": {
+    "usuario": "Grup",
+    "password": "Grupo",
+    "ruta": "/9etnrilc16/index.html",
     "iduser": "6442",
     "IA": false
   },

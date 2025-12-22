@@ -16,7 +16,7 @@ const iniciarMonitoreoAudio = require('./procesarAudio');
 const iniciarMonitoreoImagen = require('./procesarImagenes');
 const iniciarMonitoreoVideo = require('./procesarvideo');
 const routerAudio = require('./routerAudio');
-const { iniciarWatcher } = require('./autoResponderGPT');
+const { iniciarWatcher }  = require('./autoResponderGPT');
 const { startWatcherCitas } = require('./startWatcherCitas');
 const { startWatcherAsesor } = require('./watcherAsesor');
 const pedidosRouter = require('./pedidosRouter');
@@ -24,9 +24,6 @@ const resetnu = require('./resetnu');
 const iaRoutes = require('./iaRoutes');
 const instruccionesRoutes = require('./instruccionesRoutes');
 const salachatRoutes = require("./salachatRoutes");
-const iniciarWatcher6 = require('./dosetapa5');
-const iniciarWatcher7 = require('./dosetapa6');
-const iniciarWatcher8 = require('./dosetapa7');
 
 
 
@@ -54,9 +51,6 @@ router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
 router.use('/api/ia', iaRoutes);
-iniciarWatcher6();
-iniciarWatcher7();
-iniciarWatcher8();
 
 
 // Procesos periódicos y watchers
