@@ -78,7 +78,7 @@ async function enviarBotonesWA(to, bodyText) {
   to: to,
   type: "text",
   text: {
-    body: "Gracias por solicitar un reserva. espereme un momento por favor.",
+    body: "Gracias por solicitar una reserva, espera un momento por favor",
   }
 };
 

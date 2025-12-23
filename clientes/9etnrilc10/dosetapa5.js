@@ -78,7 +78,7 @@ async function enviarBotonesWA(to, bodyText) {
   to: to,
   type: "text",
   text: {
-    body: "Gracias por sololicitar una cotización. espera un momento",
+    body: "Gracias por solicitar una cotización, espera un momento por favor",
   }
 };
 

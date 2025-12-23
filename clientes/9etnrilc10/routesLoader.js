@@ -27,6 +27,7 @@ const salachatRoutes = require("./salachatRoutes");
 const iniciarWatcher6 = require('./dosetapa5');
 const iniciarWatcher7 = require('./dosetapa6');
 const iniciarWatcher8 = require('./dosetapa7');
+const iniciarWatcher9 = require('./dosetapa8');
 
 
 
@@ -57,6 +58,7 @@ router.use('/api/ia', iaRoutes);
 iniciarWatcher6();
 iniciarWatcher7();
 iniciarWatcher8();
+iniciarWatcher9();
 
 
 // Procesos periódicos y watchers
