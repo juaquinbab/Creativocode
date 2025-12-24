@@ -75,13 +75,13 @@ async function enviarBotonesWA(to, bodyText) {
   const payload = {
     messaging_product: "whatsapp",
     recipient_type: "individual",
-    to: from,
+    to: to,
     type: "interactive",
     interactive: {
       type: "button",
       body: {
         text:
-          "Por favor, antes de comenzar, debes seleccionar 1  de las siguientes 3 opciones:\n\n" + "Por favor, selecciona (oprime, dale click) a una opción para continuar 😊",
+          "Por favor, antes de comenzar, debes seleccionar 1  de las siguientes 3 opciones:\n\n",
       },
       action: {
         buttons: [
@@ -112,7 +112,7 @@ async function pasarEtapaA2PorId(msgId) {
   const nuevo = data.map((m) => {
     if (m?.id === msgId) {
       changed = true;
-      return { ...m, etapa: 4, id: "4c8e-89c4", enProceso: false };
+      return { ...m, etapa: 5, id: "4c8e-89c4", enProceso: false };
     }
     return m;
   });
@@ -121,28 +121,35 @@ async function pasarEtapaA2PorId(msgId) {
   return changed;
 }
 
-// ====== Núcleo: procesa solo interactiveId === "btn_info" y etapa === 1 ======
+
 async function procesarMensajesNuevos() {
   const lista = await readJson(ETAPAS_PATH, []);
   if (!Array.isArray(lista) || lista.length === 0) return;
 
-  const pendientes = lista.filter((m) => {
-    const id    = String(m?.id ?? "");
-    const from  = String(m?.from ?? "").trim();
-    const etapa = Number(m?.etapa);
+ const pendientes = lista.filter((m) => {
+  const id    = String(m?.id ?? "").trim();
+  const from  = String(m?.from ?? "").trim();
+  const etapa = Number(m?.etapa);
+  const body  = String(m?.body ?? "").trim();
 
-    // 👇 texto escrito por el usuario
-    const texto = String(m?.text?.body ?? "").trim().toLowerCase();
+  // 👇 NUEVO: detectar si viene de interacción (botón / lista)
+  const interactiveId = String(m?.interactiveId ?? "").trim();
+  const interactiveTitle = String(m?.interactiveTitle ?? "").trim();
 
-    return (
-      etapa === 4 &&
-      texto.length > 0 &&          
-      id &&
-      from &&
-      !m?.enProceso &&
-      !mensajesProcesados.includes(id)
-    );
-  });
+  const esTextoNormal =
+    body.length >= 1 &&
+    interactiveId.length === 0 &&
+    interactiveTitle.length === 0;
+
+  return (
+    etapa === 4 &&              
+    esTextoNormal &&
+    id &&
+    from &&
+    !m?.enProceso &&
+    !mensajesProcesados.includes(id)
+  );
+});
 
   if (pendientes.length === 0) return;
 

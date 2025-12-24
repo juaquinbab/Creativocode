@@ -122,7 +122,7 @@ async function procesarMensajesNuevos() {
     const interactiveId = String(m?.interactiveId ?? "").trim().toLowerCase();
 
     return (
-      etapa === 4 &&
+    (etapa === 4 || etapa === 5) &&
       interactiveId === "deseo_cotizar" &&
       id && from &&
       !m?.enProceso &&

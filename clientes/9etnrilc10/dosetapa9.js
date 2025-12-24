@@ -72,15 +72,26 @@ async function enviarBotonesWA(to, bodyText) {
   const IDNUMERO = getIDNUMERO();
   if (!IDNUMERO) throw new Error("IDNUMERO no configurado");
 
- const payload = {
-  messaging_product: "whatsapp",
-  recipient_type: "individual",
-  to: to,
-  type: "text",
-  text: {
-    body: "Gracias por solicitar una consulta, espera un momento por favor",
-  }
-};
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: to,
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: {
+        text:
+          "Por favor, antes de comenzar, debes seleccionar 1  de las siguientes 3 opciones:\n\n",
+      },
+      action: {
+        buttons: [
+          { type: "reply", reply: { id: "deseo_cotizar", title: "Deseo cotizar" } },
+          { type: "reply", reply: { id: "reservar_agendar", title: "Reservar Agendar" } },
+          { type: "reply", reply: { id: "consulta_dudas", title: "Consulta Dudas" } },
+        ],
+      },
+    },
+  };
 
 
   const url = `https://graph.facebook.com/v23.0/${IDNUMERO}/messages`;
@@ -101,7 +112,7 @@ async function pasarEtapaA2PorId(msgId) {
   const nuevo = data.map((m) => {
     if (m?.id === msgId) {
       changed = true;
-      return { ...m, etapa: 1, id: "4c8e-89c4", enProceso: false };
+      return { ...m, etapa: 4, id: "4c8e-89c4", enProceso: false };
     }
     return m;
   });
@@ -110,25 +121,35 @@ async function pasarEtapaA2PorId(msgId) {
   return changed;
 }
 
-// ====== Núcleo: procesa solo interactiveId === "btn_info" y etapa === 1 ======
+
 async function procesarMensajesNuevos() {
   const lista = await readJson(ETAPAS_PATH, []);
   if (!Array.isArray(lista) || lista.length === 0) return;
 
-  const pendientes = lista.filter((m) => {
-    const id   = String(m?.id ?? "");
-    const from = String(m?.from ?? "").trim();
-    const etapa = Number(m?.etapa);
-    const interactiveId = String(m?.interactiveId ?? "").trim().toLowerCase();
+ const pendientes = lista.filter((m) => {
+  const id    = String(m?.id ?? "").trim();
+  const from  = String(m?.from ?? "").trim();
+  const etapa = Number(m?.etapa);
+  const body  = String(m?.body ?? "").trim();
 
-    return (
-       (etapa === 4 || etapa === 5) &&
-      interactiveId === "consulta_dudas" &&
-      id && from &&
-      !m?.enProceso &&
-      !mensajesProcesados.includes(id)
-    );
-  });
+  // 👇 NUEVO: detectar si viene de interacción (botón / lista)
+  const interactiveId = String(m?.interactiveId ?? "").trim();
+  const interactiveTitle = String(m?.interactiveTitle ?? "").trim();
+
+  const esTextoNormal =
+    body.length >= 1 &&
+    interactiveId.length === 0 &&
+    interactiveTitle.length === 0;
+
+  return (
+    etapa === 5 &&              
+    esTextoNormal &&
+    id &&
+    from &&
+    !m?.enProceso &&
+    !mensajesProcesados.includes(id)
+  );
+});
 
   if (pendientes.length === 0) return;
 
@@ -163,7 +184,7 @@ async function procesarMensajesNuevos() {
 
 // ====== Watcher con debounce ======
 let debounceT = null;
-function iniciarWatcher7() {
+function iniciarWatcher10() {
   if (!fs.existsSync(ETAPAS_PATH)) {
     console.warn("⚠ No existe EtapasMSG3.json, creando [].");
     fs.writeFileSync(ETAPAS_PATH, "[]", "utf8");
@@ -179,5 +200,4 @@ function iniciarWatcher7() {
   });
 }
 
-module.exports = iniciarWatcher7;
-
+module.exports = iniciarWatcher10;

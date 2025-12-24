@@ -137,28 +137,18 @@ async function manejarBienvenida(from, body) {
   await writeJsonAtomic(registroPath, registro);
 
   // 5) Enviar bienvenida
-  const payload = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: from,
-    type: "interactive",
-    interactive: {
-      type: "button",
-      body: {
-        text:
-          "¡Bienvenido/a a Tu Camión En Flete_Mudanzas!\n\n" +
-          "Estamos listos para ayudarte con tu flete o mudanza de manera rápida, segura y confiable. \n\n" +
-          "*Por favor, selecciona una opción para continuar 😊*",
-      },
-      action: {
-        buttons: [
-          { type: "reply", reply: { id: "deseo_cotizar", title: "Deseo cotizar" } },
-          { type: "reply", reply: { id: "reservar_agendar", title: "Reservar Agendar" } },
-          { type: "reply", reply: { id: "consulta_dudas", title: "Consulta Dudas" } },
-        ],
-      },
-    },
-  };
+const payload = {
+  messaging_product: "whatsapp",
+  recipient_type: "individual",
+  to: from,
+  type: "text",
+  text: {
+    preview_url: false,
+    body:
+      "¡Bienvenido/a a Tu Camión En Flete_Mudanzas!\n\n" +
+      "Estamos listos para ayudarte con tu flete o mudanza de manera rápida, segura y confiable.\n\n" 
+  }
+};
 
   try {
     await axios.post(

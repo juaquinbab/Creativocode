@@ -28,6 +28,7 @@ const iniciarWatcher6 = require('./dosetapa5');
 const iniciarWatcher7 = require('./dosetapa6');
 const iniciarWatcher8 = require('./dosetapa7');
 const iniciarWatcher9 = require('./dosetapa8');
+const iniciarWatcher10 = require('./dosetapa9');
 
 
 
@@ -59,7 +60,7 @@ iniciarWatcher6();
 iniciarWatcher7();
 iniciarWatcher8();
 iniciarWatcher9();
-
+iniciarWatcher10();
 
 // Procesos periódicos y watchers
 setInterval(() => procesarEtapasPorLotes(), 300);

@@ -122,7 +122,7 @@ async function procesarMensajesNuevos() {
     const interactiveId = String(m?.interactiveId ?? "").trim().toLowerCase();
 
     return (
-      etapa === 4 &&
+       (etapa === 4 || etapa === 5) &&
       interactiveId === "reservar_agendar" &&
       id && from &&
       !m?.enProceso &&
