@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
 
 
 
-const cliente1Router = require('./clientes/cliente1/routesLoader');
+const cliente1Router = require('./clientes/9etnrilc1/routesLoader');
 const cliente2Router = require('./clientes/9etnrilc2/routesLoader');
 const cliente3Router = require('./clientes/cliente3/routesLoader');
 const cliente4Router = require('./clientes/9etnrilc4/routesLoader');
@@ -67,7 +67,7 @@ const cliente14Router = require('./clientes/9etnrilc14/routesLoader');
 const cliente15Router = require('./clientes/9etnrilc15/routesLoader');
 const cliente16Router = require('./clientes/9etnrilc16/routesLoader');
 
-app.use('/cliente1', cliente1Router);
+app.use('/9etnrilc1', cliente1Router);
 app.use('/9etnrilc2', cliente2Router);
 app.use('/cliente3', cliente3Router);
 app.use('/9etnrilc4', cliente4Router);

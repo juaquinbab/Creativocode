@@ -24,9 +24,14 @@
         </div>
     </div>
 
+<script>
+  const basePath = `/${window.location.pathname.split('/')[1]}`;
+</script>
+
+
     <script>
         async function cargarPedidos() {
-            const res = await fetch('/pedidos');
+            const res = await fetch(`${basePath}/pedidos`);
             const { pedidos, confirmados, noConfirmados } = await res.json();
 
             document.getElementById('conteo').innerHTML = `
@@ -62,7 +67,7 @@
 
 
 <a class="ml-2 inline-block bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-full font-semibold"
-   href="/pedidos/${p.archivo}/pdf" target="_blank" rel="noopener">
+   href="${basePath}/pedidos/${p.archivo}/pdf" target="_blank" rel="noopener">
   ⬇️ Descargar PDF
 </a>
 
@@ -72,7 +77,7 @@
         }
 
         async function despachar(archivo) {
-            await fetch('/despachar', {
+            await fetch(`${basePath}/despachar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ archivo })

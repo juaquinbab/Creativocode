@@ -1,9 +1,10 @@
 {
   "cliente1": {
-    "usuario": "cliente1",
+    "usuario": "9etnrilc1",
     "password": "1234",
-    "ruta": "/cliente1/index.html",
-    "iduser": "528202610374098"
+    "ruta": "/9etnrilc1/index.html",
+    "iduser": "528202610374098",
+    "IA": true
   },
   "cliente2": {
     "usuario": "Mayra22",

@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 
 // Importar todos los módulos del cliente 1
-//const webhookRoute = require('../../routes/webhook1');
+// const webhookRoute = require('../../routes/webhook2');
 const procesarEtapasPorLotes = require('./procesarEtapas');
 const mensajeIndex = require('./mensajeIndex');
 const rutasSala1 = require('./rutasSala1');
@@ -16,11 +16,17 @@ const iniciarMonitoreoAudio = require('./procesarAudio');
 const iniciarMonitoreoImagen = require('./procesarImagenes');
 const iniciarMonitoreoVideo = require('./procesarvideo');
 const routerAudio = require('./routerAudio');
-const iniciarWatcher  = require('./autoResponderGPT');
+const { iniciarWatcher }  = require('./autoResponderGPT');
 const { startWatcherCitas } = require('./startWatcherCitas');
 const { startWatcherAsesor } = require('./watcherAsesor');
 const pedidosRouter = require('./pedidosRouter');
 const resetnu = require('./resetnu');
+const iaRoutes = require('./iaRoutes');
+const instruccionesRoutes = require('./instruccionesRoutes');
+const salachatRoutes = require("./salachatRoutes");
+
+
+
 
 const router = express.Router();
 
@@ -30,7 +36,10 @@ router.use('/', express.static(path.join(__dirname)));
 
 
 // Rutas
-//router.use('/webhook', webhookRoute);
+// router.use('/webhook', webhookRoute);
+
+router.use("/api", salachatRoutes);
+router.use('/', instruccionesRoutes);
 router.use('/', rutasSala1);
 router.use('/', resetnu);
 router.use('/', mensajeIndex.router);
@@ -41,6 +50,8 @@ router.use(capturaPantallaCliente1);
 router.use(pdfUploadCliente1);
 router.use('/media', routerAudio);
 router.use('/', pedidosRouter);
+router.use('/api/ia', iaRoutes);
+
 
 // Procesos periódicos y watchers
 setInterval(() => procesarEtapasPorLotes(), 300);
