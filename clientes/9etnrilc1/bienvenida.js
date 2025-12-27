@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const registroPath = path.join(__dirname, 'bienvenida.json');
-const etapasPath = path.join(__dirname, '../../data/EtapasMSG.json');
+const etapasPath = path.join(__dirname, '../../data/EtapasMSG1.json');
 
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
