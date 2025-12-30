@@ -10,8 +10,8 @@ const whatsappToken = process.env.WHATSAPP_API_TOKEN;
 
 // --- Rutas absolutas (más seguras) ---
 const USUARIOS_PATH = path.resolve(__dirname, "../../data/usuarios.json");
-const INSTRUCCIONES_PATH = path.resolve(__dirname, "../../data/instruciones1.json");
-const ETAPAS_PATH = path.resolve(__dirname, "../../data/EtapasMSG1.json");
+const INSTRUCCIONES_PATH = path.resolve(__dirname, "../../data/instruciones17.json");
+const ETAPAS_PATH = path.resolve(__dirname, "../../data/EtapasMSG17.json");
 const PROCESADOS_PATH = path.resolve(__dirname, "../../mensajes_procesados.json");
 
 // --- Cargar con require invalidando caché ---
@@ -24,7 +24,7 @@ function requireFresh(p) {
 function getIDNUMERO() {
   try {
     const usuariosData = requireFresh(USUARIOS_PATH);
-    return usuariosData?.cliente1?.iduser || "";
+    return usuariosData?.cliente17?.iduser || "";
   } catch (err) {
     console.error("❌ Error cargando usuarios.json:", err.message);
     return "";
@@ -230,7 +230,7 @@ ${texto}
 
 // ====== Lógica para filtrar y ENCOLAR (NO responder aquí) ======
 const procesarEtapas = (mensajes) => {
-  const palabrasClave = ["asesor", "@"];
+  const palabrasClave = ["asesor"];
 
   const aTexto = (v) => String(v ?? "").trim();
   const normalizar = (t) =>

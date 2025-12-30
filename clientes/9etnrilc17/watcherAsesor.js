@@ -6,7 +6,7 @@ const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
 
-const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG1.json");
+const ETA_PATH = path.join(__dirname, "../../data/EtapasMSG17.json");
 const PROCESSED_PATH = path.join(__dirname, "../../data/processed_asesor.json");
 const usuariosPath = path.join(__dirname, '../../data/usuarios.json');
 
@@ -19,7 +19,7 @@ function getWabaPhoneId() {
   try {
     const usuariosData = requireFresh(usuariosPath);
     // usa cliente4 como en tu versión original; cambia aquí si necesitas otro cliente
-    return usuariosData?.cliente1?.iduser || '';
+    return usuariosData?.cliente17?.iduser || '';
   } catch (e) {
     console.error('❌ Error leyendo usuarios.json:', e.message);
     return '';
@@ -50,7 +50,7 @@ const normalizar = (t = "") =>
   t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 // Palabras/raíces que indican solicitud de asesor
-const PALABRAS_ASESOR = ["asesor", "asesora", "asesores", "Asesor", "@" ];
+const PALABRAS_ASESOR = ["asesor", "asesora", "asesores", "Asesor", "Asesora" ];
 
 function loadProcessed() {
   try {
@@ -154,8 +154,8 @@ async function workerHandle(item, WHATSAPP_API_TOKEN) {
       console.warn(`[ASESOR] Archivo no existe para ${from}. Se creará uno nuevo con [].`);
     }
 
-    const textoRespuesta = `✅ ¡Gracias por tu interés en Creativos Code!
-Nuestro equipo comercial se comunicará contigo en breve para ofrecerte la mejor solución a la medida.
+    const textoRespuesta = `✅ ¡Gracias!
+Muy pronto uno de nuestros asesores te estará contactando 🤝
 
 `;
 
